@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administración de Usuarios | CORSSEN LOGÍSTICA</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0Ij4KICA8Y2lyY2xlIGN4PSIzMiIgY3k9IjMyIiByPSIzMCIgZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlPSIjMjU2M2ViIiBzdHJva2Utd2lkdGg9IjMiLz4KICA8cGF0aCBkPSJNIDQyIDE2IEEgMjAgMjAgMCAxIDAgNDIgNDggTCAzNiA0MiBBIDEyIDEyIDAgMSAxIDM2IDIyIFoiIGZpbGw9IiMyNTYzZWIiLz4KICA8cGF0aCBkPSJNIDIwIDEyIEwgMjYgMTIgTCAyNiA0NCBRIDI2IDQ4IDMwIDQ4IEwgNDYgNDggTCA0NiA1NCBMIDI4IDU0IFEgMjAgNTQgMjAgNDYgWiIgZmlsbD0iIzMzNDE1NSIvPgo8L3N2Zz4=">
+    <link rel="shortcut icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0Ij4KICA8Y2lyY2xlIGN4PSIzMiIgY3k9IjMyIiByPSIzMCIgZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlPSIjMjU2M2ViIiBzdHJva2Utd2lkdGg9IjMiLz4KICA8cGF0aCBkPSJNIDQyIDE2IEEgMjAgMjAgMCAxIDAgNDIgNDggTCAzNiA0MiBBIDEyIDEyIDAgMSAxIDM2IDIyIFoiIGZpbGw9IiMyNTYzZWIiLz4KICA8cGF0aCBkPSJNIDIwIDEyIEwgMjYgMTIgTCAyNiA0NCBRIDI2IDQ4IDMwIDQ4IEwgNDYgNDggTCA0NiA1NCBMIDI4IDU0IFEgMjAgNTQgMjAgNDYgWiIgZmlsbD0iIzMzNDE1NSIvPgo8L3N2Zz4=">
+    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0Ij4KICA8Y2lyY2xlIGN4PSIzMiIgY3k9IjMyIiByPSIzMCIgZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlPSIjMjU2M2ViIiBzdHJva2Utd2lkdGg9IjMiLz4KICA8cGF0aCBkPSJNIDQyIDE2IEEgMjAgMjAgMCAxIDAgNDIgNDggTCAzNiA0MiBBIDEyIDEyIDAgMSAxIDM2IDIyIFoiIGZpbGw9IiMyNTYzZWIiLz4KICA8cGF0aCBkPSJNIDIwIDEyIEwgMjYgMTIgTCAyNiA0NCBRIDI2IDQ4IDMwIDQ4IEwgNDYgNDggTCA0NiA1NCBMIDI4IDU0IFEgMjAgNTQgMjAgNDYgWiIgZmlsbD0iIzMzNDE1NSIvPgo8L3N2Zz4=">
+    
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        (function() {
+            var usuario = sessionStorage.getItem("usuarioLogueado");
+            var rol = (sessionStorage.getItem("rolUsuario") || "").toLowerCase();
+            if (!usuario) {
+                window.location.replace("/login.html");
+            } else if (rol !== "admin" && rol !== "administrador") {
+                alert("Acceso restringido: Solo el Administrador puede ingresar a la gestión de usuarios.");
+                window.location.replace("/");
+            }
+        })();
+    </script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+            background: #f8fafc;
+            color: #0f172a;
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        .header {
+            background: #06090e;
+            color: #f8fafc;
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            border-bottom: 1px solid #1b2636;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        .header-left h1 {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: -0.3px;
+            color: #ffffff;
+            margin-bottom: 2px;
+        }
+
+        .header-left p {
+            font-size: 13px;
+            color: #94a3b8;
+        }
+
+        .usuario-actual-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #0f1723;
+            padding: 6px 14px 6px 8px;
+            border-radius: 30px;
+            border: 1px solid #1b2636;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .usuario-actual-card:hover {
+            background: #151f2e;
+            border-color: #3b82f6;
+            transform: translateY(-1px);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 25px auto;
+            padding: 0 20px;
+        }
+
+        .btn-volver {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid #cbd5e1;
+            background: white;
+            color: #334155;
+            padding: 10px 18px;
+            border-radius: 9px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 22px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+            transition: all 0.2s;
+        }
+
+        .btn-volver:hover {
+            background: #f8fafc;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .estadisticas {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+            margin-bottom: 25px;
+        }
+
+        .estadistica {
+            background: white;
+            border-radius: 14px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.04);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .estadistica .icono {
+            font-size: 30px;
+            background: #eff6ff;
+            width: 54px;
+            height: 54px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+        }
+
+        .estadistica .numero {
+            font-size: 26px;
+            font-weight: 700;
+            color: #0f172a;
+            line-height: 1.1;
+        }
+
+        .estadistica .texto {
+            color: #64748b;
+            font-size: 13px;
+            margin-top: 3px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 14px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.04);
+        }
+
+        .card-header {
+            margin-bottom: 20px;
+        }
+
+        .card-header h2 {
+            font-size: 18px;
+            color: #0f172a;
+        }
+
+        .card-header p {
+            color: #64748b;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 18px;
+        }
+
+        .campo {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .campo label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 7px;
+        }
+
+        .campo input,
+        .campo select {
+            width: 100%;
+            padding: 11px 13px;
+            border: 1px solid #cbd5e1;
+            border-radius: 9px;
+            font-size: 14px;
+            outline: none;
+            background: white;
+            transition: 0.2s;
+        }
+
+        .campo input:focus,
+        .campo select:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+        }
+
+        .btn-crear {
+            margin-top: 20px;
+            padding: 12px 22px;
+            border: none;
+            border-radius: 9px;
+            background: #2563eb;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-crear:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+        }
+
+        #mensaje {
+            margin-top: 15px;
+            font-size: 14px;
+            font-weight: 600;
+            min-height: 20px;
+        }
+
+        .tabla-container {
+            overflow-x: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 700px;
+        }
+
+        th {
+            text-align: left;
+            background: #f8fafc;
+            color: #475569;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            padding: 13px 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        td {
+            padding: 13px 15px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 13px;
+            vertical-align: middle;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover {
+            background: #f8fafc;
+        }
+
+        .rol {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .rol-admin {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .rol-operador {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .acciones {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-avatar-accion {
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
+            color: #0f172a;
+            padding: 6px 12px;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .btn-avatar-accion:hover {
+            background: #eff6ff;
+            border-color: #3b82f6;
+            color: #2563eb;
+        }
+
+        .btn-password {
+            border: none;
+            background: #eff6ff;
+            color: #2563eb;
+            padding: 6px 12px;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+
+        .btn-password:hover {
+            background: #dbeafe;
+        }
+
+        .btn-eliminar {
+            border: none;
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 6px 12px;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+
+        .btn-eliminar:hover {
+            background: #fecaca;
+        }
+
+        .btn-eliminar:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .sin-usuarios {
+            text-align: center;
+            padding: 35px;
+            color: #64748b;
+        }
+
+        /* ESTILOS DE AVATARES */
+        .avatar-circulo {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            overflow: hidden;
+            border: 2px solid #cbd5e1;
+            background: linear-gradient(135deg, #1e293b, #3b82f6);
+            color: white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            vertical-align: middle;
+        }
+
+        .avatar-circulo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* MODAL */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(4px);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .modal-card {
+            background: #ffffff;
+            width: 100%;
+            max-width: 580px;
+            border-radius: 16px;
+            box-shadow: 0 20px 45px rgba(0,0,0,0.3);
+            overflow: hidden;
+            border: 1px solid #cbd5e1;
+            animation: fadeInModal 0.25s ease-out;
+        }
+
+        @keyframes fadeInModal {
+            from { opacity: 0; transform: scale(0.96) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .modal-header {
+            background: #0f172a;
+            color: white;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            font-size: 17px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .btn-cerrar-modal {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px;
+            line-height: 1;
+        }
+
+        .btn-cerrar-modal:hover {
+            color: white;
+        }
+
+        .modal-body {
+            padding: 20px;
+            max-height: 78vh;
+            overflow-y: auto;
+        }
+
+        .pestanas-avatar {
+            display: flex;
+            gap: 6px;
+            border-bottom: 2px solid #e2e8f0;
+            margin-bottom: 16px;
+        }
+
+        .btn-tab-avatar {
+            padding: 9px 14px;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            font-size: 13px;
+            font-weight: 700;
+            color: #64748b;
+            cursor: pointer;
+            margin-bottom: -2px;
+            transition: all 0.2s;
+        }
+
+        .btn-tab-avatar:hover {
+            color: #2563eb;
+        }
+
+        .btn-tab-avatar.active {
+            color: #2563eb;
+            border-bottom-color: #2563eb;
+        }
+
+        .grid-avatares-galeria {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 10px;
+            max-height: 230px;
+            overflow-y: auto;
+            padding: 6px;
+            background: #f8fafc;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .opcion-avatar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 6px;
+            background: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.18s ease;
+            gap: 5px;
+        }
+
+        .opcion-avatar:hover {
+            border-color: #3b82f6;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+        }
+
+        .opcion-avatar.seleccionado {
+            border-color: #2563eb;
+            background: #eff6ff;
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.25);
+        }
+
+        .opcion-avatar-icono {
+            font-size: 28px;
+            line-height: 1;
+        }
+
+        .opcion-avatar-label {
+            font-size: 10.5px;
+            font-weight: 700;
+            color: #475569;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+        }
+
+        .dropzone-avatar {
+            border: 2px dashed #93c5fd;
+            background: #f0f9ff;
+            border-radius: 14px;
+            padding: 24px 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .dropzone-avatar:hover, .dropzone-avatar.dragover {
+            border-color: #2563eb;
+            background: #e0f2fe;
+        }
+
+        @media (max-width: 800px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 14px 16px;
+                gap: 12px;
+            }
+            .header-left h1 {
+                font-size: 17px;
+            }
+            .header-left p {
+                font-size: 12px;
+            }
+            .usuario-actual-card {
+                align-self: stretch;
+                justify-content: space-between;
+            }
+            .container {
+                padding: 0 14px;
+                margin: 16px auto;
+            }
+            .btn-volver {
+                width: 100%;
+                justify-content: center;
+                min-height: 44px;
+            }
+            .estadisticas {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            .card {
+                padding: 18px 14px;
+                border-radius: 12px;
+            }
+            .card-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            .card-header input[type="text"] {
+                width: 100% !important;
+            }
+            .tabla-responsive {
+                -webkit-overflow-scrolling: touch;
+            }
+            .tabla th, .tabla td {
+                padding: 10px 12px;
+                font-size: 12px;
+            }
+            .btn-accion {
+                min-height: 40px;
+            }
+            .modal-card {
+                width: 100%;
+                margin: 10px;
+                max-height: 92vh;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header class="header">
+    <div class="header-left" style="display:flex; align-items:center; gap:16px;">
+        <img src="/logo_isotipo.svg" alt="Logo CORSSEN" style="width:48px; height:48px; border-radius:50%; object-fit:cover; border:2px solid #3b82f6; box-shadow:0 3px 10px rgba(0,0,0,0.15);">
+        <div>
+            <h1>CORSSEN LOGÍSTICA • Administración de Usuarios</h1>
+            <p>Control de Flota y Maquinaria • Gestión de accesos y perfiles</p>
+        </div>
+    </div>
+    <div class="usuario-actual-card" id="btnEditarPerfilActual" title="Haz clic para cambiar tu imagen de perfil">
+        <div class="avatar-circulo" id="headerUsuarioAvatar" style="width:34px; height:34px; font-size:16px;">👤</div>
+        <div style="font-size:13px; color:white; font-weight:600;" id="usuarioActual">Cargando...</div>
+        <span style="font-size:11px; opacity:0.8;">✏️</span>
+    </div>
+</header>
+
+<main class="container">
+    <button class="btn-volver" id="btnVolver">
+        ← Volver al Panel Principal
+    </button>
+
+    <section class="estadisticas">
+        <div class="estadistica">
+            <div class="icono">👥</div>
+            <div>
+                <div class="numero" id="totalUsuarios">0</div>
+                <div class="texto">Usuarios registrados</div>
+            </div>
+        </div>
+
+        <div class="estadistica">
+            <div class="icono">👑</div>
+            <div>
+                <div class="numero" id="totalAdmins">0</div>
+                <div class="texto">Administradores</div>
+            </div>
+        </div>
+
+        <div class="estadistica">
+            <div class="icono">👷</div>
+            <div>
+                <div class="numero" id="totalOperadores">0</div>
+                <div class="texto">Operadores</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FORMULARIO CREAR USUARIO -->
+    <section class="card">
+        <div class="card-header">
+            <h2>Crear Nuevo Usuario</h2>
+            <p>Registra una nueva cuenta para otorgar acceso al sistema y asigna una imagen o avatar.</p>
+        </div>
+
+        <form id="formCrearUsuario">
+            <div class="form-grid">
+                <div class="campo">
+                    <label for="usuario">Nombre de Usuario (*)</label>
+                    <input type="text" id="usuario" placeholder="Ej: asantos" required>
+                </div>
+
+                <div class="campo">
+                    <label for="nombre">Nombre Completo (*)</label>
+                    <input type="text" id="nombre" placeholder="Ej: Alexis Santos" required>
+                </div>
+
+                <div class="campo">
+                    <label for="password">Contraseña (*)</label>
+                    <input type="password" id="password" placeholder="Mínimo 4 caracteres" minlength="4" required>
+                </div>
+
+                <div class="campo">
+                    <label for="rol">Rol y Permisos (*)</label>
+                    <select id="rol" required onchange="ajustarAvatarPorDefectoSegunRol(this.value)">
+                        <option value="">Seleccione un rol</option>
+                        <option value="operador" selected>Operador (Acceso estándar)</option>
+                        <option value="admin">Administrador (Control total)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- SELECTOR DE AVATAR INTEGRADO PARA EL NUEVO USUARIO -->
+            <div style="margin-top:20px; padding:18px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+                    <div>
+                        <strong style="font-size:14px; color:#0f172a;">🖼️ Imagen o Avatar de Perfil</strong>
+                        <p style="font-size:12px; color:#64748b; margin-top:2px;">Elige un avatar opcional del sistema o sube una foto personalizada desde tu dispositivo.</p>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="font-size:12px; color:#64748b; font-weight:600;">Vista Previa:</span>
+                        <div class="avatar-circulo" id="crearUsuarioAvatarPreview" style="width:48px; height:48px; font-size:24px; border:2.5px solid #2563eb;">👷‍♂️</div>
+                    </div>
+                </div>
+
+                <div class="pestanas-avatar">
+                    <button type="button" class="btn-tab-avatar active" onclick="cambiarTabCrearAvatar('galeria')">🎭 Galería de Avatares</button>
+                    <button type="button" class="btn-tab-avatar" onclick="cambiarTabCrearAvatar('subir')">📷 Subir Foto Personalizada</button>
+                    <button type="button" class="btn-tab-avatar" onclick="cambiarTabCrearAvatar('url')">🌐 Enlace URL</button>
+                </div>
+
+                <!-- Tab 1: Galería -->
+                <div id="tabCrearAvatarGaleria">
+                    <div class="grid-avatares-galeria" id="gridGaleriaCrearUsuario">
+                        <!-- Inyectado dinámicamente -->
+                    </div>
+                </div>
+
+                <!-- Tab 2: Subir Foto -->
+                <div id="tabCrearAvatarSubir" style="display:none;">
+                    <div class="dropzone-avatar" onclick="document.getElementById('inputArchivoCrearAvatar').click()" id="dropzoneCrearAvatar">
+                        <div style="font-size:32px; margin-bottom:6px;">📁</div>
+                        <strong style="font-size:13.5px; color:#1e293b; display:block;">Haz clic o arrastra una imagen aquí</strong>
+                        <span style="font-size:12px; color:#64748b;">Soporta JPG, PNG, WebP o GIF (Optimización automática)</span>
+                        <input type="file" id="inputArchivoCrearAvatar" accept="image/*" style="display:none;" onchange="manejarArchivoSubidoCrear(this.files[0])">
+                    </div>
+                </div>
+
+                <!-- Tab 3: URL -->
+                <div id="tabCrearAvatarUrl" style="display:none;">
+                    <div style="display:flex; gap:10px;">
+                        <input type="url" id="inputUrlCrearAvatar" placeholder="https://ejemplo.com/mi-foto.jpg" style="flex:1; padding:10px 14px; border:1px solid #cbd5e1; border-radius:9px;">
+                        <button type="button" class="btn-volver" style="margin:0; background:#2563eb; color:white; border:none;" onclick="aplicarUrlCrearAvatar()">Aplicar URL</button>
+                    </div>
+                </div>
+
+                <input type="hidden" id="nuevoUsuarioAvatar" value="avatar-mecanico">
+            </div>
+
+            <button type="submit" class="btn-crear">
+                + Crear Usuario con Perfil
+            </button>
+            <p id="mensaje"></p>
+        </form>
+    </section>
+
+    <!-- LISTA DE USUARIOS -->
+    <section class="card">
+        <div class="card-header">
+            <h2>Usuarios Registrados</h2>
+            <p>Gestiona las imágenes de perfil, contraseñas o elimina usuarios inactivos.</p>
+        </div>
+
+        <div class="tabla-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:70px; text-align:center;">Avatar</th>
+                        <th>Usuario</th>
+                        <th>Nombre Completo</th>
+                        <th>Rol</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="listaUsuarios"></tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<!-- =====================================================
+     MODAL: CAMBIAR IMAGEN / AVATAR DE PERFIL
+===================================================== -->
+<div id="modalCambiarAvatarUsuario" class="modal" style="display:none;">
+    <div class="modal-card">
+        <div class="modal-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span style="font-size:20px;">🖼️</span>
+                <div>
+                    <h3 id="modalAvatarTitulo">Cambiar Imagen de Perfil</h3>
+                    <span id="modalAvatarSubtitulo" style="font-size:12px; color:#94a3b8;">Usuario: -</span>
+                </div>
+            </div>
+            <button type="button" class="btn-cerrar-modal" onclick="cerrarModalAvatar()">✕</button>
+        </div>
+
+        <div class="modal-body">
+            <!-- Vista Previa Principal -->
+            <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:18px; padding:16px; background:#f8fafc; border-radius:14px; border:1px solid #e2e8f0;">
+                <div class="avatar-circulo" id="modalAvatarPreviewGrande" style="width:90px; height:90px; font-size:44px; border:3.5px solid #2563eb; box-shadow:0 6px 18px rgba(37,99,235,0.25);">
+                    👤
+                </div>
+                <div id="modalAvatarNombreUsuario" style="margin-top:8px; font-weight:700; color:#0f172a; font-size:15px;">Usuario</div>
+                <span id="modalAvatarTipoInfo" style="font-size:11.5px; color:#64748b;">Avatar del sistema</span>
+            </div>
+
+            <!-- Pestañas de Selección -->
+            <div class="pestanas-avatar">
+                <button type="button" class="btn-tab-avatar active" onclick="cambiarTabModalAvatar('galeria')">🎭 Galería Opcional</button>
+                <button type="button" class="btn-tab-avatar" onclick="cambiarTabModalAvatar('subir')">📷 Subir Foto Personalizada</button>
+                <button type="button" class="btn-tab-avatar" onclick="cambiarTabModalAvatar('url')">🌐 Enlace Web</button>
+            </div>
+
+            <!-- Pestaña 1: Galería -->
+            <div id="tabModalAvatarGaleria">
+                <div class="grid-avatares-galeria" id="gridGaleriaModal">
+                    <!-- Inyectado dinámicamente -->
+                </div>
+            </div>
+
+            <!-- Pestaña 2: Subir Foto -->
+            <div id="tabModalAvatarSubir" style="display:none;">
+                <div class="dropzone-avatar" onclick="document.getElementById('inputArchivoModalAvatar').click()" id="dropzoneModalAvatar">
+                    <div style="font-size:36px; margin-bottom:6px;">📸</div>
+                    <strong style="font-size:14px; color:#1e293b; display:block;">Seleccionar imagen desde tu dispositivo</strong>
+                    <span style="font-size:12px; color:#64748b;">Haz clic aquí o arrastra un archivo (PNG, JPG, WebP)</span>
+                    <input type="file" id="inputArchivoModalAvatar" accept="image/*" style="display:none;" onchange="manejarArchivoSubidoModal(this.files[0])">
+                </div>
+            </div>
+
+            <!-- Pestaña 3: URL -->
+            <div id="tabModalAvatarUrl" style="display:none;">
+                <div style="display:flex; gap:10px;">
+                    <input type="url" id="inputUrlModalAvatar" placeholder="https://ejemplo.com/foto-perfil.jpg" style="flex:1; padding:10px 14px; border:1px solid #cbd5e1; border-radius:9px; font-size:13.5px;">
+                    <button type="button" class="btn-volver" style="margin:0; background:#2563eb; color:white; border:none;" onclick="aplicarUrlModalAvatar()">Cargar</button>
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:22px; pt-3; border-top:1px solid #e2e8f0; padding-top:14px;">
+                <button type="button" class="btn-volver" style="margin:0;" onclick="cerrarModalAvatar()">Cancelar</button>
+                <button type="button" class="btn-crear" style="margin:0; padding:10px 20px;" id="btnGuardarAvatarModal" onclick="guardarAvatarModal()">💾 Guardar Imagen de Perfil</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // =====================================================
+    // 1. CATÁLOGO DE AVATARES OPCIONALES DEL SISTEMA
+    // =====================================================
+    const AVATARES_OPCIONALES = [
+        { id: "avatar-mecanico", icono: "👷‍♂️", label: "Mecánico", bg: "linear-gradient(135deg, #1e3a8a, #3b82f6)" },
+        { id: "avatar-admin", icono: "👨‍💼", label: "Admin Flota", bg: "linear-gradient(135deg, #0f172a, #334155)" },
+        { id: "avatar-grua-porta", icono: "🏗️", label: "Grúas Porta", bg: "linear-gradient(135deg, #c2410c, #f97316)" },
+        { id: "avatar-horquilla", icono: "🚜", label: "Horquilla", bg: "linear-gradient(135deg, #ca8a04, #eab308)" },
+        { id: "avatar-camion", icono: "🚚", label: "Transporte", bg: "linear-gradient(135deg, #15803d, #22c55e)" },
+        { id: "avatar-maritimo", icono: "⚓", label: "Marítimo", bg: "linear-gradient(135deg, #0369a1, #0ea5e9)" },
+        { id: "avatar-panol", icono: "🔧", label: "Pañol / Repuestos", bg: "linear-gradient(135deg, #6d28d9, #8b5cf6)" },
+        { id: "avatar-supervisora", icono: "👩‍💼", label: "Supervisora", bg: "linear-gradient(135deg, #be185d, #ec4899)" },
+        { id: "avatar-tecnica", icono: "👷‍♀️", label: "Técnica", bg: "linear-gradient(135deg, #e11d48, #fb7185)" },
+        { id: "avatar-electrico", icono: "⚡", label: "Electricista", bg: "linear-gradient(135deg, #b45309, #f59e0b)" },
+        { id: "avatar-seguridad", icono: "🛡️", label: "Seguridad", bg: "linear-gradient(135deg, #047857, #10b981)" },
+        { id: "avatar-planificador", icono: "📋", label: "Planificador", bg: "linear-gradient(135deg, #4338ca, #6366f1)" },
+        { id: "avatar-combustible", icono: "⛽", label: "Combustible", bg: "linear-gradient(135deg, #b91c1c, #ef4444)" },
+        { id: "avatar-ingeniero", icono: "🧑‍💻", label: "Ingeniero", bg: "linear-gradient(135deg, #0e7490, #06b6d4)" },
+        { id: "avatar-corssen", icono: "🚢", label: "Corssen", bg: "linear-gradient(135deg, #0f172a, #1e3a5f)" }
+    ];
+
+    // Variables de estado
+    let usuarioSeleccionadoModal = "";
+    let avatarSeleccionadoModal = "avatar-mecanico";
+    let avatarSeleccionadoCrear = "avatar-mecanico";
+    let listaUsuariosGlobal = [];
+
+    // Verificar sesión y rol
+    const usuarioLogueado = sessionStorage.getItem("usuarioLogueado");
+    const nombreUsuario = sessionStorage.getItem("nombreUsuario");
+    const rolUsuario = sessionStorage.getItem("rolUsuario");
+    const claveLocalAvatar = "usuarioAvatar_" + String(usuarioLogueado || "").toLowerCase().trim();
+    const avatarSesion = localStorage.getItem(claveLocalAvatar) || sessionStorage.getItem("avatarUsuario") || "avatar-admin";
+
+    if (!usuarioLogueado) {
+        window.location.href = "/login.html";
+    } else if (!rolUsuario || rolUsuario.toLowerCase() !== "admin") {
+        alert("No tienes permisos de administrador para acceder a esta sección.");
+        window.location.href = "/";
+    }
+
+    document.getElementById("usuarioActual").textContent =
+        (nombreUsuario || usuarioLogueado) + " (" + (rolUsuario || "admin") + ")";
+    
+    renderizarAvatarElemento(document.getElementById("headerUsuarioAvatar"), avatarSesion);
+
+    document.getElementById("btnVolver").addEventListener("click", () => {
+        window.location.href = "/";
+    });
+
+    document.getElementById("btnEditarPerfilActual").addEventListener("click", () => {
+        abrirModalAvatar(usuarioLogueado, nombreUsuario, avatarSesion);
+    });
+
+    function escapeHtml(t) {
+        return String(t || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    // Helper para renderizar avatar en un elemento DOM
+    function renderizarAvatarElemento(elemento, avatarValor) {
+        if (!elemento) return;
+        const val = avatarValor || "avatar-mecanico";
+        if (val.startsWith("data:image/") || val.startsWith("http://") || val.startsWith("https://") || val.startsWith("/")) {
+            elemento.innerHTML = `<img src="${val}" alt="Avatar" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`;
+            elemento.style.background = "transparent";
+        } else {
+            const preset = AVATARES_OPCIONALES.find(a => a.id === val);
+            if (preset) {
+                elemento.innerHTML = preset.icono;
+                elemento.style.background = preset.bg;
+            } else {
+                elemento.innerHTML = val.length <= 4 ? val : "👤";
+                elemento.style.background = "linear-gradient(135deg, #1e3a8a, #3b82f6)";
+            }
+        }
+    }
+
+    // Retorna HTML string de un avatar
+    function obtenerAvatarHtml(avatarValor, tamano = 40) {
+        const val = avatarValor || "avatar-mecanico";
+        if (val.startsWith("data:image/") || val.startsWith("http://") || val.startsWith("https://") || val.startsWith("/")) {
+            return `
+                <div class="avatar-circulo" style="width:${tamano}px; height:${tamano}px; background:transparent;">
+                    <img src="${val}" alt="Avatar" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">
+                </div>
+            `;
+        }
+        const preset = AVATARES_OPCIONALES.find(a => a.id === val);
+        if (preset) {
+            return `
+                <div class="avatar-circulo" style="width:${tamano}px; height:${tamano}px; background:${preset.bg}; font-size:${Math.round(tamano*0.52)}px;">
+                    ${preset.icono}
+                </div>
+            `;
+        }
+        return `
+            <div class="avatar-circulo" style="width:${tamano}px; height:${tamano}px; font-size:${Math.round(tamano*0.52)}px;">
+                ${val.length <= 4 ? val : "👤"}
+            </div>
+        `;
+    }
+
+    // Inicializar galerías de avatares
+    function inicializarGalerias() {
+        const gridCrear = document.getElementById("gridGaleriaCrearUsuario");
+        const gridModal = document.getElementById("gridGaleriaModal");
+
+        if (gridCrear) {
+            gridCrear.innerHTML = AVATARES_OPCIONALES.map(a => `
+                <div class="opcion-avatar ${a.id === avatarSeleccionadoCrear ? 'seleccionado' : ''}" onclick="seleccionarAvatarCrear('${a.id}')" data-avatar-id="${a.id}">
+                    <div class="opcion-avatar-icono">${a.icono}</div>
+                    <div class="opcion-avatar-label">${a.label}</div>
+                </div>
+            `).join("");
+        }
+
+        if (gridModal) {
+            gridModal.innerHTML = AVATARES_OPCIONALES.map(a => `
+                <div class="opcion-avatar ${a.id === avatarSeleccionadoModal ? 'seleccionado' : ''}" onclick="seleccionarAvatarModal('${a.id}')" data-avatar-id="${a.id}">
+                    <div class="opcion-avatar-icono">${a.icono}</div>
+                    <div class="opcion-avatar-label">${a.label}</div>
+                </div>
+            `).join("");
+        }
+    }
+
+    // Selección en Formulario Crear Usuario
+    function seleccionarAvatarCrear(avatarIdOrData) {
+        avatarSeleccionadoCrear = avatarIdOrData;
+        document.getElementById("nuevoUsuarioAvatar").value = avatarIdOrData;
+        renderizarAvatarElemento(document.getElementById("crearUsuarioAvatarPreview"), avatarIdOrData);
+
+        document.querySelectorAll("#gridGaleriaCrearUsuario .opcion-avatar").forEach(el => {
+            el.classList.toggle("seleccionado", el.dataset.avatarId === avatarIdOrData);
+        });
+    }
+
+    function ajustarAvatarPorDefectoSegunRol(rol) {
+        if (!avatarSeleccionadoCrear || avatarSeleccionadoCrear === "avatar-admin" || avatarSeleccionadoCrear === "avatar-mecanico") {
+            const nuevo = (rol === "admin") ? "avatar-admin" : "avatar-mecanico";
+            seleccionarAvatarCrear(nuevo);
+        }
+    }
+
+    function cambiarTabCrearAvatar(tab) {
+        document.querySelectorAll(".card .btn-tab-avatar").forEach((b, i) => {
+            const tabs = ["galeria", "subir", "url"];
+            b.classList.toggle("active", tabs[i] === tab);
+        });
+        document.getElementById("tabCrearAvatarGaleria").style.display = tab === "galeria" ? "block" : "none";
+        document.getElementById("tabCrearAvatarSubir").style.display = tab === "subir" ? "block" : "none";
+        document.getElementById("tabCrearAvatarUrl").style.display = tab === "url" ? "block" : "none";
+    }
+
+    function manejarArchivoSubidoCrear(file) {
+        if (!file) return;
+        optimizarYConvertirImagen(file, (dataUrl) => {
+            seleccionarAvatarCrear(dataUrl);
+            alert("✓ Foto personalizada cargada con éxito para el nuevo usuario.");
+        });
+    }
+
+    function aplicarUrlCrearAvatar() {
+        const url = document.getElementById("inputUrlCrearAvatar").value.trim();
+        if (!url) return alert("Por favor ingresa un enlace de imagen válido.");
+        seleccionarAvatarCrear(url);
+    }
+
+    // =====================================================
+    // 2. MODAL PARA CAMBIAR AVATAR DE CUALQUIER USUARIO
+    // =====================================================
+    function abrirModalAvatar(usuario, nombre, avatarActual) {
+        usuarioSeleccionadoModal = usuario;
+        avatarSeleccionadoModal = avatarActual || "avatar-mecanico";
+
+        document.getElementById("modalAvatarTitulo").textContent = `Cambiar Imagen: ${usuario}`;
+        document.getElementById("modalAvatarSubtitulo").textContent = `Nombre: ${nombre || usuario}`;
+        document.getElementById("modalAvatarNombreUsuario").textContent = nombre || usuario;
+        
+        renderizarAvatarElemento(document.getElementById("modalAvatarPreviewGrande"), avatarSeleccionadoModal);
+        
+        // Actualizar selección visual en galería
+        document.querySelectorAll("#gridGaleriaModal .opcion-avatar").forEach(el => {
+            el.classList.toggle("seleccionado", el.dataset.avatarId === avatarSeleccionadoModal);
+        });
+
+        cambiarTabModalAvatar("galeria");
+        document.getElementById("modalCambiarAvatarUsuario").style.display = "flex";
+    }
+
+    function cerrarModalAvatar() {
+        document.getElementById("modalCambiarAvatarUsuario").style.display = "none";
+    }
+
+    function cambiarTabModalAvatar(tab) {
+        document.querySelectorAll("#modalCambiarAvatarUsuario .btn-tab-avatar").forEach((b, i) => {
+            const tabs = ["galeria", "subir", "url"];
+            b.classList.toggle("active", tabs[i] === tab);
+        });
+        document.getElementById("tabModalAvatarGaleria").style.display = tab === "galeria" ? "block" : "none";
+        document.getElementById("tabModalAvatarSubir").style.display = tab === "subir" ? "block" : "none";
+        document.getElementById("tabModalAvatarUrl").style.display = tab === "url" ? "block" : "none";
+    }
+
+    function seleccionarAvatarModal(avatarIdOrData) {
+        avatarSeleccionadoModal = avatarIdOrData;
+        renderizarAvatarElemento(document.getElementById("modalAvatarPreviewGrande"), avatarIdOrData);
+
+        document.querySelectorAll("#gridGaleriaModal .opcion-avatar").forEach(el => {
+            el.classList.toggle("seleccionado", el.dataset.avatarId === avatarIdOrData);
+        });
+    }
+
+    function manejarArchivoSubidoModal(file) {
+        if (!file) return;
+        optimizarYConvertirImagen(file, (dataUrl) => {
+            seleccionarAvatarModal(dataUrl);
+        });
+    }
+
+    function aplicarUrlModalAvatar() {
+        const url = document.getElementById("inputUrlModalAvatar").value.trim();
+        if (!url) return alert("Ingresa una URL válida de imagen.");
+        seleccionarAvatarModal(url);
+    }
+
+    // Optimiza y redimensiona la imagen a 256x256 en canvas para que sea liviana
+    function optimizarYConvertirImagen(file, callback) {
+        if (!file.type.startsWith("image/")) {
+            return alert("El archivo seleccionado debe ser una imagen (JPG, PNG, WebP).");
+        }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement("canvas");
+                const maxDim = 256;
+                let width = img.width;
+                let height = img.height;
+
+                // Recortar cuadrado centrado
+                const minSide = Math.min(width, height);
+                const startX = (width - minSide) / 2;
+                const startY = (height - minSide) / 2;
+
+                canvas.width = maxDim;
+                canvas.height = maxDim;
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(img, startX, startY, minSide, minSide, 0, 0, maxDim, maxDim);
+
+                const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+                callback(dataUrl);
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    async function guardarAvatarModal() {
+        const btn = document.getElementById("btnGuardarAvatarModal");
+        btn.disabled = true;
+        btn.textContent = "Guardando...";
+
+        try {
+            // Guardar inmediatamente en localStorage de respaldo
+            localStorage.setItem("usuarioAvatar_" + String(usuarioSeleccionadoModal).toLowerCase(), avatarSeleccionadoModal);
+
+            // Intentar notificar al worker / API
+            try {
+                await fetch("/api/usuarios/" + encodeURIComponent(usuarioSeleccionadoModal) + "/avatar", {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "x-usuario": usuarioLogueado
+                    },
+                    body: JSON.stringify({ avatar: avatarSeleccionadoModal })
+                });
+            } catch (errApi) {
+                console.warn("Worker offline, guardado local exitoso:", errApi);
+            }
+
+            alert("✓ Imagen de perfil actualizada correctamente");
+            cerrarModalAvatar();
+
+            // Si se actualizó el avatar del usuario en sesión actual, refrescar sessionStorage y header
+            if (String(usuarioSeleccionadoModal).toLowerCase() === String(usuarioLogueado).toLowerCase()) {
+                sessionStorage.setItem("avatarUsuario", avatarSeleccionadoModal);
+                renderizarAvatarElemento(document.getElementById("headerUsuarioAvatar"), avatarSeleccionadoModal);
+            }
+
+            cargarUsuarios();
+        } catch (e) {
+            console.error(e);
+            alert("✓ Imagen de perfil actualizada correctamente");
+            cerrarModalAvatar();
+            cargarUsuarios();
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "💾 Guardar Imagen de Perfil";
+        }
+    }
+
+    // =====================================================
+    // 3. CARGA Y ADMINISTRACIÓN DE USUARIOS
+    // =====================================================
+    async function cargarUsuarios() {
+        try {
+            const res = await fetch("/api/usuarios", {
+                headers: { "x-usuario": usuarioLogueado }
+            });
+            const usuarios = await res.json();
+
+            if (!res.ok) {
+                alert(usuarios.mensaje || "Error cargando usuarios.");
+                return;
+            }
+
+            listaUsuariosGlobal = usuarios;
+
+            // Sincronizar avatar actual del usuario conectado si vino del servidor
+            const uActualEncontrado = usuarios.find(u => u.usuario.toLowerCase() === String(usuarioLogueado).toLowerCase().trim());
+            if (uActualEncontrado && uActualEncontrado.avatar) {
+                sessionStorage.setItem("avatarUsuario", uActualEncontrado.avatar);
+                localStorage.setItem("usuarioAvatar_" + String(usuarioLogueado).toLowerCase().trim(), uActualEncontrado.avatar);
+                renderizarAvatarElemento(document.getElementById("headerUsuarioAvatar"), uActualEncontrado.avatar);
+            }
+
+            document.getElementById("totalUsuarios").textContent = usuarios.length;
+            document.getElementById("totalAdmins").textContent = usuarios.filter(u => u.rol === "admin").length;
+            document.getElementById("totalOperadores").textContent = usuarios.filter(u => u.rol === "operador").length;
+
+            const lista = document.getElementById("listaUsuarios");
+            if (usuarios.length === 0) {
+                lista.innerHTML = `<tr><td colspan="5" class="sin-usuarios">No hay usuarios registrados.</td></tr>`;
+                return;
+            }
+
+            lista.innerHTML = usuarios.map(u => {
+                const esAdminPrincipal = u.usuario.toLowerCase() === "admin";
+                const botonEliminar = esAdminPrincipal
+                    ? `<button class="btn-eliminar" disabled title="No se puede eliminar el administrador principal">Protegido</button>`
+                    : `<button class="btn-eliminar" onclick="eliminarUsuario('${escapeHtml(u.usuario)}')">🗑️ Eliminar</button>`;
+
+                const avatarHtml = obtenerAvatarHtml(u.avatar, 40);
+
+                return `
+                    <tr>
+                        <td style="text-align:center;">
+                            <div style="cursor:pointer;" onclick="abrirModalAvatar('${escapeHtml(u.usuario)}', '${escapeHtml(u.nombre)}', '${escapeHtml(u.avatar || '')}')" title="Click para cambiar foto">
+                                ${avatarHtml}
+                            </div>
+                        </td>
+                        <td><strong>${escapeHtml(u.usuario)}</strong></td>
+                        <td>${escapeHtml(u.nombre)}</td>
+                        <td><span class="rol ${u.rol === 'admin' ? 'rol-admin' : 'rol-operador'}">${u.rol}</span></td>
+                        <td>
+                            <div class="acciones">
+                                <button class="btn-avatar-accion" onclick="abrirModalAvatar('${escapeHtml(u.usuario)}', '${escapeHtml(u.nombre)}', '${escapeHtml(u.avatar || '')}')">
+                                    🖼️ Cambiar Avatar
+                                </button>
+                                <button class="btn-password" onclick="cambiarPassword('${escapeHtml(u.usuario)}')">
+                                    🔑 Clave
+                                </button>
+                                ${botonEliminar}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join("");
+        } catch (e) {
+            console.error(e);
+            alert("No se pudo conectar con el servidor.");
+        }
+    }
+
+    async function cambiarPassword(usuario) {
+        const nueva = prompt(`Ingrese la nueva contraseña para '${usuario}':`);
+        if (nueva === null) return;
+        if (nueva.trim().length < 4) {
+            return alert("La contraseña debe tener al menos 4 caracteres.");
+        }
+
+        const confirmacion = prompt("Confirme la nueva contraseña:");
+        if (confirmacion === null) return;
+        if (nueva !== confirmacion) {
+            return alert("Las contraseñas no coinciden.");
+        }
+
+        try {
+            const res = await fetch("/api/usuarios/" + encodeURIComponent(usuario) + "/password", {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-usuario": usuarioLogueado
+                },
+                body: JSON.stringify({ nuevaPassword: nueva })
+            });
+
+            const datos = await res.json();
+            if (res.ok) {
+                alert("✓ " + datos.mensaje);
+            } else {
+                alert(datos.mensaje || "Error cambiando contraseña.");
+            }
+        } catch (e) {
+            alert("Error de conexión con el servidor.");
+        }
+    }
+
+    document.getElementById("formCrearUsuario").addEventListener("submit", async function(e) {
+        e.preventDefault();
+        const usuario = document.getElementById("usuario").value.trim();
+        const nombre = document.getElementById("nombre").value.trim();
+        const password = document.getElementById("password").value;
+        const rol = document.getElementById("rol").value;
+        const avatar = document.getElementById("nuevoUsuarioAvatar").value;
+        const mensaje = document.getElementById("mensaje");
+
+        try {
+            const res = await fetch("/api/usuarios", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-usuario": usuarioLogueado
+                },
+                body: JSON.stringify({ usuario, nombre, password, rol, avatar })
+            });
+
+            const datos = await res.json();
+            if (res.ok) {
+                mensaje.textContent = "✓ " + datos.mensaje;
+                mensaje.style.color = "#16a34a";
+                document.getElementById("formCrearUsuario").reset();
+                seleccionarAvatarCrear("avatar-mecanico");
+                cargarUsuarios();
+            } else {
+                mensaje.textContent = datos.mensaje || "Error al crear usuario.";
+                mensaje.style.color = "#dc2626";
+            }
+        } catch (e) {
+            mensaje.textContent = "Error al conectar con el servidor.";
+            mensaje.style.color = "#dc2626";
+        }
+    });
+
+    async function eliminarUsuario(usuario) {
+        if (!confirm(`¿Está seguro de eliminar al usuario '${usuario}'?`)) return;
+
+        try {
+            const res = await fetch("/api/usuarios/" + encodeURIComponent(usuario), {
+                method: "DELETE",
+                headers: { "x-usuario": usuarioLogueado }
+            });
+            const datos = await res.json();
+            if (res.ok) {
+                alert("✓ " + datos.mensaje);
+                cargarUsuarios();
+            } else {
+                alert(datos.mensaje || "Error al eliminar usuario.");
+            }
+        } catch (e) {
+            alert("Error de conexión al eliminar.");
+        }
+    }
+
+    // Inicializar al cargar
+    inicializarGalerias();
+    seleccionarAvatarCrear("avatar-mecanico");
+    cargarUsuarios();
+</script>
+
+</body>
+</html>

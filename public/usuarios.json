@@ -1,0 +1,16 @@
+[
+    {
+        "usuario": "admin",
+        "password": "$2b$10$uYTOyaJeHb9FQfOosVFElehPB3AntqhXGSMUTUbJGjYTXv.KLx/x2",
+        "nombre": "Administrador General",
+        "rol": "admin",
+        "avatar": "avatar-admin"
+    },
+    {
+        "usuario": "operador",
+        "password": "$2b$10$qac5xGf7UI3udD4j88V/O.OiWQUFBa5qJX3Yb.V5YpbmMR8FWzYL6",
+        "nombre": "Operador Principal",
+        "rol": "operador",
+        "avatar": "avatar-mecanico"
+    }
+]

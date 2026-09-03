@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 180" width="100%" height="100%">
+  <defs>
+    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563eb" />
+      <stop offset="60%" stop-color="#1d4ed8" />
+      <stop offset="100%" stop-color="#1e40af" />
+    </linearGradient>
+    <linearGradient id="greyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#475569" />
+      <stop offset="100%" stop-color="#1e293b" />
+    </linearGradient>
+  </defs>
+
+  <!-- Simbolo C & L -->
+  <g transform="translate(10, 10)">
+    <!-- Letra C estilizada (arco circular grueso) -->
+    <path d="M 85 22 
+             A 65 65 0 1 0 135 110 
+             L 115 95 
+             A 45 45 0 1 1 85 42 
+             Z" 
+          fill="url(#blueGrad)" />
+
+    <!-- Letra L estilizada con esquinas redondeadas -->
+    <path d="M 52 35 
+             L 68 35 
+             L 68 115 
+             L 132 115 
+             L 132 130 
+             L 52 130 
+             Z" 
+          fill="url(#greyGrad)" 
+          stroke="url(#greyGrad)"
+          stroke-width="2"
+          stroke-linejoin="round" />
+  </g>
+
+  <!-- Texto CORSSEN LOGÍSTICA -->
+  <!-- CORSSEN -->
+  <text x="170" y="88" 
+        font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" 
+        font-size="44" 
+        font-weight="900" 
+        letter-spacing="1.5" 
+        fill="#1e293b">CORSSEN</text>
+
+  <!-- LOGÍSTICA -->
+  <text x="172" y="128" 
+        font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" 
+        font-size="21" 
+        font-weight="400" 
+        letter-spacing="8" 
+        fill="#334155">LOGÍSTICA</text>
+</svg>
