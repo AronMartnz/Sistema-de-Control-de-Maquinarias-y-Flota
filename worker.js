@@ -1,6 +1,6 @@
 /**
  * Cloudflare Worker Handler - CORSSEN LOGÍSTICA
- * Conexión completa a Cloudflare D1 (SQL) y KV (CORSSEN_STORAGE)
+ * Integración nativa con Cloudflare D1 (SQL Edge) y KV (CORSSEN_STORAGE)
  */
 
 let IN_MEMORY_USERS = [
@@ -25,7 +25,7 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
 
-    // CORS Headers
+    // CORS headers con soporte total
     const corsHeaders = {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
@@ -36,24 +36,26 @@ export default {
       return new Response(null, { headers: corsHeaders });
     }
 
-    // Identificar KV (soporta ambos nombres)
+    // Helper para obtener el almacenamiento KV correcto
     const kv = (env && (env.CORSSEN_STORAGE || env.CORSSEN_KV)) || null;
 
-    // 1. Obtener usuarios desde D1 SQL o KV
+    // Función auxiliar para obtener lista unificada de usuarios (D1 -> KV -> Memoria)
     async function obtenerUsuarios() {
+      // 1. Intentar desde Cloudflare D1 Database
       if (env && env.DB) {
         try {
-          const res = await env.DB.prepare(
+          const queryResult = await env.DB.prepare(
             "SELECT id, usuario, password, nombre, rol, avatar FROM usuarios ORDER BY id ASC"
           ).all();
-          if (res && res.results && res.results.length > 0) {
-            return res.results;
+          if (queryResult && queryResult.results && queryResult.results.length > 0) {
+            return queryResult.results;
           }
-        } catch (e) {
-          console.warn("Error leyendo D1 usuarios:", e);
+        } catch (eD1) {
+          console.warn("D1 obtenerUsuarios error:", eD1);
         }
       }
 
+      // 2. Intentar desde Cloudflare KV
       if (kv) {
         try {
           const stored = await kv.get("usuarios_lista", "json");
@@ -61,22 +63,24 @@ export default {
             IN_MEMORY_USERS = stored;
             return stored;
           }
-        } catch (e) {
-          console.warn("Error leyendo KV usuarios:", e);
+        } catch (eKV) {
+          console.warn("KV obtenerUsuarios error:", eKV);
         }
       }
 
+      // 3. Fallback memoria
       return IN_MEMORY_USERS;
     }
 
-    // 2. Guardar nuevo usuario en D1 SQL y KV
+    // Función auxiliar para guardar usuario en D1 y sincronizar en KV
     async function persistirUsuario(nuevoUsuario) {
       const uNorm = (nuevoUsuario.usuario || "").trim().toLowerCase();
       const uNombre = (nuevoUsuario.nombre || uNorm).trim();
-      const uPass = (nuevoUsuario.password || "1234").trim();
+      const uPass = nuevoUsuario.password || "1234";
       const uRol = nuevoUsuario.rol || "operador";
       const uAvatar = nuevoUsuario.avatar || (uRol === "admin" ? "avatar-admin" : "avatar-mecanico");
 
+      // 1. Guardar en Cloudflare D1
       if (env && env.DB) {
         try {
           await env.DB.prepare(`
@@ -89,11 +93,12 @@ export default {
               avatar = excluded.avatar,
               actualizado_en = CURRENT_TIMESTAMP
           `).bind(uNorm, uPass, uNombre, uRol, uAvatar).run();
-        } catch (err) {
-          console.error("Error insertando en D1:", err);
+        } catch (errD1) {
+          console.error("Error persistiendo usuario en D1:", errD1);
         }
       }
 
+      // 2. Sincronizar en memoria y KV
       const idx = IN_MEMORY_USERS.findIndex(u => u.usuario.toLowerCase() === uNorm);
       const userObj = { usuario: uNorm, password: uPass, nombre: uNombre, rol: uRol, avatar: uAvatar };
       if (idx >= 0) {
@@ -105,8 +110,8 @@ export default {
       if (kv) {
         try {
           await kv.put("usuarios_lista", JSON.stringify(IN_MEMORY_USERS));
-        } catch (err) {
-          console.warn("Error guardando en KV:", err);
+        } catch (errKV) {
+          console.warn("Error guardando en KV:", errKV);
         }
       }
     }
@@ -117,6 +122,7 @@ export default {
       const kvStatus = kv ? "KV Conectado" : "KV No detectado";
       return new Response(JSON.stringify({
         status: "ok",
+        mensaje: "SERVIDOR CLOUDFLARE DE CORSSEN OPERATIVO",
         db: dbStatus,
         kv: kvStatus,
         timestamp: new Date().toISOString()
@@ -136,6 +142,7 @@ export default {
         const listaUsers = await obtenerUsuarios();
         const uFound = listaUsers.find(u => u.usuario.toLowerCase() === uNorm);
 
+        // Validación de contraseña
         const passValida = 
           (uNorm === "admin" && (passTrim === "admin" || passTrim === "admin123" || passTrim === "corssen2026")) ||
           (uNorm === "operador" && (passTrim === "1234" || passTrim === "operador" || passTrim === "operador123")) ||
@@ -266,7 +273,7 @@ export default {
       }
     }
 
-    // API Usuarios - PATCH avatar
+    // API Usuarios - PATCH avatar (/api/usuarios/:usuario/avatar)
     if (path.startsWith("/api/usuarios/") && path.endsWith("/avatar") && (request.method === "PATCH" || request.method === "POST")) {
       try {
         const parts = path.split("/");
@@ -289,19 +296,19 @@ export default {
           }
         }
 
-        return new Response(JSON.stringify({ mensaje: "Avatar actualizado correctamente" }), {
+        return new Response(JSON.stringify({ mensaje: "Imagen de perfil actualizada correctamente" }), {
           status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" }
         });
       } catch (err) {
-        return new Response(JSON.stringify({ mensaje: "Avatar actualizado" }), {
+        return new Response(JSON.stringify({ mensaje: "Imagen de perfil actualizada correctamente" }), {
           status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" }
         });
       }
     }
 
-    // API Usuarios - PATCH password
+    // API Usuarios - PATCH password (/api/usuarios/:usuario/password)
     if (path.startsWith("/api/usuarios/") && path.endsWith("/password") && request.method === "PATCH") {
       try {
         const parts = path.split("/");
@@ -336,7 +343,7 @@ export default {
       }
     }
 
-    // API Usuarios - DELETE
+    // API Usuarios - DELETE (/api/usuarios/:usuario)
     if (path.startsWith("/api/usuarios/") && request.method === "DELETE") {
       const userToDelete = decodeURIComponent(path.split("/")[3] || "").toLowerCase().trim();
       if (userToDelete && userToDelete !== "admin") {
@@ -356,34 +363,34 @@ export default {
           console.warn("Error eliminando en KV:", e);
         }
       }
-      return new Response(JSON.stringify({ mensaje: `Usuario ${userToDelete} eliminado correctamente` }), {
+      return new Response(JSON.stringify({ mensaje: "Usuario eliminado correctamente" }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" }
       });
     }
 
-    // API Backup - Guardar Respaldo
+    // API Backup - Guardar Respaldo en la Nube KV y D1 (/api/backup/guardar)
     if (path === "/api/backup/guardar" && request.method === "POST") {
       try {
         const body = await request.json();
-        const timestamp = Date.now();
-        const backupId = "SNP-" + timestamp;
-        const now = new Date();
-        const fecha = now.toLocaleDateString("es-CL");
-        const hora = now.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
+        const backupId = body.id || ("SNP-CLOUD-" + Date.now());
+        const timestamp = body.timestamp || Date.now();
+        const fecha = body.fecha || new Date().toLocaleDateString("es-CL");
+        const hora = body.hora || new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 
         const snapshotMeta = {
           id: backupId,
-          timestamp,
-          fecha,
-          hora,
-          motivo: body.motivo || "Respaldo Manual en la Nube",
+          fecha: fecha,
+          hora: hora,
+          timestamp: timestamp,
+          motivo: body.motivo || "Copia de Seguridad Automática",
           tipo: body.tipo || "AUTOMATICO_NUBE",
           usuario: body.usuario || "Sistema Corssen",
           resumen: body.resumen || {},
           origen: "Cloudflare D1 & KV"
         };
 
+        // Guardar en D1
         if (env && env.DB) {
           try {
             await env.DB.prepare(`
@@ -405,6 +412,7 @@ export default {
           }
         }
 
+        // Guardar en KV
         if (kv) {
           try {
             await kv.put(`backup_${backupId}`, JSON.stringify({ ...snapshotMeta, data: body.data }));
@@ -438,14 +446,14 @@ export default {
           headers: { ...corsHeaders, "Content-Type": "application/json" }
         });
       } catch (err) {
-        return new Response(JSON.stringify({ mensaje: "Error guardando respaldo: " + err.message }), {
+        return new Response(JSON.stringify({ error: "Error al procesar respaldo: " + err.message }), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" }
         });
       }
     }
 
-    // API Backup - Historial de Respaldos
+    // API Backup - Historial de Respaldos en Nube (/api/backup/historial)
     if (path === "/api/backup/historial" && request.method === "GET") {
       let historial = [];
       if (env && env.DB) {
@@ -486,11 +494,11 @@ export default {
       });
     }
 
-    // API Backup - Descargar / Restaurar Respaldo
-    if (path.startsWith("/api/backup/descargar/") && request.method === "GET") {
+    // API Backup - Obtener Respaldo Específico (/api/backup/obtener/:id)
+    if (path.startsWith("/api/backup/obtener/") && request.method === "GET") {
       const bId = path.split("/")[4];
       if (!bId) {
-        return new Response(JSON.stringify({ mensaje: "ID de respaldo inválido" }), {
+        return new Response(JSON.stringify({ error: "ID de respaldo no especificado" }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" }
         });
@@ -536,29 +544,76 @@ export default {
         }
       }
 
-      if (backupData) {
-        return new Response(JSON.stringify(backupData), {
-          status: 200,
+      if (!backupData) {
+        return new Response(JSON.stringify({ error: "Respaldo no encontrado en la nube" }), {
+          status: 404,
           headers: { ...corsHeaders, "Content-Type": "application/json" }
         });
       }
 
-      return new Response(JSON.stringify({ mensaje: "Respaldo no encontrado" }), {
-        status: 404,
+      return new Response(JSON.stringify(backupData), {
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" }
       });
     }
 
-    // Servir assets estáticos
+    // Servir assets estáticos a través del binding de Cloudflare
     if (env && env.ASSETS) {
       let res = await env.ASSETS.fetch(request);
       if (res.status === 404 && !path.includes(".")) {
         const indexUrl = new URL("/index.html", request.url);
         res = await env.ASSETS.fetch(new Request(indexUrl, request));
       }
-      return res;
+      const newHeaders = new Headers(res.headers);
+      newHeaders.set("Cache-Control", "no-cache, no-store, must-revalidate");
+      newHeaders.set("Pragma", "no-cache");
+      newHeaders.set("Expires", "0");
+      return new Response(res.body, {
+        status: res.status,
+        statusText: res.statusText,
+        headers: newHeaders
+      });
     }
 
-    return new Response("Not Found", { status: 404 });
+    return fetch(request);
+  },
+
+  // Manejador para Cron Triggers automáticos en Cloudflare
+  async scheduled(event, env, ctx) {
+    const kv = (env && (env.CORSSEN_STORAGE || env.CORSSEN_KV)) || null;
+    if (kv) {
+      try {
+        const timestamp = Date.now();
+        const fecha = new Date().toLocaleDateString("es-CL");
+        const hora = new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
+        const backupId = "SNP-CRON-" + timestamp;
+
+        const ultimo = await kv.get("corssen_backup_ultimo", "json");
+        if (ultimo && ultimo.data) {
+          const snapshotMeta = {
+            id: backupId,
+            fecha: fecha,
+            hora: hora,
+            timestamp: timestamp,
+            motivo: `Respaldo Automático Programado (Cron)`,
+            tipo: "CRON_AUTOMATICO",
+            usuario: "Cloudflare Cron",
+            resumen: ultimo.resumen || {},
+            origen: "Cloudflare Worker"
+          };
+          await kv.put(`backup_${backupId}`, JSON.stringify({ ...snapshotMeta, data: ultimo.data }));
+          
+          let historial = [];
+          const rawHist = await kv.get("corssen_backups_historial", "json");
+          if (rawHist && Array.isArray(rawHist)) historial = rawHist;
+          historial.unshift(snapshotMeta);
+          if (historial.length > 30) historial = historial.slice(0, 30);
+          await kv.put("corssen_backups_historial", JSON.stringify(historial));
+        }
+      } catch (err) {
+        console.error("Error en scheduled cron backup:", err);
+      }
+    }
   }
 };
+
