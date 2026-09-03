@@ -5650,11 +5650,12 @@ function renderizarModuloAceite() {
     if (!tbody) return;
 
     if (!historialConsumoAceite || historialConsumoAceite.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:24px; color:#64748b;">No hay consumos de aceite registrados aún para este tambor.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:24px; color:#64748b;">No hay consumos de aceite registrados aún para este tambor.</td></tr>`;
         return;
     }
 
-    tbody.innerHTML = historialConsumoAceite.map((item) => {
+    tbody.innerHTML = historialConsumoAceite.map((item, index) => {
+        const itemId = item.id || `ACEITE-AUTO-${index}`;
         return `
             <tr>
                 <td><strong>${item.fecha || '-'}</strong></td>
@@ -5665,9 +5666,72 @@ function renderizarModuloAceite() {
                 <td><span class="badge badge-gris">${(item.saldoRestante !== undefined ? item.saldoRestante : 0).toFixed(1)} Lts Disp.</span></td>
                 <td><strong style="color:#059669;">$${(item.costoTotal || 0).toLocaleString('es-CL')}</strong></td>
                 <td>${item.tecnico || 'Alexis Santos'}</td>
+                <td style="text-align:center;">
+                    <button type="button" class="btn-peligro" onclick="eliminarConsumoAceite('${itemId}')" title="Eliminar este consumo y reincorporar los litros al tambor" style="padding:4px 8px; font-size:11px; background:#fee2e2; color:#dc2626; border:1px solid #fecaca; border-radius:6px; cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:4px; transition:background 0.2s;">
+                        🗑️ Eliminar
+                    </button>
+                </td>
             </tr>
         `;
     }).join("");
+}
+
+function eliminarConsumoAceite(id) {
+    if (!historialConsumoAceite || historialConsumoAceite.length === 0) return;
+
+    const idx = historialConsumoAceite.findIndex((item, index) => {
+        const itemId = item.id || `ACEITE-AUTO-${index}`;
+        return String(itemId) === String(id) || String(item.id) === String(id);
+    });
+
+    if (idx === -1) {
+        if (typeof mostrarNotificacionToast === "function") {
+            mostrarNotificacionToast("Registro de consumo de aceite no encontrado", "warning");
+        } else {
+            alert("Registro de consumo de aceite no encontrado.");
+        }
+        return;
+    }
+
+    const consumo = historialConsumoAceite[idx];
+    const equipo = consumo.codigoEquipo || "la máquina seleccionada";
+    const litros = parseFloat(consumo.litrosDescontados) || 0;
+    const folio = consumo.folioOT || "S/F";
+    const fecha = consumo.fecha || "-";
+
+    const mensajeConfirm = `¿Está seguro de eliminar el registro de consumo de aceite?\n\n` +
+        `• Máquina / Equipo: ${equipo}\n` +
+        `• Folio OT: ${folio}\n` +
+        `• Fecha: ${fecha}\n` +
+        `• Litros descontados: ${litros.toFixed(1)} Lts\n\n` +
+        `⚠️ Al eliminar este registro, los ${litros.toFixed(1)} Lts se reincorporarán automáticamente al saldo disponible del tambor de aceite.`;
+
+    if (!confirm(mensajeConfirm)) return;
+
+    // 1. Reincorporar litros al tambor de aceite
+    if (litros > 0 && estadoTamborAceite) {
+        const capMax = Number(estadoTamborAceite.capacidad) || 200;
+        const actual = Number(estadoTamborAceite.actual) || 0;
+        estadoTamborAceite.actual = Math.min(capMax, actual + litros);
+    }
+
+    // 2. Eliminar del array
+    historialConsumoAceite.splice(idx, 1);
+
+    // 3. Persistir en almacenamiento local y disparar respaldo
+    guardarTodo();
+
+    // 4. Actualizar interfaz
+    renderizarModuloAceite();
+    if (typeof renderizarDashboard === "function") {
+        renderizarDashboard();
+    }
+
+    if (typeof mostrarNotificacionToast === "function") {
+        mostrarNotificacionToast(`Registro de ${equipo} eliminado y ${litros.toFixed(1)} Lts restituidos al tambor.`, "success");
+    } else {
+        alert(`Registro de ${equipo} eliminado correctamente. Se devolvieron ${litros.toFixed(1)} Lts al tambor.`);
+    }
 }
 
 function abrirModalNuevoTambor() {
@@ -7904,6 +7968,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.registrarCargaCombustible = registrarCargaCombustible;
     window.eliminarCargaCombustible = eliminarCargaCombustible;
     window.eliminarRecargaCombustible = eliminarRecargaCombustible;
+    window.eliminarConsumoAceite = eliminarConsumoAceite;
     window.cambiarPestanaCombustible = cambiarPestanaCombustible;
     window.exportarCombustibleExcel = exportarCombustibleExcel;
     window.exportarTanqueCombustibleExcel = exportarTanqueCombustibleExcel;
