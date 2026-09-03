@@ -837,35 +837,35 @@ function cargarTodo() {
         corssenFichas = fichasGuardadas ? JSON.parse(fichasGuardadas) : JSON.parse(JSON.stringify(FICHAS_EQUIPOS_CORSSEN));
 
         const vehiculosGuardados = JSON.parse(localStorage.getItem("flota_vehiculos_v3") || "null");
-        if (vehiculosGuardados && Array.isArray(vehiculosGuardados) && vehiculosGuardados.length >= 7) {
+        if (vehiculosGuardados !== null && Array.isArray(vehiculosGuardados)) {
             vehiculos = vehiculosGuardados;
         } else {
             vehiculos = [...DATOS_VEHICULOS_DEFAULT];
         }
 
         const maquinariasGuardadas = JSON.parse(localStorage.getItem("flota_maquinarias_v3") || "null");
-        if (maquinariasGuardadas && Array.isArray(maquinariasGuardadas) && maquinariasGuardadas.length >= 8) {
+        if (maquinariasGuardadas !== null && Array.isArray(maquinariasGuardadas)) {
             maquinarias = maquinariasGuardadas;
         } else {
             maquinarias = [...DATOS_MAQUINARIAS_DEFAULT];
         }
 
         const cargasGuardadas = JSON.parse(localStorage.getItem("flota_cargas") || "null");
-        if (cargasGuardadas && Array.isArray(cargasGuardadas) && cargasGuardadas.length > 0) {
+        if (cargasGuardadas !== null && Array.isArray(cargasGuardadas)) {
             cargas = cargasGuardadas;
         } else {
             cargas = JSON.parse(JSON.stringify(DATOS_CARGAS_DEFAULT));
         }
         
         const mantGuardadas = JSON.parse(localStorage.getItem("flota_mantenciones_v3") || "null");
-        if (mantGuardadas && Array.isArray(mantGuardadas) && mantGuardadas.length > 0) {
+        if (mantGuardadas !== null && Array.isArray(mantGuardadas)) {
             mantenciones = mantGuardadas;
         } else {
             mantenciones = JSON.parse(JSON.stringify(DATOS_MANTENCIONES_DEFAULT));
         }
 
         const invGuardado = JSON.parse(localStorage.getItem("flota_inventario_v3") || "null");
-        if (invGuardado && Array.isArray(invGuardado) && invGuardado.length > 0) {
+        if (invGuardado !== null && Array.isArray(invGuardado)) {
             inventario = invGuardado;
         } else {
             inventario = JSON.parse(JSON.stringify(DATOS_INVENTARIO_DEFAULT));
@@ -984,15 +984,16 @@ function guardarTodo() {
         localStorage.setItem("corssen_historial_aceite_v1", JSON.stringify(historialConsumoAceite));
         localStorage.setItem("corssen_tanque_combustible_v1", JSON.stringify(estadoTanqueCombustible));
         localStorage.setItem("corssen_historial_recargas_comb_v1", JSON.stringify(historialRecargasCombustible));
+        localStorage.setItem("corssen_ultima_modificacion_ts", String(Date.now()));
 
-        // Disparar auto-backup silencioso a la nube y local con debounce de 5s
+        // Disparar auto-backup silencioso a la nube y local con debounce de 800ms
         if (typeof window !== "undefined" && typeof window.ejecutarAutoBackupSistema === "function") {
             if (window._debounceAutoBackupTimeout) {
                 clearTimeout(window._debounceAutoBackupTimeout);
             }
             window._debounceAutoBackupTimeout = setTimeout(() => {
                 window.ejecutarAutoBackupSistema("Auto-respaldo tras modificación de datos", "AUTOMATICO", true);
-            }, 5000);
+            }, 800);
         }
     } catch (e) {
         console.error("Error al guardar datos:", e);
@@ -6663,6 +6664,81 @@ function exportarFlotaExcel() {
 }
 
 // =========================================================
+// 11.5. SINCRONIZACIÓN AUTOMÁTICA CON LA NUBE MULTIDISPOSITIVO
+// =========================================================
+async function sincronizarConUltimoRespaldoNube(forzarRecarga = false) {
+    try {
+        const resp = await fetch("/api/backup/obtener/ultimo?t=" + Date.now());
+        if (!resp.ok) return false;
+
+        const backup = await resp.json();
+        if (!backup || !backup.data) return false;
+
+        const serverTs = Number(backup.timestamp || 0);
+        const localTs = Number(localStorage.getItem("corssen_ultima_modificacion_ts") || 0);
+
+        // Si el respaldo de la nube es más reciente que el estado local (o se fuerza la recarga)
+        if (forzarRecarga || (serverTs > 0 && serverTs > localTs)) {
+            console.log(`☁️ Sincronizando estado más reciente desde la nube (Servidor: ${serverTs} vs Local: ${localTs})...`);
+            const data = backup.data;
+
+            if (data.corssen_programa_v2) corssenPrograma = JSON.parse(JSON.stringify(data.corssen_programa_v2));
+            if (data.corssen_stock_v2) corssenStock = JSON.parse(JSON.stringify(data.corssen_stock_v2));
+            if (data.corssen_fichas_v2) corssenFichas = JSON.parse(JSON.stringify(data.corssen_fichas_v2));
+            if (data.flota_vehiculos_v3) vehiculos = JSON.parse(JSON.stringify(data.flota_vehiculos_v3));
+            if (data.flota_maquinarias_v3) maquinarias = JSON.parse(JSON.stringify(data.flota_maquinarias_v3));
+            if (data.flota_cargas) cargas = JSON.parse(JSON.stringify(data.flota_cargas));
+            if (data.flota_mantenciones_v3) mantenciones = JSON.parse(JSON.stringify(data.flota_mantenciones_v3));
+            if (data.flota_inventario_v3) inventario = JSON.parse(JSON.stringify(data.flota_inventario_v3));
+            if (data.corssen_tambor_aceite_v1) estadoTamborAceite = JSON.parse(JSON.stringify(data.corssen_tambor_aceite_v1));
+            if (data.corssen_historial_aceite_v1) historialConsumoAceite = JSON.parse(JSON.stringify(data.corssen_historial_aceite_v1));
+            if (data.corssen_tanque_combustible_v1) estadoTanqueCombustible = JSON.parse(JSON.stringify(data.corssen_tanque_combustible_v1));
+            if (data.corssen_historial_recargas_comb_v1) historialRecargasCombustible = JSON.parse(JSON.stringify(data.corssen_historial_recargas_comb_v1));
+
+            // Guardar localmente reflejando el timestamp del servidor
+            localStorage.setItem("corssen_programa_v2", JSON.stringify(corssenPrograma));
+            localStorage.setItem("corssen_stock_v2", JSON.stringify(corssenStock));
+            localStorage.setItem("corssen_fichas_v2", JSON.stringify(corssenFichas));
+            localStorage.setItem("flota_vehiculos_v3", JSON.stringify(vehiculos));
+            localStorage.setItem("flota_maquinarias_v3", JSON.stringify(maquinarias));
+            localStorage.setItem("flota_cargas", JSON.stringify(cargas));
+            localStorage.setItem("flota_mantenciones_v3", JSON.stringify(mantenciones));
+            localStorage.setItem("flota_inventario_v3", JSON.stringify(inventario));
+            localStorage.setItem("corssen_tambor_aceite_v1", JSON.stringify(estadoTamborAceite));
+            localStorage.setItem("corssen_historial_aceite_v1", JSON.stringify(historialConsumoAceite));
+            localStorage.setItem("corssen_tanque_combustible_v1", JSON.stringify(estadoTanqueCombustible));
+            localStorage.setItem("corssen_historial_recargas_comb_v1", JSON.stringify(historialRecargasCombustible));
+            localStorage.setItem("corssen_ultima_modificacion_ts", String(serverTs || Date.now()));
+
+            // Re-renderizar todos los componentes de la interfaz
+            renderizarDashboard();
+            renderizarProgramaMaestro();
+            renderizarStockInsumos();
+            renderizarKardexMovimientos();
+            renderizarMantenciones();
+            renderizarModuloAceite();
+            renderizarModuloCombustible();
+            renderizarTablasOriginales();
+            if (typeof renderizarModuloRespaldos === "function") renderizarModuloRespaldos();
+
+            const elEstado = document.querySelector(".estado-sistema");
+            if (elEstado) {
+                elEstado.innerHTML = `<span class="estado-punto" style="background:#10b981;"></span> Sincronizado con Nube`;
+            }
+            return true;
+        } else if (localTs > 0 && localTs > serverTs) {
+            // El dispositivo local tiene cambios más recientes pendientes de subir a la nube
+            if (typeof window.ejecutarAutoBackupSistema === "function") {
+                window.ejecutarAutoBackupSistema("Sincronización de cambios pendientes", "AUTOMATICO", true);
+            }
+        }
+    } catch (err) {
+        console.warn("Aviso de sincronización en la nube (modo offline/red lenta):", err);
+    }
+    return false;
+}
+
+// =========================================================
 // 12. INICIALIZACIÓN AL CARGAR LA PÁGINA
 // =========================================================
 document.addEventListener("DOMContentLoaded", () => {
@@ -7922,6 +7998,46 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
+    window.ejecutarDescargaArchivosCorregidos = async function() {
+        mostrarToast('⏳ Descargando paquete de archivos corregidos...', 'info');
+        try {
+            const resp = await fetch('/archivos_corregidos_corssen.zip');
+            if (!resp.ok) throw new Error('Error al obtener ZIP del servidor');
+            const blob = await resp.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'archivos_corregidos_corssen.zip';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+            mostrarToast('✅ Archivos corregidos descargados (ZIP).', 'success');
+        } catch (err) {
+            console.error('Error descarga archivos corregidos:', err);
+            mostrarToast('❌ Error al descargar: ' + err.message, 'error');
+        }
+    };
+
+    window.ejecutarDescargaScriptJS = async function() {
+        mostrarToast('⏳ Descargando script.js...', 'info');
+        try {
+            const resp = await fetch('/descargar-script');
+            if (!resp.ok) throw new Error('Error al obtener script.js');
+            const blob = await resp.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'script.js';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+            mostrarToast('✅ script.js descargado exitosamente.', 'success');
+        } catch (err) {
+            console.error('Error descarga script.js:', err);
+            mostrarToast('❌ Error al descargar script.js: ' + err.message, 'error');
+        }
+    };
+
     window.ejecutarDescargaZIP = async function() {
         mostrarToast('⏳ Descargando archivo ZIP...', 'info');
         try {
@@ -7986,12 +8102,32 @@ document.addEventListener("DOMContentLoaded", () => {
     window.iniciarServicioAutoBackup = iniciarServicioAutoBackup;
     window.cambiarConfiguracionAutoBackup = cambiarConfiguracionAutoBackup;
     window.ejecutarRespaldoNubeInmediatoManual = ejecutarRespaldoNubeInmediatoManual;
+    window.sincronizarConUltimoRespaldoNube = sincronizarConUltimoRespaldoNube;
 
     // Inicializar estado visual de bloqueo / desbloqueo, módulo de aceite, módulo de combustible y auto-backup
     sincronizarEstadoVisualModuloRespaldos();
     renderizarModuloAceite();
     renderizarModuloCombustible();
     iniciarServicioAutoBackup();
+
+    // Sincronizar inmediatamente al abrir la página con el último estado guardado en la nube
+    sincronizarConUltimoRespaldoNube();
+
+    // Sincronizar al volver a la pestaña (por ejemplo, al volver a abrir el navegador o cambiar de app en el celular)
+    window.addEventListener("focus", () => {
+        sincronizarConUltimoRespaldoNube();
+    });
+
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+            sincronizarConUltimoRespaldoNube();
+        }
+    });
+
+    // Sondeo de sincronización periódica cada 15 segundos para mantener todos los dispositivos (computador y celular) alineados en tiempo real
+    setInterval(() => {
+        sincronizarConUltimoRespaldoNube();
+    }, 15000);
 
     // Event listener para efecto sticky con elevación suave en el título principal / topbar
     const topbar = document.querySelector(".topbar");

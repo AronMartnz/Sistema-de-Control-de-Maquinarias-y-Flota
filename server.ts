@@ -461,7 +461,16 @@ app.get("/api/backup/historial", (req, res) => {
 
 app.get("/api/backup/obtener/:id", (req, res) => {
     try {
-        const bId = req.params.id;
+        let bId = req.params.id;
+        if (bId === "ultimo") {
+            const indexPath = path.join(backupsDir, "historial_backups.json");
+            if (fs.existsSync(indexPath)) {
+                const historial = JSON.parse(fs.readFileSync(indexPath, "utf8"));
+                if (Array.isArray(historial) && historial.length > 0 && historial[0].id) {
+                    bId = historial[0].id;
+                }
+            }
+        }
         const archivoPath = path.join(backupsDir, `${bId}.json`);
         if (fs.existsSync(archivoPath)) {
             const data = JSON.parse(fs.readFileSync(archivoPath, "utf8"));
@@ -513,9 +522,34 @@ app.get(["/descargar-zip", "/api/descargar-zip", "/proyecto_control_flota.zip", 
     const altZip = path.join(publicPath, "proyecto_control_flota.zip");
     if (fs.existsSync(altZip)) {
         res.setHeader("Content-Type", "application/zip");
-        return res.download(altZip, "archivos_corregidos_corssen.zip");
+        return res.download(altZip, "proyecto_control_flota.zip");
     }
     return res.status(404).json({ error: "Archivo ZIP no disponible" });
+});
+
+// Endpoints para descarga forzada de archivos individuales como attachment
+app.get(["/descargar-script", "/api/descargar-script"], (req, res) => {
+    const file = path.join(process.cwd(), "script.js");
+    if (fs.existsSync(file)) {
+        return res.download(file, "script.js");
+    }
+    return res.status(404).send("script.js no encontrado");
+});
+
+app.get(["/descargar-worker", "/api/descargar-worker"], (req, res) => {
+    const file = path.join(process.cwd(), "worker.js");
+    if (fs.existsSync(file)) {
+        return res.download(file, "worker.js");
+    }
+    return res.status(404).send("worker.js no encontrado");
+});
+
+app.get(["/descargar-servidor", "/api/descargar-servidor"], (req, res) => {
+    const file = path.join(process.cwd(), "server.ts");
+    if (fs.existsSync(file)) {
+        return res.download(file, "server.ts");
+    }
+    return res.status(404).send("server.ts no encontrado");
 });
 
 app.use(express.static(publicPath));
