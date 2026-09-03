@@ -1,11 +1,11 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "corssen-logistica",
+  "name": "sistema-de-control-de-maquinarias-y-flota",
   "compatibility_date": "2024-09-23",
   "compatibility_flags": [
     "nodejs_compat"
   ],
-  "main": "src/cloudflare-worker.ts",
+  "main": "worker.js",
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
@@ -15,14 +15,14 @@
     {
       "binding": "DB",
       "database_name": "corssen_db",
-      "database_id": "corssen-d1-placeholder",
+      "database_id": "12f31b4b-539a-41b0-ade0-3a41fa5878f5",
       "migrations_dir": "migrations"
     }
   ],
   "kv_namespaces": [
     {
       "binding": "CORSSEN_STORAGE",
-      "id": "corssen-kv-placeholder"
+      "id": "eb3b9ca897104bc19057e403166cb65f"
     }
   ]
 }
