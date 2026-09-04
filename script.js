@@ -573,7 +573,7 @@ let historialConsumoAceite = [];
 let estadoTanqueCombustible = {
     nombre: "Petróleo Diésel Grado B (Ultra Diésel)",
     capacidad: 400,
-    actual: 240,
+    actual: 400,
     costoTotal: 420000,
     costoPorLitro: 1050,
     proveedor: "COPEC S.A. / Distribuidora Sur",
@@ -905,6 +905,29 @@ function cargarTodo() {
             historialRecargasCombustible = histRecargasGuardado;
         } else {
             historialRecargasCombustible = JSON.parse(JSON.stringify(DATOS_RECARGAS_COMB_DEFAULT));
+        }
+
+        // Auto-reconciliación de saldo del Estanque 400L:
+        // Si no existen despachos activos registrados desde el estanque o fueron eliminados,
+        // restaurar el saldo al 100% de la capacidad nominal (400L) para evitar saldo retenido indebidamente.
+        const capTanque = estadoTanqueCombustible.capacidad || 400;
+        const despachosTanqueActivos = (cargas || []).filter(c => 
+            c.origen === "ESTANQUE_400L" || 
+            (c.estacion || "").toLowerCase().includes("estanque") || 
+            (c.estacion || "").toLowerCase().includes("corssen")
+        );
+        const totalDespachadoActivo = despachosTanqueActivos.reduce((sum, c) => sum + Number(c.litros || 0), 0);
+
+        if (despachosTanqueActivos.length === 0) {
+            if (estadoTanqueCombustible.actual === undefined || estadoTanqueCombustible.actual === 240 || estadoTanqueCombustible.actual < capTanque) {
+                estadoTanqueCombustible.actual = capTanque;
+                localStorage.setItem("corssen_tanque_combustible_v1", JSON.stringify(estadoTanqueCombustible));
+            }
+        } else {
+            if (estadoTanqueCombustible.actual === undefined) {
+                estadoTanqueCombustible.actual = Math.max(0, capTanque - totalDespachadoActivo);
+                localStorage.setItem("corssen_tanque_combustible_v1", JSON.stringify(estadoTanqueCombustible));
+            }
         }
 
         // Auto-reconciliación: Asegurar que toda maquinaria y vehículo registrado figure en corssenPrograma
@@ -3529,7 +3552,7 @@ function renderizarModuloCombustible() {
     const badgeEstado = document.getElementById("badgeEstadoTanqueCombustible");
 
     const capTotal = estadoTanqueCombustible.capacidad || 400;
-    const saldoActual = Math.max(0, estadoTanqueCombustible.actual !== undefined ? estadoTanqueCombustible.actual : 240);
+    const saldoActual = Math.max(0, estadoTanqueCombustible.actual !== undefined ? estadoTanqueCombustible.actual : capTotal);
     const porcentaje = Math.min(100, Math.max(0, (saldoActual / capTotal) * 100));
 
     if (elNombre) elNombre.textContent = estadoTanqueCombustible.nombre || "Estanque Petróleo Diésel (400 Lts)";
@@ -3753,7 +3776,7 @@ function abrirModalRecargaTanque() {
     if (inputFecha) inputFecha.value = new Date().toISOString().split("T")[0];
 
     const capTotal = estadoTanqueCombustible.capacidad || 400;
-    const saldoActual = estadoTanqueCombustible.actual !== undefined ? estadoTanqueCombustible.actual : 240;
+    const saldoActual = estadoTanqueCombustible.actual !== undefined ? estadoTanqueCombustible.actual : capTotal;
     const falta = Math.max(0, capTotal - saldoActual);
 
     const inputLitros = document.getElementById("inputLitrosRecargaTanque");
@@ -3878,16 +3901,19 @@ function registrarCargaCombustible(e) {
     let nuevoSaldoEstanque = null;
 
     if (esEstanqueInterno) {
-        const saldoActual = estadoTanqueCombustible.actual !== undefined ? estadoTanqueCombustible.actual : 240;
+        const capTotal = estadoTanqueCombustible.capacidad || 400;
+        const saldoActual = estadoTanqueCombustible.actual !== undefined ? estadoTanqueCombustible.actual : capTotal;
         if (litros > saldoActual) {
             return alert(`⚠️ STOCK INSUFICIENTE EN EL ESTANQUE DE 400L:\n\nEl estanque cuenta con ${saldoActual.toFixed(1)} Litros disponibles y se solicitaron ${litros.toFixed(1)} Litros.\n\nPor favor registre una recarga al estanque o ajuste la cantidad.`);
         }
         nuevoSaldoEstanque = Math.max(0, saldoActual - litros);
         estadoTanqueCombustible.actual = nuevoSaldoEstanque;
+        localStorage.setItem("corssen_tanque_combustible_v1", JSON.stringify(estadoTanqueCombustible));
     }
 
     const idCarga = `CARGA-${Date.now().toString().slice(-4)}`;
     const totalInversion = Math.round(litros * precioLitro);
+    const capTanque = estadoTanqueCombustible.capacidad || 400;
 
     cargas.unshift({
         id: idCarga,
@@ -3900,7 +3926,7 @@ function registrarCargaCombustible(e) {
         conductor,
         horometroKm,
         estacion,
-        saldoPosterior: esEstanqueInterno ? nuevoSaldoEstanque : (estadoTanqueCombustible.actual || 240),
+        saldoPosterior: esEstanqueInterno ? nuevoSaldoEstanque : (estadoTanqueCombustible.actual !== undefined ? estadoTanqueCombustible.actual : capTanque),
         fechaRegistro: new Date().toISOString()
     });
 
@@ -3922,12 +3948,15 @@ function eliminarCargaCombustible(id) {
     if (idx === -1) return;
 
     const carga = cargas[idx];
-    const confirma = confirm(`¿Está seguro de eliminar el registro de carga de ${carga.litros} Lts a ${carga.patente}?${carga.origen === 'ESTANQUE_400L' ? '\n\nLos litros serán restituidos al estanque de 400L.' : ''}`);
+    const esEstanque = (carga.origen === "ESTANQUE_400L" || (carga.estacion || "").toLowerCase().includes("estanque") || (carga.estacion || "").toLowerCase().includes("corssen"));
+    const confirma = confirm(`¿Está seguro de eliminar el registro de carga de ${carga.litros} Lts a ${carga.patente}?${esEstanque ? '\n\nLos litros serán restituidos al estanque de 400L.' : ''}`);
     if (!confirma) return;
 
-    if (carga.origen === "ESTANQUE_400L") {
+    if (esEstanque) {
         const capTotal = estadoTanqueCombustible.capacidad || 400;
-        estadoTanqueCombustible.actual = Math.min(capTotal, (estadoTanqueCombustible.actual || 0) + Number(carga.litros || 0));
+        const saldoPrev = Number(estadoTanqueCombustible.actual !== undefined ? estadoTanqueCombustible.actual : capTotal);
+        estadoTanqueCombustible.actual = Math.min(capTotal, saldoPrev + Number(carga.litros || 0));
+        localStorage.setItem("corssen_tanque_combustible_v1", JSON.stringify(estadoTanqueCombustible));
     }
 
     cargas.splice(idx, 1);
@@ -3935,7 +3964,7 @@ function eliminarCargaCombustible(id) {
     localStorage.setItem("corssen_ultima_modificacion_ts", String(Date.now()));
     guardarTodo();
     if (typeof window.ejecutarAutoBackupSistema === "function") {
-        window.ejecutarAutoBackupSistema("Despacho de combustible eliminado", "AUTOMATICO", true);
+        window.ejecutarAutoBackupSistema("Despacho de combustible eliminado y saldo restituido al estanque 400L", "AUTOMATICO", true);
     }
     renderizarModuloCombustible();
     renderizarDashboard();
@@ -3952,6 +3981,7 @@ function eliminarRecargaCombustible(id) {
     estadoTanqueCombustible.actual = Math.max(0, (estadoTanqueCombustible.actual || 0) - Number(recarga.litrosCargados || 0));
     historialRecargasCombustible.splice(idx, 1);
     localStorage.setItem("corssen_historial_recargas_comb_v1", JSON.stringify(historialRecargasCombustible));
+    localStorage.setItem("corssen_tanque_combustible_v1", JSON.stringify(estadoTanqueCombustible));
     localStorage.setItem("corssen_ultima_modificacion_ts", String(Date.now()));
 
     guardarTodo();
@@ -3972,22 +4002,40 @@ window.vaciarHistorialCombustibleActual = function() {
             }
             return;
         }
-        const confirma = confirm(`⚠️ ¿Está seguro de VACIAR TODOS los despachos de combustible (${cargas.length} registros)?\n\nEsta acción eliminará los registros de forma definitiva tanto localmente como en la base de datos de Cloudflare.`);
+
+        const despachosTanque = (cargas || []).filter(c => 
+            c.origen === "ESTANQUE_400L" || 
+            (c.estacion || "").toLowerCase().includes("estanque") || 
+            (c.estacion || "").toLowerCase().includes("corssen")
+        );
+        const litrosADevolver = despachosTanque.reduce((acc, c) => acc + Number(c.litros || 0), 0);
+        const capTotal = estadoTanqueCombustible.capacidad || 400;
+
+        const confirma = confirm(`⚠️ ¿Está seguro de VACIAR TODOS los despachos de combustible (${cargas.length} registros)?\n\n• Se restituirán ${litrosADevolver.toFixed(1)} Lts al estanque de 400L.\n• Esta acción eliminará los registros de forma definitiva tanto localmente como en la base de datos de Cloudflare.`);
         if (!confirma) return;
+
+        // Restituir saldo en el estanque
+        if (litrosADevolver > 0) {
+            const saldoPrev = Number(estadoTanqueCombustible.actual !== undefined ? estadoTanqueCombustible.actual : capTotal);
+            estadoTanqueCombustible.actual = Math.min(capTotal, saldoPrev + litrosADevolver);
+        } else {
+            estadoTanqueCombustible.actual = capTotal;
+        }
 
         cargas = [];
         localStorage.setItem("flota_cargas", JSON.stringify([]));
+        localStorage.setItem("corssen_tanque_combustible_v1", JSON.stringify(estadoTanqueCombustible));
         localStorage.setItem("corssen_ultima_modificacion_ts", String(Date.now()));
         guardarTodo();
         if (typeof window.ejecutarAutoBackupSistema === "function") {
-            window.ejecutarAutoBackupSistema("Vaciado completo de despachos de combustible", "AUTOMATICO", true);
+            window.ejecutarAutoBackupSistema("Vaciado completo de despachos y restitución de saldo en Estanque 400L", "AUTOMATICO", true);
         }
         renderizarModuloCombustible();
         renderizarDashboard();
         if (typeof mostrarNotificacionToast === "function") {
-            mostrarNotificacionToast("Lista de despachos de combustible vaciada permanentemente.", "success");
+            mostrarNotificacionToast(`Despachos eliminados y saldo del estanque restablecido a ${estadoTanqueCombustible.actual.toFixed(1)} Lts.`, "success");
         } else {
-            alert("Lista de despachos de combustible vaciada permanentemente.");
+            alert(`Lista de despachos eliminada y saldo del estanque restablecido a ${estadoTanqueCombustible.actual.toFixed(1)} Lts.`);
         }
     } else {
         if (!historialRecargasCombustible || historialRecargasCombustible.length === 0) {
@@ -4016,6 +4064,110 @@ window.vaciarHistorialCombustibleActual = function() {
         }
     }
 };
+
+// =========================================================
+// CALIBRACIÓN Y AJUSTE DIRECTO DEL ESTANQUE DE PETRÓLEO 400L
+// =========================================================
+function abrirModalAjustarNivelEstanque() {
+    const modal = document.getElementById("modalAjustarNivelEstanque");
+    if (!modal) return;
+    const inputLitros = document.getElementById("inputNivelManualEstanque");
+    const cap = estadoTanqueCombustible.capacidad || 400;
+    const actual = estadoTanqueCombustible.actual !== undefined ? estadoTanqueCombustible.actual : cap;
+    if (inputLitros) {
+        inputLitros.value = actual.toFixed(1);
+    }
+    const lblActual = document.getElementById("lblAjusteSaldoActualModal");
+    if (lblActual) {
+        lblActual.textContent = `${actual.toFixed(1)} / ${cap} Lts (${((actual / cap) * 100).toFixed(1)}%)`;
+    }
+    modal.style.display = "flex";
+}
+
+function cerrarModalAjustarNivelEstanque() {
+    const modal = document.getElementById("modalAjustarNivelEstanque");
+    if (modal) modal.style.display = "none";
+}
+
+function restablecerEstanqueLleno() {
+    const cap = estadoTanqueCombustible.capacidad || 400;
+    if (!confirm(`¿Desea restablecer el estanque a su capacidad máxima de ${cap} Litros (100% lleno)?\n\nEsto dejará el saldo en 400.0 Lts y se guardará directamente en Cloudflare.`)) return;
+    
+    estadoTanqueCombustible.actual = cap;
+    localStorage.setItem("corssen_tanque_combustible_v1", JSON.stringify(estadoTanqueCombustible));
+    localStorage.setItem("corssen_ultima_modificacion_ts", String(Date.now()));
+    guardarTodo();
+    if (typeof window.ejecutarAutoBackupSistema === "function") {
+        window.ejecutarAutoBackupSistema("Estanque de 400L restablecido al 100% de capacidad", "AUTOMATICO", true);
+    }
+    renderizarModuloCombustible();
+    renderizarDashboard();
+    cerrarModalAjustarNivelEstanque();
+    if (typeof mostrarNotificacionToast === "function") {
+        mostrarNotificacionToast(`Estanque restablecido a ${cap} Lts (100% lleno) y sincronizado con Cloudflare.`, "success");
+    } else {
+        alert(`Estanque restablecido a ${cap} Lts (100% lleno) y sincronizado con Cloudflare.`);
+    }
+}
+
+function reconciliarSaldoEstanqueCombustible(mostrarAviso = true) {
+    const cap = estadoTanqueCombustible.capacidad || 400;
+    const despachosTanque = (cargas || []).filter(c => 
+        c.origen === "ESTANQUE_400L" || 
+        (c.estacion || "").toLowerCase().includes("estanque") || 
+        (c.estacion || "").toLowerCase().includes("corssen")
+    );
+    const totalDespachado = despachosTanque.reduce((sum, c) => sum + Number(c.litros || 0), 0);
+    const saldoCalculado = Math.max(0, cap - totalDespachado);
+
+    estadoTanqueCombustible.actual = saldoCalculado;
+    localStorage.setItem("corssen_tanque_combustible_v1", JSON.stringify(estadoTanqueCombustible));
+    localStorage.setItem("corssen_ultima_modificacion_ts", String(Date.now()));
+    guardarTodo();
+    if (typeof window.ejecutarAutoBackupSistema === "function") {
+        window.ejecutarAutoBackupSistema("Reconciliación de saldo de Estanque 400L según despachos", "AUTOMATICO", true);
+    }
+    renderizarModuloCombustible();
+    renderizarDashboard();
+    cerrarModalAjustarNivelEstanque();
+
+    if (mostrarAviso) {
+        const msg = `Saldo reconciliado: ${saldoCalculado.toFixed(1)} Lts disponibles (${totalDespachado.toFixed(1)} Lts despachados en ${despachosTanque.length} registros). Sincronizado con Cloudflare.`;
+        if (typeof mostrarNotificacionToast === "function") {
+            mostrarNotificacionToast(msg, "success");
+        } else {
+            alert(msg);
+        }
+    }
+}
+
+function guardarAjusteManualEstanque(e) {
+    if (e) e.preventDefault();
+    const inputLitros = document.getElementById("inputNivelManualEstanque");
+    const nuevoValor = parseFloat(inputLitros?.value);
+    const cap = estadoTanqueCombustible.capacidad || 400;
+
+    if (isNaN(nuevoValor) || nuevoValor < 0 || nuevoValor > cap) {
+        return alert(`Por favor ingrese un valor válido entre 0 y ${cap} Litros.`);
+    }
+
+    estadoTanqueCombustible.actual = nuevoValor;
+    localStorage.setItem("corssen_tanque_combustible_v1", JSON.stringify(estadoTanqueCombustible));
+    localStorage.setItem("corssen_ultima_modificacion_ts", String(Date.now()));
+    guardarTodo();
+    if (typeof window.ejecutarAutoBackupSistema === "function") {
+        window.ejecutarAutoBackupSistema(`Ajuste manual de nivel en Estanque 400L a ${nuevoValor} Lts`, "AUTOMATICO", true);
+    }
+    renderizarModuloCombustible();
+    renderizarDashboard();
+    cerrarModalAjustarNivelEstanque();
+
+    if (typeof mostrarNotificacionToast === "function") {
+        mostrarNotificacionToast(`Nivel del estanque ajustado a ${nuevoValor.toFixed(1)} Lts y guardado en Cloudflare.`, "success");
+    } else {
+        alert(`Nivel del estanque ajustado a ${nuevoValor.toFixed(1)} Lts con éxito.`);
+    }
+}
 
 function registrarVehiculo(e) {
     e.preventDefault();
@@ -6655,8 +6807,8 @@ function exportarCombustibleExcel() {
         [],
         ["Tipo de Combustible:", estadoTanqueCombustible.nombre || "Petróleo Diésel Grado B (Ultra Diésel)"],
         ["Capacidad Nominal Máxima:", `${estadoTanqueCombustible.capacidad || 400} Litros`],
-        ["Saldo Físico Disponible:", `${(estadoTanqueCombustible.actual !== undefined ? estadoTanqueCombustible.actual : 240).toFixed(1)} Litros`],
-        ["Porcentaje de Llenado:", `${(((estadoTanqueCombustible.actual !== undefined ? estadoTanqueCombustible.actual : 240) / (estadoTanqueCombustible.capacidad || 400)) * 100).toFixed(1)}%`],
+        ["Saldo Físico Disponible:", `${(estadoTanqueCombustible.actual !== undefined ? estadoTanqueCombustible.actual : (estadoTanqueCombustible.capacidad || 400)).toFixed(1)} Litros`],
+        ["Porcentaje de Llenado:", `${(((estadoTanqueCombustible.actual !== undefined ? estadoTanqueCombustible.actual : (estadoTanqueCombustible.capacidad || 400)) / (estadoTanqueCombustible.capacidad || 400)) * 100).toFixed(1)}%`],
         ["Precio Promedio por Litro:", `$${(estadoTanqueCombustible.costoPorLitro || 1050).toLocaleString('es-CL')}`],
         ["Proveedor Habitual:", estadoTanqueCombustible.proveedor || "COPEC S.A."],
         ["Última Factura de Recarga:", estadoTanqueCombustible.factura || "FAC-91823"],
@@ -6817,6 +6969,20 @@ async function sincronizarConUltimoRespaldoNube(forzarRecarga = false) {
             if (data.corssen_historial_aceite_v1) historialConsumoAceite = JSON.parse(JSON.stringify(data.corssen_historial_aceite_v1));
             if (data.corssen_tanque_combustible_v1) estadoTanqueCombustible = JSON.parse(JSON.stringify(data.corssen_tanque_combustible_v1));
             if (data.corssen_historial_recargas_comb_v1) historialRecargasCombustible = JSON.parse(JSON.stringify(data.corssen_historial_recargas_comb_v1));
+
+            // Auto-reconciliación de combustible al recibir datos de la nube:
+            // Si no hay despachos de estanque activos pero el saldo venía con litros descontados o en 240, restablecerlo a 400L
+            const capTanqueCloud = estadoTanqueCombustible.capacidad || 400;
+            const despachosCloud = (cargas || []).filter(c => 
+                c.origen === "ESTANQUE_400L" || 
+                (c.estacion || "").toLowerCase().includes("estanque") || 
+                (c.estacion || "").toLowerCase().includes("corssen")
+            );
+            if (despachosCloud.length === 0) {
+                if (estadoTanqueCombustible.actual === undefined || estadoTanqueCombustible.actual === 240 || estadoTanqueCombustible.actual < capTanqueCloud) {
+                    estadoTanqueCombustible.actual = capTanqueCloud;
+                }
+            }
 
             // Guardar localmente reflejando el timestamp del servidor
             localStorage.setItem("corssen_programa_v2", JSON.stringify(corssenPrograma));
@@ -7829,6 +7995,7 @@ document.addEventListener("DOMContentLoaded", () => {
         renderizarStockInsumos();
         renderizarKardexMovimientos();
         renderizarModuloAceite();
+        renderizarModuloCombustible();
         renderizarMantenciones();
         renderizarTablasOriginales();
         renderizarModuloRespaldos();
@@ -7859,6 +8026,8 @@ document.addEventListener("DOMContentLoaded", () => {
         if (data.flota_inventario_v3) inventario = JSON.parse(JSON.stringify(data.flota_inventario_v3));
         if (data.corssen_tambor_aceite_v1) estadoTamborAceite = JSON.parse(JSON.stringify(data.corssen_tambor_aceite_v1));
         if (data.corssen_historial_aceite_v1) historialConsumoAceite = JSON.parse(JSON.stringify(data.corssen_historial_aceite_v1));
+        if (data.corssen_tanque_combustible_v1) estadoTanqueCombustible = JSON.parse(JSON.stringify(data.corssen_tanque_combustible_v1));
+        if (data.corssen_historial_recargas_comb_v1) historialRecargasCombustible = JSON.parse(JSON.stringify(data.corssen_historial_recargas_comb_v1));
 
         guardarTodo();
 
@@ -7868,6 +8037,7 @@ document.addEventListener("DOMContentLoaded", () => {
         renderizarStockInsumos();
         renderizarKardexMovimientos();
         renderizarModuloAceite();
+        renderizarModuloCombustible();
         renderizarMantenciones();
         renderizarTablasOriginales();
         renderizarModuloRespaldos();
@@ -8219,6 +8389,11 @@ document.addEventListener("DOMContentLoaded", () => {
     window.cambiarPestanaCombustible = cambiarPestanaCombustible;
     window.exportarCombustibleExcel = exportarCombustibleExcel;
     window.exportarTanqueCombustibleExcel = exportarTanqueCombustibleExcel;
+    window.abrirModalAjustarNivelEstanque = abrirModalAjustarNivelEstanque;
+    window.cerrarModalAjustarNivelEstanque = cerrarModalAjustarNivelEstanque;
+    window.restablecerEstanqueLleno = restablecerEstanqueLleno;
+    window.reconciliarSaldoEstanqueCombustible = reconciliarSaldoEstanqueCombustible;
+    window.guardarAjusteManualEstanque = guardarAjusteManualEstanque;
 
     // Vincular funciones de filtrado y ordenamiento de Stock a window
     window.renderizarStockInsumos = renderizarStockInsumos;
