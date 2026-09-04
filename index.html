@@ -1527,19 +1527,24 @@
                             <h3 id="lblNombreTanqueCombustible" style="margin:6px 0 0 0; font-size:17px; font-weight:800; color:#0f172a;">Estanque Petróleo Diésel (400 Lts)</h3>
                             <span style="font-size:12px; color:#64748b;">Diésel Grado B / Ultra Diésel - Taller Central CORSSEN</span>
                         </div>
-                        <button type="button" class="btn-primario" onclick="abrirModalRecargaTanque()" style="font-size:12px; padding:7px 14px; background:#d97706; border-color:#d97706;" title="Registrar recarga o compra de petróleo para el estanque de 400L">
-                            ⛽ Registrar Recarga Estanque
-                        </button>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                            <button type="button" class="btn-secundario" onclick="abrirModalAjustarNivelEstanque()" style="font-size:12px; padding:7px 13px; font-weight:700; border:1px solid #cbd5e1; background:#ffffff; color:#334155;" title="Calibrar, restablecer o ajustar nivel de litros del estanque de 400L">
+                                🎛️ Calibrar Nivel
+                            </button>
+                            <button type="button" class="btn-primario" onclick="abrirModalRecargaTanque()" style="font-size:12px; padding:7px 14px; background:#d97706; border-color:#d97706;" title="Registrar recarga o compra de petróleo para el estanque de 400L">
+                                ⛽ Registrar Recarga Estanque
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Gauge / Barra de Nivel Volumétrico -->
                     <div style="margin:16px 0;">
                         <div style="display:flex; justify-content:space-between; margin-bottom:6px; align-items:center;">
                             <span style="font-size:12px; font-weight:700; color:#334155;">Nivel de Petróleo Disponible:</span>
-                            <span id="lblPorcentajeCombustible" style="color:#d97706; font-size:15px; font-weight:800;">60.0% (240.0 / 400 L)</span>
+                            <span id="lblPorcentajeCombustible" style="color:#059669; font-size:15px; font-weight:800;">100.0% (400.0 / 400 L)</span>
                         </div>
                         <div style="width:100%; height:22px; background:#e2e8f0; border-radius:12px; overflow:hidden; position:relative; border:1px solid #cbd5e1; box-shadow:inset 0 2px 4px rgba(0,0,0,0.06);">
-                            <div id="barraProgresoCombustible" style="width:60%; height:100%; background:linear-gradient(90deg, #f59e0b, #d97706); border-radius:12px; transition:width 0.5s ease-in-out;"></div>
+                            <div id="barraProgresoCombustible" style="width:100%; height:100%; background:linear-gradient(90deg, #10b981, #059669); border-radius:12px; transition:width 0.5s ease-in-out;"></div>
                         </div>
                         <div style="display:flex; justify-content:space-between; font-size:11px; color:#94a3b8; margin-top:4px;">
                             <span>0 L (Vacío)</span>
@@ -1560,14 +1565,14 @@
                     <div class="tarjeta-dash" style="margin:0;">
                         <div class="tarjeta-icono" style="background:#fffbeb; color:#d97706; font-size:22px;">📉</div>
                         <div>
-                            <div class="numero" id="kpiLitrosDespachadosTanque">160.0 L</div>
+                            <div class="numero" id="kpiLitrosDespachadosTanque">0.0 L</div>
                             <div class="etiqueta">Petróleo Despachado</div>
                         </div>
                     </div>
                     <div class="tarjeta-dash" style="margin:0;">
                         <div class="tarjeta-icono" style="background:#eff6ff; color:#2563eb; font-size:22px;">🚜</div>
                         <div>
-                            <div class="numero" id="kpiEquiposAbastecidosComb">3</div>
+                            <div class="numero" id="kpiEquiposAbastecidosComb">0</div>
                             <div class="etiqueta">Cargas a Equipos</div>
                         </div>
                     </div>
@@ -1595,8 +1600,8 @@
                         <h3 style="margin:0; font-size:16px;">⛽ Registro de Despacho de Combustible a Equipo o Vehículo</h3>
                         <p style="margin:2px 0 0 0; font-size:12px; color:#64748b;">Suministro directo con deducción automática del estanque de 400L o desde estación externa.</p>
                     </div>
-                    <span id="badgeSaldoTanqueEnFormulario" class="badge badge-naranja" style="font-size:12px; padding:5px 12px; font-weight:700;">
-                        Saldo en Estanque 400L: 240.0 Lts
+                    <span id="badgeSaldoTanqueEnFormulario" class="badge badge-verde" style="font-size:12px; padding:5px 12px; font-weight:700;">
+                        Saldo en Estanque 400L: 400.0 Lts
                     </span>
                 </div>
 
@@ -1794,6 +1799,65 @@
                         <button type="submit" class="btn-primario" style="background:#d97706; border-color:#d97706; font-weight:700;">💾 Confirmar Recarga de Estanque</button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <!-- =====================================================
+             MODAL: CALIBRACIÓN Y AJUSTE DE SALDO ESTANQUE 400L
+        ===================================================== -->
+        <div id="modalAjustarNivelEstanque" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.65); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(4px);">
+            <div class="modal-contenido" style="background:#ffffff; max-width:540px; width:92%; border-radius:16px; box-shadow:0 24px 50px rgba(0,0,0,0.3); overflow:hidden; border:1px solid #cbd5e1;">
+                <div style="background:#0f172a; color:#ffffff; padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-size:20px;">🎛️</span>
+                        <div>
+                            <h3 style="font-size:16px; margin:0; color:#ffffff; font-weight:700;">Calibrar Nivel del Estanque (400 Litros)</h3>
+                            <span style="font-size:11.5px; color:#94a3b8;">Ajuste físico, restablecimiento y sincronización en la nube</span>
+                        </div>
+                    </div>
+                    <button type="button" onclick="cerrarModalAjustarNivelEstanque()" style="background:transparent; border:none; color:#ffffff; font-size:20px; cursor:pointer;">✕</button>
+                </div>
+
+                <div style="padding:22px;">
+                    <!-- Nivel Actual -->
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:14px; margin-bottom:18px; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <span style="font-size:12px; color:#64748b; font-weight:600;">Saldo Registrado Actualmente:</span>
+                            <div id="lblAjusteSaldoActualModal" style="font-size:18px; font-weight:800; color:#0f172a;">400.0 / 400 Lts (100.0%)</div>
+                        </div>
+                        <span class="badge badge-verde" style="font-size:12px;">Capacidad: 400 L</span>
+                    </div>
+
+                    <!-- Acciones Rápidas -->
+                    <div style="margin-bottom:20px;">
+                        <label style="font-size:12.5px; font-weight:700; color:#334155; display:block; margin-bottom:8px;">Acciones Rápidas de Calibración:</label>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                            <button type="button" onclick="restablecerEstanqueLleno()" class="btn-primario" style="background:#059669; border-color:#059669; font-size:12px; padding:10px 12px; text-align:center; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;" title="Restablecer el saldo directamente al 100% (400 Litros)">
+                                <strong style="font-size:13px;">🟢 Restablecer a 400 L</strong>
+                                <span style="font-size:11px; opacity:0.9;">Estanque 100% Lleno</span>
+                            </button>
+                            <button type="button" onclick="reconciliarSaldoEstanqueCombustible(true)" class="btn-secundario" style="border:1px solid #cbd5e1; font-size:12px; padding:10px 12px; text-align:center; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; background:#f1f5f9; color:#1e293b;" title="Recalcular el saldo restando los despachos del estanque">
+                                <strong style="font-size:13px;">🔄 Reconciliar con Despachos</strong>
+                                <span style="font-size:11px; color:#64748b;">Descontar solo lo registrado</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Ajuste Manual Específico -->
+                    <form id="formAjusteManualEstanque" onsubmit="guardarAjusteManualEstanque(event)" style="border-top:1px dashed #e2e8f0; padding-top:16px;">
+                        <label style="font-size:12.5px; font-weight:700; color:#334155; display:block; margin-bottom:8px;">O Definir Nivel Físico Exacto (Medición / Varilla):</label>
+                        <div style="display:flex; gap:10px; align-items:flex-end;">
+                            <div class="campo-form" style="flex:1; margin:0;">
+                                <label for="inputNivelManualEstanque" style="font-size:12px;">Litros Reales en Estanque (0 a 400 L):</label>
+                                <input type="number" id="inputNivelManualEstanque" min="0" max="400" step="0.5" value="400" required style="width:100%; font-size:15px; font-weight:700;">
+                            </div>
+                            <button type="submit" class="btn-primario" style="background:#2563eb; border-color:#2563eb; font-weight:700; padding:10px 16px; white-space:nowrap;">
+                                💾 Guardar Ajuste
+                            </button>
+                        </div>
+                        <small style="color:#64748b; font-size:11px; display:block; margin-top:6px;">El valor ingresado se sincronizará de inmediato con la base de datos de Cloudflare.</small>
+                    </form>
+                </div>
             </div>
         </div>
 
