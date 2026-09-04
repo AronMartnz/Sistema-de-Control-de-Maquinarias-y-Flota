@@ -551,7 +551,7 @@ let estadoTamborAceite = {
     estado: "Activo"
 };
 
-let historialConsumoAceite = [
+const DATOS_HISTORIAL_ACEITE_DEFAULT = [
     {
         id: "ACEITE-001",
         fecha: "2026-03-01",
@@ -565,6 +565,7 @@ let historialConsumoAceite = [
         tecnico: "Alexis Santos"
     }
 ];
+let historialConsumoAceite = [];
 
 // =========================================================
 // ESTADO ESPECIALIZADO: CONTROL DE ESTANQUE DE COMBUSTIBLE DIÉSEL (400 LITROS)
@@ -581,7 +582,7 @@ let estadoTanqueCombustible = {
     estado: "Activo"
 };
 
-let historialRecargasCombustible = [
+const DATOS_RECARGAS_COMB_DEFAULT = [
     {
         id: "RECARGA-COMB-001",
         fecha: "2026-02-27",
@@ -595,6 +596,7 @@ let historialRecargasCombustible = [
         observaciones: "Llenado inicial del estanque de 400L de taller central."
     }
 ];
+let historialRecargasCombustible = [];
 
 const DATOS_CARGAS_DEFAULT = [
     {
@@ -881,13 +883,11 @@ function cargarTodo() {
             }
         }
 
-        const histAceiteGuardado = localStorage.getItem("corssen_historial_aceite_v1");
-        if (histAceiteGuardado) {
-            try {
-                historialConsumoAceite = JSON.parse(histAceiteGuardado);
-            } catch (e) {
-                console.error("Error al parsear historialConsumoAceite:", e);
-            }
+        const histAceiteGuardado = JSON.parse(localStorage.getItem("corssen_historial_aceite_v1") || "null");
+        if (histAceiteGuardado !== null && Array.isArray(histAceiteGuardado)) {
+            historialConsumoAceite = histAceiteGuardado;
+        } else {
+            historialConsumoAceite = JSON.parse(JSON.stringify(DATOS_HISTORIAL_ACEITE_DEFAULT));
         }
 
         // Cargar estado especializado del Estanque de Combustible Diésel (400L)
@@ -900,13 +900,11 @@ function cargarTodo() {
             }
         }
 
-        const histRecargasGuardado = localStorage.getItem("corssen_historial_recargas_comb_v1");
-        if (histRecargasGuardado) {
-            try {
-                historialRecargasCombustible = JSON.parse(histRecargasGuardado);
-            } catch (e) {
-                console.error("Error al parsear historialRecargasCombustible:", e);
-            }
+        const histRecargasGuardado = JSON.parse(localStorage.getItem("corssen_historial_recargas_comb_v1") || "null");
+        if (histRecargasGuardado !== null && Array.isArray(histRecargasGuardado)) {
+            historialRecargasCombustible = histRecargasGuardado;
+        } else {
+            historialRecargasCombustible = JSON.parse(JSON.stringify(DATOS_RECARGAS_COMB_DEFAULT));
         }
 
         // Auto-reconciliación: Asegurar que toda maquinaria y vehículo registrado figure en corssenPrograma
@@ -3933,7 +3931,12 @@ function eliminarCargaCombustible(id) {
     }
 
     cargas.splice(idx, 1);
+    localStorage.setItem("flota_cargas", JSON.stringify(cargas));
+    localStorage.setItem("corssen_ultima_modificacion_ts", String(Date.now()));
     guardarTodo();
+    if (typeof window.ejecutarAutoBackupSistema === "function") {
+        window.ejecutarAutoBackupSistema("Despacho de combustible eliminado", "AUTOMATICO", true);
+    }
     renderizarModuloCombustible();
     renderizarDashboard();
 }
@@ -3948,10 +3951,71 @@ function eliminarRecargaCombustible(id) {
 
     estadoTanqueCombustible.actual = Math.max(0, (estadoTanqueCombustible.actual || 0) - Number(recarga.litrosCargados || 0));
     historialRecargasCombustible.splice(idx, 1);
+    localStorage.setItem("corssen_historial_recargas_comb_v1", JSON.stringify(historialRecargasCombustible));
+    localStorage.setItem("corssen_ultima_modificacion_ts", String(Date.now()));
 
     guardarTodo();
+    if (typeof window.ejecutarAutoBackupSistema === "function") {
+        window.ejecutarAutoBackupSistema("Recarga de combustible eliminada", "AUTOMATICO", true);
+    }
     renderizarModuloCombustible();
 }
+
+window.vaciarHistorialCombustibleActual = function() {
+    const pestana = (typeof pestanaActivaCombustible !== "undefined" ? pestanaActivaCombustible : "DESPACHOS");
+    if (pestana === "DESPACHOS") {
+        if (!cargas || cargas.length === 0) {
+            if (typeof mostrarNotificacionToast === "function") {
+                mostrarNotificacionToast("No hay despachos de combustible para eliminar.", "info");
+            } else {
+                alert("No hay despachos de combustible para eliminar.");
+            }
+            return;
+        }
+        const confirma = confirm(`⚠️ ¿Está seguro de VACIAR TODOS los despachos de combustible (${cargas.length} registros)?\n\nEsta acción eliminará los registros de forma definitiva tanto localmente como en la base de datos de Cloudflare.`);
+        if (!confirma) return;
+
+        cargas = [];
+        localStorage.setItem("flota_cargas", JSON.stringify([]));
+        localStorage.setItem("corssen_ultima_modificacion_ts", String(Date.now()));
+        guardarTodo();
+        if (typeof window.ejecutarAutoBackupSistema === "function") {
+            window.ejecutarAutoBackupSistema("Vaciado completo de despachos de combustible", "AUTOMATICO", true);
+        }
+        renderizarModuloCombustible();
+        renderizarDashboard();
+        if (typeof mostrarNotificacionToast === "function") {
+            mostrarNotificacionToast("Lista de despachos de combustible vaciada permanentemente.", "success");
+        } else {
+            alert("Lista de despachos de combustible vaciada permanentemente.");
+        }
+    } else {
+        if (!historialRecargasCombustible || historialRecargasCombustible.length === 0) {
+            if (typeof mostrarNotificacionToast === "function") {
+                mostrarNotificacionToast("No hay recargas de estanque para eliminar.", "info");
+            } else {
+                alert("No hay recargas de estanque para eliminar.");
+            }
+            return;
+        }
+        const confirma = confirm(`⚠️ ¿Está seguro de VACIAR TODO el historial de recargas del estanque de 400L (${historialRecargasCombustible.length} registros)?\n\nEsta acción eliminará los registros de forma definitiva.`);
+        if (!confirma) return;
+
+        historialRecargasCombustible = [];
+        localStorage.setItem("corssen_historial_recargas_comb_v1", JSON.stringify([]));
+        localStorage.setItem("corssen_ultima_modificacion_ts", String(Date.now()));
+        guardarTodo();
+        if (typeof window.ejecutarAutoBackupSistema === "function") {
+            window.ejecutarAutoBackupSistema("Vaciado completo de recargas de estanque", "AUTOMATICO", true);
+        }
+        renderizarModuloCombustible();
+        if (typeof mostrarNotificacionToast === "function") {
+            mostrarNotificacionToast("Historial de recargas de estanque vaciado permanentemente.", "success");
+        } else {
+            alert("Historial de recargas de estanque vaciado permanentemente.");
+        }
+    }
+};
 
 function registrarVehiculo(e) {
     e.preventDefault();
@@ -5718,9 +5782,14 @@ function eliminarConsumoAceite(id) {
 
     // 2. Eliminar del array
     historialConsumoAceite.splice(idx, 1);
+    localStorage.setItem("corssen_historial_aceite_v1", JSON.stringify(historialConsumoAceite));
+    localStorage.setItem("corssen_ultima_modificacion_ts", String(Date.now()));
 
-    // 3. Persistir en almacenamiento local y disparar respaldo
+    // 3. Persistir en almacenamiento local y disparar respaldo inmediato en nube
     guardarTodo();
+    if (typeof window.ejecutarAutoBackupSistema === "function") {
+        window.ejecutarAutoBackupSistema("Consumo de aceite eliminado", "AUTOMATICO", true);
+    }
 
     // 4. Actualizar interfaz
     renderizarModuloAceite();
@@ -5734,6 +5803,60 @@ function eliminarConsumoAceite(id) {
         alert(`Registro de ${equipo} eliminado correctamente. Se devolvieron ${litros.toFixed(1)} Lts al tambor.`);
     }
 }
+
+window.vaciarHistorialConsumoAceite = function() {
+    if (!historialConsumoAceite || historialConsumoAceite.length === 0) {
+        if (typeof mostrarNotificacionToast === "function") {
+            mostrarNotificacionToast("El historial de consumos de aceite ya está vacío.", "info");
+        } else {
+            alert("El historial de consumos de aceite ya está vacío.");
+        }
+        return;
+    }
+
+    const totalRegistros = historialConsumoAceite.length;
+    let sumaLitros = 0;
+    historialConsumoAceite.forEach(h => {
+        sumaLitros += Number(h.litrosDescontados || 0);
+    });
+
+    const mensajeConfirm = `⚠️ ¿Está seguro de VACIAR TODO el historial de consumos de aceite (${totalRegistros} registros)?\n\n` +
+        `• Se reincorporarán hasta ${sumaLitros.toFixed(1)} Lts al tambor activo (hasta el tope de capacidad).\n` +
+        `• Esta acción eliminará permanentemente los consumos tanto localmente como en la base de datos de Cloudflare.`;
+
+    if (!confirm(mensajeConfirm)) return;
+
+    // 1. Reincorporar litros al tambor
+    if (sumaLitros > 0 && estadoTamborAceite) {
+        const capMax = Number(estadoTamborAceite.capacidad) || 200;
+        const actual = Number(estadoTamborAceite.actual) || 0;
+        estadoTamborAceite.actual = Math.min(capMax, actual + sumaLitros);
+    }
+
+    // 2. Vaciar array
+    historialConsumoAceite = [];
+    localStorage.setItem("corssen_historial_aceite_v1", JSON.stringify([]));
+    localStorage.setItem("corssen_tambor_aceite_v1", JSON.stringify(estadoTamborAceite));
+    localStorage.setItem("corssen_ultima_modificacion_ts", String(Date.now()));
+
+    // 3. Guardar y respaldar en nube de inmediato
+    guardarTodo();
+    if (typeof window.ejecutarAutoBackupSistema === "function") {
+        window.ejecutarAutoBackupSistema("Vaciado completo de historial de consumo de aceite", "AUTOMATICO", true);
+    }
+
+    // 4. Actualizar interfaz
+    renderizarModuloAceite();
+    if (typeof renderizarDashboard === "function") {
+        renderizarDashboard();
+    }
+
+    if (typeof mostrarNotificacionToast === "function") {
+        mostrarNotificacionToast("Historial de consumo de aceite vaciado permanentemente.", "success");
+    } else {
+        alert("Historial de consumo de aceite vaciado permanentemente.");
+    }
+};
 
 function abrirModalNuevoTambor() {
     const form = document.getElementById("formNuevoTamborAceite");
@@ -7947,6 +8070,14 @@ document.addEventListener("DOMContentLoaded", () => {
         const modal = document.getElementById("modalDescargaProyecto");
         if (modal) {
             modal.style.display = "none";
+        }
+    };
+
+    window.mostrarToast = function(msg, tipo = 'info') {
+        if (typeof mostrarNotificacionToast === 'function') {
+            mostrarNotificacionToast(msg, tipo);
+        } else {
+            console.log(`[${tipo}]:`, msg);
         }
     };
 
