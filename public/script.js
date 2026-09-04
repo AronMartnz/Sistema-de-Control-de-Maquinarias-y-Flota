@@ -551,7 +551,7 @@ let estadoTamborAceite = {
     estado: "Activo"
 };
 
-let historialConsumoAceite = [
+const DATOS_HISTORIAL_ACEITE_DEFAULT = [
     {
         id: "ACEITE-001",
         fecha: "2026-03-01",
@@ -565,6 +565,7 @@ let historialConsumoAceite = [
         tecnico: "Alexis Santos"
     }
 ];
+let historialConsumoAceite = [];
 
 // =========================================================
 // ESTADO ESPECIALIZADO: CONTROL DE ESTANQUE DE COMBUSTIBLE DIÉSEL (400 LITROS)
@@ -581,7 +582,7 @@ let estadoTanqueCombustible = {
     estado: "Activo"
 };
 
-let historialRecargasCombustible = [
+const DATOS_RECARGAS_COMB_DEFAULT = [
     {
         id: "RECARGA-COMB-001",
         fecha: "2026-02-27",
@@ -595,6 +596,7 @@ let historialRecargasCombustible = [
         observaciones: "Llenado inicial del estanque de 400L de taller central."
     }
 ];
+let historialRecargasCombustible = [];
 
 const DATOS_CARGAS_DEFAULT = [
     {
@@ -837,35 +839,35 @@ function cargarTodo() {
         corssenFichas = fichasGuardadas ? JSON.parse(fichasGuardadas) : JSON.parse(JSON.stringify(FICHAS_EQUIPOS_CORSSEN));
 
         const vehiculosGuardados = JSON.parse(localStorage.getItem("flota_vehiculos_v3") || "null");
-        if (vehiculosGuardados && Array.isArray(vehiculosGuardados) && vehiculosGuardados.length >= 7) {
+        if (vehiculosGuardados !== null && Array.isArray(vehiculosGuardados)) {
             vehiculos = vehiculosGuardados;
         } else {
             vehiculos = [...DATOS_VEHICULOS_DEFAULT];
         }
 
         const maquinariasGuardadas = JSON.parse(localStorage.getItem("flota_maquinarias_v3") || "null");
-        if (maquinariasGuardadas && Array.isArray(maquinariasGuardadas) && maquinariasGuardadas.length >= 8) {
+        if (maquinariasGuardadas !== null && Array.isArray(maquinariasGuardadas)) {
             maquinarias = maquinariasGuardadas;
         } else {
             maquinarias = [...DATOS_MAQUINARIAS_DEFAULT];
         }
 
         const cargasGuardadas = JSON.parse(localStorage.getItem("flota_cargas") || "null");
-        if (cargasGuardadas && Array.isArray(cargasGuardadas) && cargasGuardadas.length > 0) {
+        if (cargasGuardadas !== null && Array.isArray(cargasGuardadas)) {
             cargas = cargasGuardadas;
         } else {
             cargas = JSON.parse(JSON.stringify(DATOS_CARGAS_DEFAULT));
         }
         
         const mantGuardadas = JSON.parse(localStorage.getItem("flota_mantenciones_v3") || "null");
-        if (mantGuardadas && Array.isArray(mantGuardadas) && mantGuardadas.length > 0) {
+        if (mantGuardadas !== null && Array.isArray(mantGuardadas)) {
             mantenciones = mantGuardadas;
         } else {
             mantenciones = JSON.parse(JSON.stringify(DATOS_MANTENCIONES_DEFAULT));
         }
 
         const invGuardado = JSON.parse(localStorage.getItem("flota_inventario_v3") || "null");
-        if (invGuardado && Array.isArray(invGuardado) && invGuardado.length > 0) {
+        if (invGuardado !== null && Array.isArray(invGuardado)) {
             inventario = invGuardado;
         } else {
             inventario = JSON.parse(JSON.stringify(DATOS_INVENTARIO_DEFAULT));
@@ -881,13 +883,11 @@ function cargarTodo() {
             }
         }
 
-        const histAceiteGuardado = localStorage.getItem("corssen_historial_aceite_v1");
-        if (histAceiteGuardado) {
-            try {
-                historialConsumoAceite = JSON.parse(histAceiteGuardado);
-            } catch (e) {
-                console.error("Error al parsear historialConsumoAceite:", e);
-            }
+        const histAceiteGuardado = JSON.parse(localStorage.getItem("corssen_historial_aceite_v1") || "null");
+        if (histAceiteGuardado !== null && Array.isArray(histAceiteGuardado)) {
+            historialConsumoAceite = histAceiteGuardado;
+        } else {
+            historialConsumoAceite = JSON.parse(JSON.stringify(DATOS_HISTORIAL_ACEITE_DEFAULT));
         }
 
         // Cargar estado especializado del Estanque de Combustible Diésel (400L)
@@ -900,13 +900,11 @@ function cargarTodo() {
             }
         }
 
-        const histRecargasGuardado = localStorage.getItem("corssen_historial_recargas_comb_v1");
-        if (histRecargasGuardado) {
-            try {
-                historialRecargasCombustible = JSON.parse(histRecargasGuardado);
-            } catch (e) {
-                console.error("Error al parsear historialRecargasCombustible:", e);
-            }
+        const histRecargasGuardado = JSON.parse(localStorage.getItem("corssen_historial_recargas_comb_v1") || "null");
+        if (histRecargasGuardado !== null && Array.isArray(histRecargasGuardado)) {
+            historialRecargasCombustible = histRecargasGuardado;
+        } else {
+            historialRecargasCombustible = JSON.parse(JSON.stringify(DATOS_RECARGAS_COMB_DEFAULT));
         }
 
         // Auto-reconciliación: Asegurar que toda maquinaria y vehículo registrado figure en corssenPrograma
@@ -984,15 +982,16 @@ function guardarTodo() {
         localStorage.setItem("corssen_historial_aceite_v1", JSON.stringify(historialConsumoAceite));
         localStorage.setItem("corssen_tanque_combustible_v1", JSON.stringify(estadoTanqueCombustible));
         localStorage.setItem("corssen_historial_recargas_comb_v1", JSON.stringify(historialRecargasCombustible));
+        localStorage.setItem("corssen_ultima_modificacion_ts", String(Date.now()));
 
-        // Disparar auto-backup silencioso a la nube y local con debounce de 5s
+        // Disparar auto-backup silencioso a la nube y local con debounce de 800ms
         if (typeof window !== "undefined" && typeof window.ejecutarAutoBackupSistema === "function") {
             if (window._debounceAutoBackupTimeout) {
                 clearTimeout(window._debounceAutoBackupTimeout);
             }
             window._debounceAutoBackupTimeout = setTimeout(() => {
                 window.ejecutarAutoBackupSistema("Auto-respaldo tras modificación de datos", "AUTOMATICO", true);
-            }, 5000);
+            }, 800);
         }
     } catch (e) {
         console.error("Error al guardar datos:", e);
@@ -3932,7 +3931,12 @@ function eliminarCargaCombustible(id) {
     }
 
     cargas.splice(idx, 1);
+    localStorage.setItem("flota_cargas", JSON.stringify(cargas));
+    localStorage.setItem("corssen_ultima_modificacion_ts", String(Date.now()));
     guardarTodo();
+    if (typeof window.ejecutarAutoBackupSistema === "function") {
+        window.ejecutarAutoBackupSistema("Despacho de combustible eliminado", "AUTOMATICO", true);
+    }
     renderizarModuloCombustible();
     renderizarDashboard();
 }
@@ -3947,10 +3951,71 @@ function eliminarRecargaCombustible(id) {
 
     estadoTanqueCombustible.actual = Math.max(0, (estadoTanqueCombustible.actual || 0) - Number(recarga.litrosCargados || 0));
     historialRecargasCombustible.splice(idx, 1);
+    localStorage.setItem("corssen_historial_recargas_comb_v1", JSON.stringify(historialRecargasCombustible));
+    localStorage.setItem("corssen_ultima_modificacion_ts", String(Date.now()));
 
     guardarTodo();
+    if (typeof window.ejecutarAutoBackupSistema === "function") {
+        window.ejecutarAutoBackupSistema("Recarga de combustible eliminada", "AUTOMATICO", true);
+    }
     renderizarModuloCombustible();
 }
+
+window.vaciarHistorialCombustibleActual = function() {
+    const pestana = (typeof pestanaActivaCombustible !== "undefined" ? pestanaActivaCombustible : "DESPACHOS");
+    if (pestana === "DESPACHOS") {
+        if (!cargas || cargas.length === 0) {
+            if (typeof mostrarNotificacionToast === "function") {
+                mostrarNotificacionToast("No hay despachos de combustible para eliminar.", "info");
+            } else {
+                alert("No hay despachos de combustible para eliminar.");
+            }
+            return;
+        }
+        const confirma = confirm(`⚠️ ¿Está seguro de VACIAR TODOS los despachos de combustible (${cargas.length} registros)?\n\nEsta acción eliminará los registros de forma definitiva tanto localmente como en la base de datos de Cloudflare.`);
+        if (!confirma) return;
+
+        cargas = [];
+        localStorage.setItem("flota_cargas", JSON.stringify([]));
+        localStorage.setItem("corssen_ultima_modificacion_ts", String(Date.now()));
+        guardarTodo();
+        if (typeof window.ejecutarAutoBackupSistema === "function") {
+            window.ejecutarAutoBackupSistema("Vaciado completo de despachos de combustible", "AUTOMATICO", true);
+        }
+        renderizarModuloCombustible();
+        renderizarDashboard();
+        if (typeof mostrarNotificacionToast === "function") {
+            mostrarNotificacionToast("Lista de despachos de combustible vaciada permanentemente.", "success");
+        } else {
+            alert("Lista de despachos de combustible vaciada permanentemente.");
+        }
+    } else {
+        if (!historialRecargasCombustible || historialRecargasCombustible.length === 0) {
+            if (typeof mostrarNotificacionToast === "function") {
+                mostrarNotificacionToast("No hay recargas de estanque para eliminar.", "info");
+            } else {
+                alert("No hay recargas de estanque para eliminar.");
+            }
+            return;
+        }
+        const confirma = confirm(`⚠️ ¿Está seguro de VACIAR TODO el historial de recargas del estanque de 400L (${historialRecargasCombustible.length} registros)?\n\nEsta acción eliminará los registros de forma definitiva.`);
+        if (!confirma) return;
+
+        historialRecargasCombustible = [];
+        localStorage.setItem("corssen_historial_recargas_comb_v1", JSON.stringify([]));
+        localStorage.setItem("corssen_ultima_modificacion_ts", String(Date.now()));
+        guardarTodo();
+        if (typeof window.ejecutarAutoBackupSistema === "function") {
+            window.ejecutarAutoBackupSistema("Vaciado completo de recargas de estanque", "AUTOMATICO", true);
+        }
+        renderizarModuloCombustible();
+        if (typeof mostrarNotificacionToast === "function") {
+            mostrarNotificacionToast("Historial de recargas de estanque vaciado permanentemente.", "success");
+        } else {
+            alert("Historial de recargas de estanque vaciado permanentemente.");
+        }
+    }
+};
 
 function registrarVehiculo(e) {
     e.preventDefault();
@@ -5717,9 +5782,14 @@ function eliminarConsumoAceite(id) {
 
     // 2. Eliminar del array
     historialConsumoAceite.splice(idx, 1);
+    localStorage.setItem("corssen_historial_aceite_v1", JSON.stringify(historialConsumoAceite));
+    localStorage.setItem("corssen_ultima_modificacion_ts", String(Date.now()));
 
-    // 3. Persistir en almacenamiento local y disparar respaldo
+    // 3. Persistir en almacenamiento local y disparar respaldo inmediato en nube
     guardarTodo();
+    if (typeof window.ejecutarAutoBackupSistema === "function") {
+        window.ejecutarAutoBackupSistema("Consumo de aceite eliminado", "AUTOMATICO", true);
+    }
 
     // 4. Actualizar interfaz
     renderizarModuloAceite();
@@ -5733,6 +5803,60 @@ function eliminarConsumoAceite(id) {
         alert(`Registro de ${equipo} eliminado correctamente. Se devolvieron ${litros.toFixed(1)} Lts al tambor.`);
     }
 }
+
+window.vaciarHistorialConsumoAceite = function() {
+    if (!historialConsumoAceite || historialConsumoAceite.length === 0) {
+        if (typeof mostrarNotificacionToast === "function") {
+            mostrarNotificacionToast("El historial de consumos de aceite ya está vacío.", "info");
+        } else {
+            alert("El historial de consumos de aceite ya está vacío.");
+        }
+        return;
+    }
+
+    const totalRegistros = historialConsumoAceite.length;
+    let sumaLitros = 0;
+    historialConsumoAceite.forEach(h => {
+        sumaLitros += Number(h.litrosDescontados || 0);
+    });
+
+    const mensajeConfirm = `⚠️ ¿Está seguro de VACIAR TODO el historial de consumos de aceite (${totalRegistros} registros)?\n\n` +
+        `• Se reincorporarán hasta ${sumaLitros.toFixed(1)} Lts al tambor activo (hasta el tope de capacidad).\n` +
+        `• Esta acción eliminará permanentemente los consumos tanto localmente como en la base de datos de Cloudflare.`;
+
+    if (!confirm(mensajeConfirm)) return;
+
+    // 1. Reincorporar litros al tambor
+    if (sumaLitros > 0 && estadoTamborAceite) {
+        const capMax = Number(estadoTamborAceite.capacidad) || 200;
+        const actual = Number(estadoTamborAceite.actual) || 0;
+        estadoTamborAceite.actual = Math.min(capMax, actual + sumaLitros);
+    }
+
+    // 2. Vaciar array
+    historialConsumoAceite = [];
+    localStorage.setItem("corssen_historial_aceite_v1", JSON.stringify([]));
+    localStorage.setItem("corssen_tambor_aceite_v1", JSON.stringify(estadoTamborAceite));
+    localStorage.setItem("corssen_ultima_modificacion_ts", String(Date.now()));
+
+    // 3. Guardar y respaldar en nube de inmediato
+    guardarTodo();
+    if (typeof window.ejecutarAutoBackupSistema === "function") {
+        window.ejecutarAutoBackupSistema("Vaciado completo de historial de consumo de aceite", "AUTOMATICO", true);
+    }
+
+    // 4. Actualizar interfaz
+    renderizarModuloAceite();
+    if (typeof renderizarDashboard === "function") {
+        renderizarDashboard();
+    }
+
+    if (typeof mostrarNotificacionToast === "function") {
+        mostrarNotificacionToast("Historial de consumo de aceite vaciado permanentemente.", "success");
+    } else {
+        alert("Historial de consumo de aceite vaciado permanentemente.");
+    }
+};
 
 function abrirModalNuevoTambor() {
     const form = document.getElementById("formNuevoTamborAceite");
@@ -6660,6 +6784,81 @@ function exportarFlotaExcel() {
         { nombre: "Equipos Auxiliares", datos: datosAux, anchos: [14, 30, 16, 16, 18, 14, 22, 38] },
         { nombre: "Equipos Marítimos", datos: datosMar, anchos: [14, 28, 16, 18, 14, 22, 38] }
     ]);
+}
+
+// =========================================================
+// 11.5. SINCRONIZACIÓN AUTOMÁTICA CON LA NUBE MULTIDISPOSITIVO
+// =========================================================
+async function sincronizarConUltimoRespaldoNube(forzarRecarga = false) {
+    try {
+        const resp = await fetch("/api/backup/obtener/ultimo?t=" + Date.now());
+        if (!resp.ok) return false;
+
+        const backup = await resp.json();
+        if (!backup || !backup.data) return false;
+
+        const serverTs = Number(backup.timestamp || 0);
+        const localTs = Number(localStorage.getItem("corssen_ultima_modificacion_ts") || 0);
+
+        // Si el respaldo de la nube es más reciente que el estado local (o se fuerza la recarga)
+        if (forzarRecarga || (serverTs > 0 && serverTs > localTs)) {
+            console.log(`☁️ Sincronizando estado más reciente desde la nube (Servidor: ${serverTs} vs Local: ${localTs})...`);
+            const data = backup.data;
+
+            if (data.corssen_programa_v2) corssenPrograma = JSON.parse(JSON.stringify(data.corssen_programa_v2));
+            if (data.corssen_stock_v2) corssenStock = JSON.parse(JSON.stringify(data.corssen_stock_v2));
+            if (data.corssen_fichas_v2) corssenFichas = JSON.parse(JSON.stringify(data.corssen_fichas_v2));
+            if (data.flota_vehiculos_v3) vehiculos = JSON.parse(JSON.stringify(data.flota_vehiculos_v3));
+            if (data.flota_maquinarias_v3) maquinarias = JSON.parse(JSON.stringify(data.flota_maquinarias_v3));
+            if (data.flota_cargas) cargas = JSON.parse(JSON.stringify(data.flota_cargas));
+            if (data.flota_mantenciones_v3) mantenciones = JSON.parse(JSON.stringify(data.flota_mantenciones_v3));
+            if (data.flota_inventario_v3) inventario = JSON.parse(JSON.stringify(data.flota_inventario_v3));
+            if (data.corssen_tambor_aceite_v1) estadoTamborAceite = JSON.parse(JSON.stringify(data.corssen_tambor_aceite_v1));
+            if (data.corssen_historial_aceite_v1) historialConsumoAceite = JSON.parse(JSON.stringify(data.corssen_historial_aceite_v1));
+            if (data.corssen_tanque_combustible_v1) estadoTanqueCombustible = JSON.parse(JSON.stringify(data.corssen_tanque_combustible_v1));
+            if (data.corssen_historial_recargas_comb_v1) historialRecargasCombustible = JSON.parse(JSON.stringify(data.corssen_historial_recargas_comb_v1));
+
+            // Guardar localmente reflejando el timestamp del servidor
+            localStorage.setItem("corssen_programa_v2", JSON.stringify(corssenPrograma));
+            localStorage.setItem("corssen_stock_v2", JSON.stringify(corssenStock));
+            localStorage.setItem("corssen_fichas_v2", JSON.stringify(corssenFichas));
+            localStorage.setItem("flota_vehiculos_v3", JSON.stringify(vehiculos));
+            localStorage.setItem("flota_maquinarias_v3", JSON.stringify(maquinarias));
+            localStorage.setItem("flota_cargas", JSON.stringify(cargas));
+            localStorage.setItem("flota_mantenciones_v3", JSON.stringify(mantenciones));
+            localStorage.setItem("flota_inventario_v3", JSON.stringify(inventario));
+            localStorage.setItem("corssen_tambor_aceite_v1", JSON.stringify(estadoTamborAceite));
+            localStorage.setItem("corssen_historial_aceite_v1", JSON.stringify(historialConsumoAceite));
+            localStorage.setItem("corssen_tanque_combustible_v1", JSON.stringify(estadoTanqueCombustible));
+            localStorage.setItem("corssen_historial_recargas_comb_v1", JSON.stringify(historialRecargasCombustible));
+            localStorage.setItem("corssen_ultima_modificacion_ts", String(serverTs || Date.now()));
+
+            // Re-renderizar todos los componentes de la interfaz
+            renderizarDashboard();
+            renderizarProgramaMaestro();
+            renderizarStockInsumos();
+            renderizarKardexMovimientos();
+            renderizarMantenciones();
+            renderizarModuloAceite();
+            renderizarModuloCombustible();
+            renderizarTablasOriginales();
+            if (typeof renderizarModuloRespaldos === "function") renderizarModuloRespaldos();
+
+            const elEstado = document.querySelector(".estado-sistema");
+            if (elEstado) {
+                elEstado.innerHTML = `<span class="estado-punto" style="background:#10b981;"></span> Sincronizado con Nube`;
+            }
+            return true;
+        } else if (localTs > 0 && localTs > serverTs) {
+            // El dispositivo local tiene cambios más recientes pendientes de subir a la nube
+            if (typeof window.ejecutarAutoBackupSistema === "function") {
+                window.ejecutarAutoBackupSistema("Sincronización de cambios pendientes", "AUTOMATICO", true);
+            }
+        }
+    } catch (err) {
+        console.warn("Aviso de sincronización en la nube (modo offline/red lenta):", err);
+    }
+    return false;
 }
 
 // =========================================================
@@ -7874,6 +8073,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
+    window.mostrarToast = function(msg, tipo = 'info') {
+        if (typeof mostrarNotificacionToast === 'function') {
+            mostrarNotificacionToast(msg, tipo);
+        } else {
+            console.log(`[${tipo}]:`, msg);
+        }
+    };
+
     window.ejecutarDescargaHTML = async function() {
         mostrarToast('⏳ Generando archivo HTML completo...', 'info');
         try {
@@ -7919,6 +8126,46 @@ document.addEventListener("DOMContentLoaded", () => {
             } catch (e) {
                 mostrarToast('❌ No se pudo descargar el archivo: ' + e.message, 'error');
             }
+        }
+    };
+
+    window.ejecutarDescargaArchivosCorregidos = async function() {
+        mostrarToast('⏳ Descargando paquete de archivos corregidos...', 'info');
+        try {
+            const resp = await fetch('/archivos_corregidos_corssen.zip');
+            if (!resp.ok) throw new Error('Error al obtener ZIP del servidor');
+            const blob = await resp.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'archivos_corregidos_corssen.zip';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+            mostrarToast('✅ Archivos corregidos descargados (ZIP).', 'success');
+        } catch (err) {
+            console.error('Error descarga archivos corregidos:', err);
+            mostrarToast('❌ Error al descargar: ' + err.message, 'error');
+        }
+    };
+
+    window.ejecutarDescargaScriptJS = async function() {
+        mostrarToast('⏳ Descargando script.js...', 'info');
+        try {
+            const resp = await fetch('/descargar-script');
+            if (!resp.ok) throw new Error('Error al obtener script.js');
+            const blob = await resp.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'script.js';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+            mostrarToast('✅ script.js descargado exitosamente.', 'success');
+        } catch (err) {
+            console.error('Error descarga script.js:', err);
+            mostrarToast('❌ Error al descargar script.js: ' + err.message, 'error');
         }
     };
 
@@ -7986,12 +8233,32 @@ document.addEventListener("DOMContentLoaded", () => {
     window.iniciarServicioAutoBackup = iniciarServicioAutoBackup;
     window.cambiarConfiguracionAutoBackup = cambiarConfiguracionAutoBackup;
     window.ejecutarRespaldoNubeInmediatoManual = ejecutarRespaldoNubeInmediatoManual;
+    window.sincronizarConUltimoRespaldoNube = sincronizarConUltimoRespaldoNube;
 
     // Inicializar estado visual de bloqueo / desbloqueo, módulo de aceite, módulo de combustible y auto-backup
     sincronizarEstadoVisualModuloRespaldos();
     renderizarModuloAceite();
     renderizarModuloCombustible();
     iniciarServicioAutoBackup();
+
+    // Sincronizar inmediatamente al abrir la página con el último estado guardado en la nube
+    sincronizarConUltimoRespaldoNube();
+
+    // Sincronizar al volver a la pestaña (por ejemplo, al volver a abrir el navegador o cambiar de app en el celular)
+    window.addEventListener("focus", () => {
+        sincronizarConUltimoRespaldoNube();
+    });
+
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+            sincronizarConUltimoRespaldoNube();
+        }
+    });
+
+    // Sondeo de sincronización periódica cada 15 segundos para mantener todos los dispositivos (computador y celular) alineados en tiempo real
+    setInterval(() => {
+        sincronizarConUltimoRespaldoNube();
+    }, 15000);
 
     // Event listener para efecto sticky con elevación suave en el título principal / topbar
     const topbar = document.querySelector(".topbar");
