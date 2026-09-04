@@ -171,9 +171,6 @@
         </div>
 
         <div class="topbar-derecha">
-            <button type="button" onclick="abrirModalDescargaProyecto()" class="btn-secundario btn-topbar-accion" style="border-color:#10b981; color:#065f46; font-weight:700; display:inline-flex; align-items:center; gap:6px;" title="Descargar script.js y archivos actualizados">
-                📥 Descargar Archivos
-            </button>
             <button onclick="exportarPlanillaCSV()" class="btn-secundario btn-topbar-accion" title="Exportar planilla general consolidada (.csv / .xlsx)">
                 📊 Exportar Planilla Excel
             </button>
@@ -2100,9 +2097,6 @@
                         <button type="button" class="btn-primario" onclick="abrirModalCrearSnapshot()" style="font-weight:700; background:#2563eb; border-color:#2563eb;">
                             ➕ Crear Punto de Restauración
                         </button>
-                        <button type="button" class="btn-primario" onclick="abrirModalDescargaProyecto()" style="font-weight:700; background:#059669; border-color:#059669; color:white; display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
-                            📦 Descargar Proyecto (HTML / ZIP)
-                        </button>
                         <button type="button" class="btn-secundario" onclick="descargarBackupJSONCompleto()" style="font-weight:700;">
                             📥 Descargar Backup (.JSON)
                         </button>
@@ -2520,94 +2514,6 @@
                 <div style="background:#f8fafc; padding:14px 22px; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
                     <button type="button" class="btn-secundario" onclick="cerrarModalPerfilUsuario()">Cancelar</button>
                     <button type="button" class="btn-primario" id="btnGuardarAvatarPerfil" onclick="guardarAvatarPerfilUsuario()">💾 Guardar Nueva Foto</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- =====================================================
-             MODAL: DESCARGA DE PROYECTO / RESPALDO OFFLINE
-        ===================================================== -->
-        <div id="modalDescargaProyecto" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.65); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(4px);">
-            <div class="modal-contenido" style="background:#ffffff; max-width:540px; width:92%; border-radius:18px; box-shadow:0 24px 50px rgba(0,0,0,0.3); overflow:hidden; border:1px solid #cbd5e1; display:flex; flex-direction:column;">
-                <div style="background:linear-gradient(135deg, #065f46, #047857); color:#ffffff; padding:18px 22px; display:flex; justify-content:space-between; align-items:center;">
-                    <div style="display:flex; align-items:center; gap:12px;">
-                        <span style="font-size:24px;">📦</span>
-                        <div>
-                            <h3 style="font-size:17px; margin:0; color:#ffffff; font-weight:700;">Descargar Proyecto CORSSEN</h3>
-                            <span style="font-size:12px; color:#a7f3d0;">Opciones de respaldo completo y ejecución offline</span>
-                        </div>
-                    </div>
-                    <button type="button" onclick="cerrarModalDescargaProyecto()" style="background:transparent; border:none; color:#ffffff; font-size:22px; cursor:pointer;">✕</button>
-                </div>
-
-                <div style="padding:22px; display:flex; flex-direction:column; gap:16px;">
-                    <!-- Opción 1: Archivos Modificados (ZIP) -->
-                    <div style="border:2px solid #10b981; border-radius:14px; padding:16px; display:flex; align-items:center; justify-content:space-between; gap:14px; background:#ecfdf5; transition:all 0.2s;">
-                        <div style="display:flex; align-items:center; gap:14px;">
-                            <div style="width:44px; height:44px; border-radius:10px; background:#10b981; color:#ffffff; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:bold;">
-                                ⚡
-                            </div>
-                            <div>
-                                <strong style="font-size:14px; color:#065f46; display:block;">Solo Archivos Corregidos (.zip)</strong>
-                                <span style="font-size:12px; color:#047857;">Contiene script.js, worker.js, server.ts e index.html listos para reemplazar en la raíz.</span>
-                            </div>
-                        </div>
-                        <a href="/archivos_corregidos_corssen.zip" download="archivos_corregidos_corssen.zip" class="btn-primario" style="background:#059669; border-color:#059669; font-weight:700; white-space:nowrap; padding:9px 16px; text-decoration:none; display:inline-flex; align-items:center; gap:6px; color:#ffffff;">
-                            ⬇️ Descargar ZIP
-                        </a>
-                    </div>
-
-                    <!-- Opción 2: script.js directo -->
-                    <div style="border:1.5px solid #e2e8f0; border-radius:14px; padding:16px; display:flex; align-items:center; justify-content:space-between; gap:14px; background:#f8fafc; transition:all 0.2s;">
-                        <div style="display:flex; align-items:center; gap:14px;">
-                            <div style="width:44px; height:44px; border-radius:10px; background:#fef3c7; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:bold;">
-                                📜
-                            </div>
-                            <div>
-                                <strong style="font-size:14px; color:#0f172a; display:block;">script.js (Archivo Individual)</strong>
-                                <span style="font-size:12px; color:#64748b;">El script principal con la sincronización y persistencia de tablas.</span>
-                            </div>
-                        </div>
-                        <a href="/descargar-script" download="script.js" class="btn-primario" style="background:#d97706; border-color:#d97706; font-weight:700; white-space:nowrap; padding:9px 16px; text-decoration:none; display:inline-flex; align-items:center; gap:6px; color:#ffffff;">
-                            ⬇️ Descargar .JS
-                        </a>
-                    </div>
-
-                    <!-- Opción 3: Paquete Completo ZIP -->
-                    <div style="border:1.5px solid #e2e8f0; border-radius:14px; padding:16px; display:flex; align-items:center; justify-content:space-between; gap:14px; background:#f8fafc; transition:all 0.2s;">
-                        <div style="display:flex; align-items:center; gap:14px;">
-                            <div style="width:44px; height:44px; border-radius:10px; background:#eff6ff; color:#2563eb; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:bold;">
-                                🗜️
-                            </div>
-                            <div>
-                                <strong style="font-size:14px; color:#0f172a; display:block;">Proyecto Completo (.zip)</strong>
-                                <span style="font-size:12px; color:#64748b;">Todo el repositorio listo para desplegar o respaldar.</span>
-                            </div>
-                        </div>
-                        <a href="/proyecto_control_flota.zip" download="proyecto_control_flota.zip" class="btn-primario" style="background:#2563eb; border-color:#2563eb; font-weight:700; white-space:nowrap; padding:9px 16px; text-decoration:none; display:inline-flex; align-items:center; gap:6px; color:#ffffff;">
-                            ⬇️ Descargar Todo
-                        </a>
-                    </div>
-
-                    <!-- Opción 4: Standalone HTML -->
-                    <div style="border:1.5px solid #e2e8f0; border-radius:14px; padding:16px; display:flex; align-items:center; justify-content:space-between; gap:14px; background:#f8fafc; transition:all 0.2s;">
-                        <div style="display:flex; align-items:center; gap:14px;">
-                            <div style="width:44px; height:44px; border-radius:10px; background:#f1f5f9; color:#475569; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:bold;">
-                                📄
-                            </div>
-                            <div>
-                                <strong style="font-size:14px; color:#0f172a; display:block;">Archivo Único Offline (.html)</strong>
-                                <span style="font-size:12px; color:#64748b;">Ejecutable con doble clic en cualquier PC sin internet.</span>
-                            </div>
-                        </div>
-                        <button type="button" class="btn-primario" onclick="ejecutarDescargaHTML()" style="background:#475569; border-color:#475569; font-weight:700; white-space:nowrap; padding:9px 16px;">
-                            ⬇️ Descargar HTML
-                        </button>
-                    </div>
-                </div>
-
-                <div style="background:#f8fafc; padding:14px 22px; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end;">
-                    <button type="button" class="btn-secundario" onclick="cerrarModalDescargaProyecto()">Cerrar</button>
                 </div>
             </div>
         </div>
