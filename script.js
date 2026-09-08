@@ -6452,6 +6452,10 @@ function navegarSeccion(idSeccion) {
         renderizarFlotaRegistrada();
     }
 
+    if (idSeccion === "videoTutoriales") {
+        iniciarModuloVideoTutoriales();
+    }
+
     if ((idSeccion === "registrarVehiculo" || idSeccion === "registrarMaquinaria") && !esUsuarioAdministrador()) {
         alert("⛔ Acceso Restringido: Únicamente los usuarios con rol de Administrador pueden dar de alta o editar unidades de la flota.");
         navegarSeccion("vehiculos");
@@ -6469,6 +6473,667 @@ function navegarSeccion(idSeccion) {
     }
 
     window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// =========================================================
+// 11.B MÓDULO DE 2 VIDEOS TUTORIALES NARRADOS (VOZ EN ESPAÑOL)
+// Formato con narración por voz profesional (Web Speech API),
+// simulación visual idéntica a la plataforma y subtítulos guiados
+// para ROL OPERADOR y ROL ADMINISTRADOR.
+// =========================================================
+
+const TUTORIAL_VIDEOS = {
+    operador: {
+        rol: "Operador / Jefe de Flota",
+        titulo: "VIDEO TUTORIAL 1: ROL OPERADOR (FLUJO OPERATIVO COMPLETO)",
+        badgeTexto: "ROL OPERADOR",
+        badgeClase: "badge-verde",
+        usuarioSimulado: "Operando como: Alexis Santos (Operador / Jefe Flota)",
+        pasos: [
+            {
+                modulo: "DASHBOARD GENERAL & SEMÁFORO PREDICTIVO",
+                icono: "🚜",
+                tituloPaso: "Paso 1: Monitoreo en Tiempo Real y Semáforo Preventivo",
+                categoria: "Supervisión de Flota",
+                textoExplicativo: "Como Operador, el primer punto de control es el Dashboard. Aquí visualizas los 54 equipos activos y el semáforo predictivo: Verde (Óptimo), Amarillo (Próximo a mantención dentro del 15%) y Rojo (Vencido o Urgente). Puedes alternar entre vista resumida y detallada de alertas.",
+                htmlEscenario: `
+                    <div style="width:100%; max-width:680px; background:#1e293b; border-radius:12px; padding:20px; border:1px solid #334155; text-align:left;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                            <strong style="color:#38bdf8; font-size:15px;">📊 Panel de Control: 54 Equipos Monitoreados</strong>
+                            <span class="badge badge-verde">Estado: Normal</span>
+                        </div>
+                        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin-bottom:14px;">
+                            <div style="background:#0f172a; padding:12px; border-radius:8px; border-left:4px solid #10b981;">
+                                <div style="font-size:11px; color:#94a3b8;">Óptimos</div>
+                                <div style="font-size:20px; font-weight:800; color:#10b981;">46 Equipos</div>
+                            </div>
+                            <div style="background:#0f172a; padding:12px; border-radius:8px; border-left:4px solid #f59e0b;">
+                                <div style="font-size:11px; color:#94a3b8;">Próximos a Servicio</div>
+                                <div style="font-size:20px; font-weight:800; color:#f59e0b;">5 Equipos</div>
+                            </div>
+                            <div style="background:#0f172a; padding:12px; border-radius:8px; border-left:4px solid #ef4444;">
+                                <div style="font-size:11px; color:#94a3b8;">Atención Requerida</div>
+                                <div style="font-size:20px; font-weight:800; color:#ef4444;">3 Equipos</div>
+                            </div>
+                        </div>
+                        <div style="background:#0f172a; padding:10px 14px; border-radius:8px; border:1px solid #334155; font-size:12.5px; color:#cbd5e1;">
+                            ⚡ <strong>Alerta Activa detectada:</strong> Grúa Portacontenedores <code>GPC-01</code> se encuentra al 94% de su ciclo (1.980 hrs / 2.000 hrs). Requiere emisión de OT.
+                        </div>
+                    </div>
+                `
+            },
+            {
+                modulo: "PROGRAMA MAESTRO & DETALLE POR EQUIPO",
+                icono: "📅",
+                tituloPaso: "Paso 2: Consulta del Programa Maestro Corssen",
+                categoria: "Planificación Preventiva",
+                textoExplicativo: "El Operador tiene acceso completo de consulta al Programa Maestro para revisar frecuencias (cada 250h, 500h o 10.000km), responsables asignados y fecha de última intervención. Nota importante: Las opciones de edición están reservadas al Administrador.",
+                htmlEscenario: `
+                    <div style="width:100%; max-width:680px; background:#1e293b; border-radius:12px; padding:18px; border:1px solid #334155; text-align:left;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                            <strong style="color:#f8fafc; font-size:14px;">📅 Programa Maestro Corssen (Vista Operador)</strong>
+                            <span class="badge badge-azul">54 Registros Sincronizados</span>
+                        </div>
+                        <div style="background:#0f172a; border-radius:8px; overflow:hidden; font-size:12px;">
+                            <div style="display:grid; grid-template-columns:80px 180px 100px 90px 1fr; background:#334155; padding:8px 12px; font-weight:700; color:#f8fafc;">
+                                <span>CÓDIGO</span><span>EQUIPO</span><span>HORÓMETRO</span><span>FRECUENCIA</span><span>ESTADO</span>
+                            </div>
+                            <div style="display:grid; grid-template-columns:80px 180px 100px 90px 1fr; padding:8px 12px; border-bottom:1px solid #1e293b; align-items:center;">
+                                <strong style="color:#38bdf8;">GPC-01</strong><span>Grúa Portacontenedores</span><span>1.980 hrs</span><span>250 hrs</span><span style="color:#f59e0b; font-weight:700;">Próxima</span>
+                            </div>
+                            <div style="display:grid; grid-template-columns:80px 180px 100px 90px 1fr; padding:8px 12px; border-bottom:1px solid #1e293b; align-items:center;">
+                                <strong style="color:#38bdf8;">CAM-01</strong><span>Camioneta Nissan NP300</span><span>84.200 km</span><span>10.000 km</span><span style="color:#10b981; font-weight:700;">Operativo</span>
+                            </div>
+                        </div>
+                        <p style="margin:10px 0 0 0; font-size:12px; color:#94a3b8;">
+                            ℹ️ En este módulo el operador visualiza el estatus sin alterar la matriz troncal de mantenimiento.
+                        </p>
+                    </div>
+                `
+            },
+            {
+                modulo: "EMISIÓN DE ORDEN DE TRABAJO & REBAJA DE STOCK",
+                icono: "🔧",
+                tituloPaso: "Paso 3: Emisión de OT y Deducción Automática de Repuestos",
+                categoria: "Mantenimiento & Insumos",
+                textoExplicativo: "Al realizar un servicio preventivo o correctivo, el Operador selecciona el equipo en 'Nueva Mantención / OT', ingresa el horómetro y los filtros o lubricantes utilizados. Al guardar, el sistema descuenta automáticamente las unidades del inventario Kardex en tiempo real.",
+                htmlEscenario: `
+                    <div style="width:100%; max-width:680px; background:#1e293b; border-radius:12px; padding:18px; border:1px solid #334155; text-align:left;">
+                        <strong style="color:#38bdf8; font-size:14.5px; display:block; margin-bottom:10px;">📋 Formulario de Emisión de Orden de Trabajo (OT)</strong>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+                            <div style="background:#0f172a; padding:10px; border-radius:6px;">
+                                <span style="font-size:11px; color:#94a3b8;">Equipo Seleccionado:</span>
+                                <div style="font-weight:700; color:#38bdf8;">GPC-01 (Kálmar Gloria)</div>
+                            </div>
+                            <div style="background:#0f172a; padding:10px; border-radius:6px;">
+                                <span style="font-size:11px; color:#94a3b8;">Tipo de Mantención:</span>
+                                <div style="font-weight:700; color:#10b981;">Preventiva 250 Hrs (Pauta A)</div>
+                            </div>
+                        </div>
+                        <div style="background:#0b1120; border:1px solid #334155; padding:10px; border-radius:8px; font-size:12px; margin-bottom:10px;">
+                            <div style="color:#e2e8f0; font-weight:700; margin-bottom:4px;">📦 Insumos a deducir del Stock automáticamente:</div>
+                            <div style="color:#94a3b8;">• Filtro de Aceite Motor LF9009 (1 un) ➔ Stock actual: 12 ➔ Nuevo: 11</div>
+                            <div style="color:#94a3b8;">• Aceite 15W40 CI-4 (28 Lts del Tambor 200L) ➔ Nivel descontado</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <span class="badge badge-verde">✓ OT Generada y Stock Sincronizado</span>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                modulo: "FLOTA REGISTRADA & MODO CONSULTA",
+                icono: "🚙",
+                tituloPaso: "Paso 4: Flota Registrada en Modo Consulta (Solo Lectura)",
+                categoria: "Protección RBAC",
+                textoExplicativo: "En la sección Flota Registrada, el Operador cuenta con el distintivo 'Modo Consulta'. Puede exportar planillas a Excel, filtrar por camionetas, grúas o marítimo y ver fichas. Los botones de eliminación y alta de unidades están ocultos para salvaguardar la integridad de la base de datos.",
+                htmlEscenario: `
+                    <div style="width:100%; max-width:680px; background:#1e293b; border-radius:12px; padding:18px; border:1px solid #334155; text-align:left;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                            <div>
+                                <strong style="color:#f8fafc; font-size:14px;">🚙 Catálogo de Flota Registrada</strong>
+                                <span class="badge badge-gris" style="margin-left:8px;">🔒 Modo Consulta (Solo Lectura)</span>
+                            </div>
+                            <button class="btn-secundario" style="font-size:11px; padding:4px 10px;">📊 Exportar Excel</button>
+                        </div>
+                        <div style="background:#0f172a; padding:12px; border-radius:8px; border:1px solid #334155; font-size:12.5px;">
+                            <p style="margin:0 0 8px 0; color:#38bdf8; font-weight:700;">Seguridad y Privilegios del Operador:</p>
+                            <div style="color:#cbd5e1; line-height:1.6;">
+                                ✔️ Consulta completa de patentes, marcas, modelos y conductores.<br>
+                                ✔️ Acceso directo a Fichas Técnicas para ver filtros alternativos.<br>
+                                🔒 <strong>Bloqueo Activo:</strong> Los botones de eliminación (🗑️) y el botón <em>➕ Registrar Unidad</em> no están disponibles para este rol.
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                modulo: "COMBUSTIBLE & ESTANQUE 400 LITROS",
+                icono: "⛽",
+                tituloPaso: "Paso 5: Registro de Cargas de Diésel y Nivel de Estanque",
+                categoria: "Combustible",
+                textoExplicativo: "El Operador registra cada carga de diésel ingresando la patente o código, litros despachados y kilometraje u horómetro. El estanque de 400 litros actualiza su indicador gráfico en el menú lateral y emite alerta en caso de stock crítico (menor a 60L).",
+                htmlEscenario: `
+                    <div style="width:100%; max-width:680px; background:#1e293b; border-radius:12px; padding:18px; border:1px solid #334155; text-align:left;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                            <strong style="color:#38bdf8; font-size:14px;">⛽ Módulo de Combustible & Estanque 400L</strong>
+                            <span class="badge badge-verde">Nivel: 345L / 400L (86%)</span>
+                        </div>
+                        <div style="background:#0f172a; padding:12px; border-radius:8px; margin-bottom:10px;">
+                            <div style="height:12px; background:#334155; border-radius:6px; overflow:hidden; margin-bottom:8px;">
+                                <div style="width:86%; height:100%; background:#10b981;"></div>
+                            </div>
+                            <div style="font-size:12px; color:#cbd5e1; display:flex; justify-content:space-between;">
+                                <span>Capacidad: 400 Litros</span>
+                                <span>Disponible: 345 Litros</span>
+                                <span>Última Carga: GPC-01 (55L)</span>
+                            </div>
+                        </div>
+                        <p style="margin:0; font-size:12px; color:#94a3b8;">
+                            El operador puede cargar combustible y registrar la recepción de camión aljibe para rellenar el estanque.
+                        </p>
+                    </div>
+                `
+            },
+            {
+                modulo: "FICHAS TÉCNICAS & CONSULTA DE FILTROS",
+                icono: "📑",
+                tituloPaso: "Paso 6: Fichas Técnicas y Equivalencias Multimarca",
+                categoria: "Equivalencias OEM",
+                textoExplicativo: "Para facilitar la adquisición de repuestos, el Operador consulta las fichas técnicas que contienen las referencias originales y sus equivalencias en marcas comerciales: Donaldson, Baldwin, Fleetguard y Mann. El operador no puede modificar los códigos maestros.",
+                htmlEscenario: `
+                    <div style="width:100%; max-width:680px; background:#1e293b; border-radius:12px; padding:18px; border:1px solid #334155; text-align:left;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                            <strong style="color:#38bdf8; font-size:14px;">📑 Ficha Técnica: GPC-01 (Kálmar DRG450)</strong>
+                            <span class="badge badge-azul">Matriz Multimarca</span>
+                        </div>
+                        <div style="background:#0f172a; border-radius:8px; padding:10px; font-size:12px;">
+                            <div style="color:#e2e8f0; font-weight:700; margin-bottom:6px;">Matriz de Equivalencias de Filtros:</div>
+                            <div style="color:#cbd5e1; line-height:1.6;">
+                                • <strong>Aceite Motor:</strong> OEM 923829.0016 ➔ Baldwin BD7309 ➔ Fleetguard LF9009<br>
+                                • <strong>Combustible Primario:</strong> OEM 923829.0018 ➔ Donaldson P550888 ➔ Baldwin BF1259<br>
+                                • <strong>Aire Primario:</strong> Donaldson P777868 ➔ Baldwin PA2897
+                            </div>
+                        </div>
+                        <p style="margin:10px 0 0 0; font-size:12px; color:#10b981; font-weight:700;">
+                            ✓ Operador habilitado para seleccionar equivalencias al solicitar insumos a bodega.
+                        </p>
+                    </div>
+                `
+            }
+        ]
+    },
+    admin: {
+        rol: "Administrador del Sistema",
+        titulo: "VIDEO TUTORIAL 2: ROL ADMINISTRADOR (CONTROL TOTAL & GESTIÓN)",
+        badgeTexto: "ROL ADMINISTRADOR",
+        badgeClase: "badge-azul",
+        usuarioSimulado: "Operando como: Administrador Central (Control Total)",
+        pasos: [
+            {
+                modulo: "MENÚ LATERAL COMPLETO & PRIVILEGIOS RBAC",
+                icono: "🛡️",
+                tituloPaso: "Paso 1: Módulos Exclusivos y Privilegios de Alta",
+                categoria: "Privilegios Avanzados",
+                textoExplicativo: "El Administrador dispone de los módulos 'Registrar Vehículo' y 'Registrar Maquinaria' en el menú lateral (ocultos para el operador). Además, en Flota Registrada cuenta con el distintivo 'Modo Administrador' y el botón habilitado '➕ Registrar Unidad'.",
+                htmlEscenario: `
+                    <div style="width:100%; max-width:680px; background:#1e293b; border-radius:12px; padding:20px; border:1px solid #334155; text-align:left;">
+                        <strong style="color:#38bdf8; font-size:15px; display:block; margin-bottom:12px;">🛡️ Menú Lateral con Permisos de Administrador</strong>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+                            <div style="background:#0f172a; padding:12px; border-radius:8px; border:1px solid #2563eb;">
+                                <div style="color:#60a5fa; font-weight:700; font-size:13px; margin-bottom:4px;">🚗 Registrar Vehículo</div>
+                                <div style="font-size:11.5px; color:#94a3b8;">Alta y parametrización de camionetas, camiones y furgones.</div>
+                            </div>
+                            <div style="background:#0f172a; padding:12px; border-radius:8px; border:1px solid #2563eb;">
+                                <div style="color:#60a5fa; font-weight:700; font-size:13px; margin-bottom:4px;">🏗️ Registrar Maquinaria</div>
+                                <div style="font-size:11.5px; color:#94a3b8;">Ingreso de grúas, horquillas, equipos marítimos y auxiliares.</div>
+                            </div>
+                        </div>
+                        <div style="background:#0b1120; padding:10px 14px; border-radius:8px; border:1px solid #334155; font-size:12.5px; color:#cbd5e1;">
+                            🛡️ <strong>Garantía de Seguridad:</strong> Si un usuario sin rol administrador intenta forzar estas URLs, el sistema bloquea la acción y lo redirige automáticamente.
+                        </div>
+                    </div>
+                `
+            },
+            {
+                modulo: "ALTA Y SINCRONIZACIÓN MULTIMÓDULO DE EQUIPOS",
+                icono: "➕",
+                tituloPaso: "Paso 2: Alta de Nuevas Unidades y Sincronización Automática",
+                categoria: "Catálogo de Flota",
+                textoExplicativo: "Al dar de alta un equipo en los formularios de administración, el sistema lo sincroniza de manera instantánea con cuatro módulos clave: Alertas del Dashboard, Programa Maestro Corssen, Ficha Técnica Multimarca y Módulo de Emisión de OT.",
+                htmlEscenario: `
+                    <div style="width:100%; max-width:680px; background:#1e293b; border-radius:12px; padding:18px; border:1px solid #334155; text-align:left;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <strong style="color:#f8fafc; font-size:14px;">✨ Proceso de Registro y Sincronización Instantánea</strong>
+                            <span class="badge badge-verde">4 Módulos Conectados</span>
+                        </div>
+                        <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:10px; font-size:12px;">
+                            <div style="background:#0f172a; padding:10px; border-radius:6px;">
+                                <strong style="color:#38bdf8;">1. Dashboard Predictivo</strong>
+                                <p style="margin:4px 0 0 0; color:#94a3b8;">Comienza a calcular porcentajes de horas y alertas.</p>
+                            </div>
+                            <div style="background:#0f172a; padding:10px; border-radius:6px;">
+                                <strong style="color:#38bdf8;">2. Programa Maestro</strong>
+                                <p style="margin:4px 0 0 0; color:#94a3b8;">Se agrega a la matriz general de mantenimiento.</p>
+                            </div>
+                            <div style="background:#0f172a; padding:10px; border-radius:6px;">
+                                <strong style="color:#38bdf8;">3. Ficha Técnica Oficial</strong>
+                                <p style="margin:4px 0 0 0; color:#94a3b8;">Crea plantilla editable de filtros y lubricantes.</p>
+                            </div>
+                            <div style="background:#0f172a; padding:10px; border-radius:6px;">
+                                <strong style="color:#38bdf8;">4. Emisión de OT</strong>
+                                <p style="margin:4px 0 0 0; color:#94a3b8;">Disponible de inmediato en el selector de máquinas.</p>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                modulo: "GESTIÓN DE BAJAS & BOTONES DE ELIMINACIÓN",
+                icono: "🗑️",
+                tituloPaso: "Paso 3: Bajas de Equipos con Verificación de Seguridad",
+                categoria: "Control de Flota",
+                textoExplicativo: "Solo los Administradores tienen acceso a los botones de eliminación ('🗑️') en las tablas de vehículos y maquinarias. Al pulsar sobre eliminar, el sistema solicita confirmación y retira la unidad de todos los módulos vinculados para evitar datos huérfanos.",
+                htmlEscenario: `
+                    <div style="width:100%; max-width:680px; background:#1e293b; border-radius:12px; padding:18px; border:1px solid #334155; text-align:left;">
+                        <strong style="color:#38bdf8; font-size:14px; display:block; margin-bottom:12px;">🗑️ Botones de Eliminación Exclusivos de Administrador</strong>
+                        <div style="background:#0f172a; padding:12px; border-radius:8px; border:1px solid #ef4444; font-size:12.5px; margin-bottom:12px;">
+                            <div style="color:#f87171; font-weight:700; margin-bottom:4px;">⚠️ Diálogo de Confirmación Segura:</div>
+                            <div style="color:#cbd5e1;">
+                                <em>"¿Está seguro de eliminar el vehículo CAM-07 (KYHL-32) de la flota?"</em><br>
+                                Al confirmar, se desvincula del Programa Maestro y de los selectores de insumos de forma limpia.
+                            </div>
+                        </div>
+                        <p style="margin:0; font-size:12px; color:#94a3b8;">
+                            Los usuarios con rol operador no tienen acceso a estos controles en el navegador ni por script.
+                        </p>
+                    </div>
+                `
+            },
+            {
+                modulo: "EDICIÓN MAESTRA DE FICHAS TÉCNICAS & FILTROS",
+                icono: "📑",
+                tituloPaso: "Paso 4: Edición de Pautas Técnicas y Equivalencias Multimarca",
+                categoria: "Especificaciones",
+                textoExplicativo: "El Administrador puede crear fichas técnicas desde cero ('➕ Nueva Ficha') o editar las existentes ('✏️ Editar Ficha'). En la ventana modal configura capacidades de cárter, viscosidad de aceites y agrega filas con códigos OEM, Baldwin, Donaldson y Fleetguard.",
+                htmlEscenario: `
+                    <div style="width:100%; max-width:680px; background:#1e293b; border-radius:12px; padding:18px; border:1px solid #334155; text-align:left;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <strong style="color:#38bdf8; font-size:14px;">✏️ Editor de Ficha Técnica Multimarca</strong>
+                            <span class="badge badge-azul">Herramienta Admin</span>
+                        </div>
+                        <div style="background:#0f172a; padding:12px; border-radius:8px; font-size:12px; line-height:1.6; color:#cbd5e1;">
+                            • <strong>Capacidad de Fluidos:</strong> Motor (28 Lts), Hidráulico (180 Lts), Transmisión (35 Lts).<br>
+                            • <strong>Equivalencias:</strong> Agregar o corregir referencias de proveedores para compras ágiles.<br>
+                            • <strong>Pautas por Horas:</strong> Configuración de servicios cada 250h, 500h, 1.000h y 2.000h.
+                        </div>
+                    </div>
+                `
+            },
+            {
+                modulo: "CENTRO DE RESPALDOS & SNAPSHOTS",
+                icono: "💾",
+                tituloPaso: "Paso 5: Puntos de Restauración y Protección de Datos",
+                categoria: "Seguridad & Resiliencia",
+                textoExplicativo: "El Administrador tiene a su cargo el Centro de Respaldos. Puede crear puntos de restauración manuales antes de importaciones masivas, descargar copias completas en JSON y restaurar cualquier versión previa en segundos con integridad de datos al 100%.",
+                htmlEscenario: `
+                    <div style="width:100%; max-width:680px; background:#1e293b; border-radius:12px; padding:18px; border:1px solid #334155; text-align:left;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                            <strong style="color:#38bdf8; font-size:14px;">💾 Centro de Respaldos y Snapshots Automáticos</strong>
+                            <span class="badge badge-verde">Salud DB: 100% Óptima</span>
+                        </div>
+                        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin-bottom:12px;">
+                            <div style="background:#0f172a; padding:10px; border-radius:6px; text-align:center;">
+                                <div style="font-size:11px; color:#94a3b8;">Snapshots Guardados</div>
+                                <div style="font-size:18px; font-weight:800; color:#38bdf8;">Historial OK</div>
+                            </div>
+                            <div style="background:#0f172a; padding:10px; border-radius:6px; text-align:center;">
+                                <div style="font-size:11px; color:#94a3b8;">Restauración</div>
+                                <div style="font-size:18px; font-weight:800; color:#10b981;">1 Clic</div>
+                            </div>
+                            <div style="background:#0f172a; padding:10px; border-radius:6px; text-align:center;">
+                                <div style="font-size:11px; color:#94a3b8;">Descarga</div>
+                                <div style="font-size:18px; font-weight:800; color:#f59e0b;">JSON / Backup</div>
+                            </div>
+                        </div>
+                        <p style="margin:0; font-size:12px; color:#cbd5e1;">
+                            Permite congelar el estado de la flota y recuperarlo inmediatamente ante cualquier imprevisto.
+                        </p>
+                    </div>
+                `
+            },
+            {
+                modulo: "GESTIÓN DE USUARIOS Y ROLES",
+                icono: "👥",
+                tituloPaso: "Paso 6: Administración de Cuentas y Asignación de Roles",
+                categoria: "Seguridad de Acceso",
+                textoExplicativo: "A través del botón 'Administrar Usuarios', el Administrador crea nuevas cuentas para mecánicos, operadores o supervisores, asigna contraseñas seguras y define el rol de acceso (Operador o Administrador) para asegurar el correcto cumplimiento del RBAC.",
+                htmlEscenario: `
+                    <div style="width:100%; max-width:680px; background:#1e293b; border-radius:12px; padding:18px; border:1px solid #334155; text-align:left;">
+                        <strong style="color:#38bdf8; font-size:14px; display:block; margin-bottom:10px;">👥 Control de Acceso y Gestión de Cuentas</strong>
+                        <div style="background:#0f172a; border-radius:8px; overflow:hidden; font-size:12px; margin-bottom:10px;">
+                            <div style="display:grid; grid-template-columns:120px 140px 100px 1fr; background:#334155; padding:8px 12px; font-weight:700; color:#f8fafc;">
+                                <span>USUARIO</span><span>NOMBRE</span><span>ROL</span><span>ESTADO</span>
+                            </div>
+                            <div style="display:grid; grid-template-columns:120px 140px 100px 1fr; padding:8px 12px; border-bottom:1px solid #1e293b; align-items:center;">
+                                <strong style="color:#38bdf8;">admin</strong><span>Admin Corssen</span><span class="badge badge-azul">Administrador</span><span style="color:#10b981;">Activo</span>
+                            </div>
+                            <div style="display:grid; grid-template-columns:120px 140px 100px 1fr; padding:8px 12px; align-items:center;">
+                                <strong style="color:#38bdf8;">operador</strong><span>Alexis Santos</span><span class="badge badge-verde">Operador</span><span style="color:#10b981;">Activo</span>
+                            </div>
+                        </div>
+                        <div style="font-size:12px; color:#94a3b8;">
+                            El Administrador puede crear, desactivar y resetear contraseñas de cualquier cuenta del sistema.
+                        </div>
+                    </div>
+                `
+            }
+        ]
+    }
+};
+
+let tutorialActivoKey = "operador";
+let tutorialPasoIndex = 0;
+let tutorialReproduciendo = true;
+let tutorialInterval = null;
+let tutorialVozActivada = true;
+let tutorialAudioTimeout = null;
+
+function iniciarModuloVideoTutoriales() {
+    seleccionarVideoTutorial(tutorialActivoKey, false);
+}
+
+function toggleVozNarrador() {
+    tutorialVozActivada = !tutorialVozActivada;
+    const btn = document.getElementById("btnToggleVozNarracion");
+    const badge = document.getElementById("badgeEstadoVozVideo");
+
+    if (tutorialVozActivada) {
+        if (btn) {
+            btn.innerHTML = "🔊 Voz: Activa";
+            btn.style.background = "#059669";
+            btn.style.borderColor = "#059669";
+        }
+        if (badge) {
+            badge.textContent = "🔊 Narración por Voz Activa";
+            badge.className = "badge badge-verde";
+        }
+        narrarPasoActual();
+    } else {
+        if (btn) {
+            btn.innerHTML = "🔇 Voz: Silenciada";
+            btn.style.background = "#64748b";
+            btn.style.borderColor = "#64748b";
+        }
+        if (badge) {
+            badge.textContent = "🔇 Narración Silenciada";
+            badge.className = "badge badge-gris";
+        }
+        detenerNarracionVoz();
+    }
+}
+
+function detenerNarracionVoz() {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        try {
+            window.speechSynthesis.cancel();
+        } catch (e) {
+            // Ignorar errores de cancelación
+        }
+    }
+    if (tutorialAudioTimeout) {
+        clearTimeout(tutorialAudioTimeout);
+        tutorialAudioTimeout = null;
+    }
+}
+
+function narrarPasoActual() {
+    detenerNarracionVoz();
+    if (!tutorialVozActivada) return;
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+
+    const tutorial = TUTORIAL_VIDEOS[tutorialActivoKey];
+    if (!tutorial) return;
+    const paso = tutorial.pasos[tutorialPasoIndex];
+    if (!paso) return;
+
+    const textoLocucion = `${paso.tituloPaso}. ${paso.textoExplicativo}`;
+
+    try {
+        const utter = new SpeechSynthesisUtterance(textoLocucion);
+        utter.lang = "es-ES";
+        utter.rate = 1.0;
+        utter.pitch = 1.0;
+
+        // Seleccionar una voz preferente en español si está disponible en el navegador
+        const voces = window.speechSynthesis.getVoices();
+        const vozEspanol = voces.find(v => v.lang.startsWith("es"));
+        if (vozEspanol) {
+            utter.voice = vozEspanol;
+        }
+
+        // Al terminar de hablar, si el video sigue reproduciéndose automáticamente, avanzar al siguiente paso
+        utter.onend = function() {
+            if (tutorialReproduciendo) {
+                tutorialAudioTimeout = setTimeout(() => {
+                    pasoTutorialSiguiente();
+                }, 1800);
+            }
+        };
+
+        utter.onerror = function() {
+            // Si falla la síntesis, continuar el flujo
+        };
+
+        window.speechSynthesis.speak(utter);
+    } catch (err) {
+        console.warn("No fue posible emitir la narración de audio:", err);
+    }
+}
+
+function repetirNarracionActual() {
+    tutorialVozActivada = true;
+    const btn = document.getElementById("btnToggleVozNarracion");
+    const badge = document.getElementById("badgeEstadoVozVideo");
+    if (btn) {
+        btn.innerHTML = "🔊 Voz: Activa";
+        btn.style.background = "#059669";
+        btn.style.borderColor = "#059669";
+    }
+    if (badge) {
+        badge.textContent = "🔊 Narración por Voz Activa";
+        badge.className = "badge badge-verde";
+    }
+    narrarPasoActual();
+}
+
+function seleccionarVideoTutorial(key, reproducirAuto = true) {
+    if (!TUTORIAL_VIDEOS[key]) key = "operador";
+    tutorialActivoKey = key;
+    tutorialPasoIndex = 0;
+
+    const btnOp = document.getElementById("btnTabVideoOperador");
+    const btnAd = document.getElementById("btnTabVideoAdmin");
+
+    if (btnOp && btnAd) {
+        if (key === "operador") {
+            btnOp.className = "btn-primario";
+            btnAd.className = "btn-secundario";
+        } else {
+            btnOp.className = "btn-secundario";
+            btnAd.className = "btn-primario";
+        }
+    }
+
+    renderizarPasoTutorialActual();
+    renderizarCapitulosTutorial();
+
+    if (reproducirAuto) {
+        iniciarReproduccionTutorial();
+    }
+}
+
+function renderizarPasoTutorialActual() {
+    const tutorial = TUTORIAL_VIDEOS[tutorialActivoKey];
+    if (!tutorial) return;
+
+    const paso = tutorial.pasos[tutorialPasoIndex];
+    if (!paso) return;
+
+    // Encabezado
+    const tituloHeader = document.getElementById("videoTituloHeader");
+    const badgeRol = document.getElementById("videoBadgeRol");
+    const tiempoTexto = document.getElementById("videoTiempoTexto");
+    const barraProgreso = document.getElementById("videoBarraProgreso");
+
+    if (tituloHeader) tituloHeader.textContent = tutorial.titulo;
+    if (badgeRol) {
+        badgeRol.textContent = tutorial.badgeTexto;
+        badgeRol.className = `badge ${tutorial.badgeClase}`;
+    }
+    if (tiempoTexto) {
+        tiempoTexto.textContent = `Paso ${tutorialPasoIndex + 1} de ${tutorial.pasos.length}`;
+    }
+    if (barraProgreso) {
+        const pct = ((tutorialPasoIndex + 1) / tutorial.pasos.length) * 100;
+        barraProgreso.style.width = `${pct}%`;
+    }
+
+    // Pantalla de la aplicación en video
+    const modActual = document.getElementById("videoPantallaModuloActual");
+    const usuSim = document.getElementById("videoPantallaUsuario");
+    const escenario = document.getElementById("videoEscenarioContenido");
+
+    if (modActual) modActual.textContent = paso.modulo;
+    if (usuSim) usuSim.textContent = tutorial.usuarioSimulado;
+    if (escenario) {
+        escenario.innerHTML = `
+            <div style="animation: fadeIn 0.3s ease; width:100%; display:flex; flex-direction:column; align-items:center;">
+                ${paso.htmlEscenario}
+            </div>
+        `;
+    }
+
+    // Subtítulos y textos explicativos inferiores
+    const iconoPaso = document.getElementById("videoIconoPaso");
+    const subTitulo = document.getElementById("videoSubtituloTitulo");
+    const subCat = document.getElementById("videoSubtituloCategoria");
+    const subTexto = document.getElementById("videoSubtituloTexto");
+
+    if (iconoPaso) iconoPaso.textContent = paso.icono || "💡";
+    if (subTitulo) subTitulo.textContent = paso.tituloPaso;
+    if (subCat) subCat.textContent = paso.categoria;
+    if (subTexto) subTexto.textContent = paso.textoExplicativo;
+
+    actualizarEstiloCapitulosActivos();
+
+    // Activar narración hablada del paso
+    narrarPasoActual();
+}
+
+function renderizarCapitulosTutorial() {
+    const contenedor = document.getElementById("videoContenedorCapitulos");
+    if (!contenedor) return;
+
+    const tutorial = TUTORIAL_VIDEOS[tutorialActivoKey];
+    if (!tutorial) return;
+
+    contenedor.innerHTML = tutorial.pasos.map((p, idx) => {
+        const esActivo = idx === tutorialPasoIndex;
+        return `
+            <button type="button" onclick="irAPasoTutorial(${idx})" class="btn-secundario" style="padding:6px 12px; font-size:11.5px; white-space:nowrap; border-radius:8px; font-weight:${esActivo ? '800' : '600'}; background:${esActivo ? '#0284c7' : '#ffffff'}; color:${esActivo ? '#ffffff' : '#0f172a'}; border-color:${esActivo ? '#0284c7' : '#cbd5e1'};">
+                ${p.icono} ${idx + 1}. ${p.categoria}
+            </button>
+        `;
+    }).join("");
+}
+
+function actualizarEstiloCapitulosActivos() {
+    const contenedor = document.getElementById("videoContenedorCapitulos");
+    if (!contenedor) return;
+
+    const botones = contenedor.querySelectorAll("button");
+    botones.forEach((btn, idx) => {
+        const esActivo = idx === tutorialPasoIndex;
+        btn.style.background = esActivo ? "#0284c7" : "#ffffff";
+        btn.style.color = esActivo ? "#ffffff" : "#0f172a";
+        btn.style.borderColor = esActivo ? "#0284c7" : "#cbd5e1";
+        btn.style.fontWeight = esActivo ? "800" : "600";
+    });
+}
+
+function irAPasoTutorial(idx) {
+    const tutorial = TUTORIAL_VIDEOS[tutorialActivoKey];
+    if (!tutorial) return;
+    if (idx >= 0 && idx < tutorial.pasos.length) {
+        tutorialPasoIndex = idx;
+        renderizarPasoTutorialActual();
+    }
+}
+
+function pasoTutorialSiguiente() {
+    const tutorial = TUTORIAL_VIDEOS[tutorialActivoKey];
+    if (!tutorial) return;
+    if (tutorialPasoIndex < tutorial.pasos.length - 1) {
+        tutorialPasoIndex++;
+        renderizarPasoTutorialActual();
+    } else {
+        tutorialPasoIndex = 0;
+        renderizarPasoTutorialActual();
+    }
+}
+
+function pasoTutorialAnterior() {
+    const tutorial = TUTORIAL_VIDEOS[tutorialActivoKey];
+    if (!tutorial) return;
+    if (tutorialPasoIndex > 0) {
+        tutorialPasoIndex--;
+        renderizarPasoTutorialActual();
+    } else {
+        tutorialPasoIndex = tutorial.pasos.length - 1;
+        renderizarPasoTutorialActual();
+    }
+}
+
+function togglePlayPauseTutorial() {
+    const btn = document.getElementById("btnVideoPlayPause");
+    if (tutorialReproduciendo) {
+        pausarReproduccionTutorial();
+        if (btn) btn.innerHTML = "▶️ Reanudar Video";
+    } else {
+        iniciarReproduccionTutorial();
+        if (btn) btn.innerHTML = "⏸️ Pausar Video";
+    }
+}
+
+function iniciarReproduccionTutorial() {
+    if (tutorialInterval) clearInterval(tutorialInterval);
+    tutorialReproduciendo = true;
+    const btn = document.getElementById("btnVideoPlayPause");
+    if (btn) btn.innerHTML = "⏸️ Pausar Video";
+
+    // Si la voz está activa, el avance automático lo comanda el fin del habla del locutor.
+    // Si la voz está silenciada o no soportada, avanza cada 8.5 segundos.
+    tutorialInterval = setInterval(() => {
+        if (!tutorialVozActivada || (typeof window !== "undefined" && !window.speechSynthesis.speaking)) {
+            pasoTutorialSiguiente();
+        }
+    }, 9000);
+}
+
+function pausarReproduccionTutorial() {
+    tutorialReproduciendo = false;
+    detenerNarracionVoz();
+    if (tutorialInterval) {
+        clearInterval(tutorialInterval);
+        tutorialInterval = null;
+    }
+}
+
+function reiniciarVideoTutorial() {
+    tutorialPasoIndex = 0;
+    renderizarPasoTutorialActual();
+    iniciarReproduccionTutorial();
 }
 
 // =========================================================
