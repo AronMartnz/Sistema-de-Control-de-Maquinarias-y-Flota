@@ -2115,13 +2115,14 @@ a {
     }
 }
 
-/* Banner de Deducción de Aceite de Tambor */
+/* Banner de Deducción de Aceite de Tambor (Dual: Motor e Hidráulico) */
 .box-deduccion-aceite {
-    background: #eff6ff;
+    background: #f0f9ff;
     border: 1.5px solid #93c5fd;
-    border-radius: 12px;
+    border-radius: 14px;
     padding: 16px 18px;
-    margin-bottom: 16px;
+    margin-bottom: 18px;
+    box-shadow: 0 4px 12px rgba(37,99,235,0.05);
 }
 
 .box-deduccion-aceite-fila {
@@ -2137,6 +2138,91 @@ a {
     align-items: center;
     gap: 12px;
     flex-wrap: wrap;
+}
+
+.bloque-tambor-deduccion {
+    background: #ffffff;
+    border: 1px solid #bfdbfe;
+    border-radius: 10px;
+    padding: 12px 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.bloque-tambor-deduccion:hover {
+    border-color: #60a5fa;
+    box-shadow: 0 2px 8px rgba(37,99,235,0.08);
+}
+
+.bloque-tambor-deduccion.hidraulico {
+    border-color: #a7f3d0;
+    background: #ffffff;
+}
+
+.bloque-tambor-deduccion.hidraulico:hover {
+    border-color: #34d399;
+    box-shadow: 0 2px 8px rgba(16,185,129,0.08);
+}
+
+.grid-dos-tambores {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+@media (min-width: 860px) {
+    .grid-dos-tambores {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.tarjeta-tambor {
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+}
+
+.tarjeta-tambor:hover {
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+}
+
+.tarjeta-tambor.tambor-motor {
+    border: 2px solid #bfdbfe;
+}
+
+.tarjeta-tambor.tambor-hidraulico {
+    border: 2px solid #a7f3d0;
+}
+
+.tambor-card-layout {
+    display: flex;
+    gap: 18px;
+    align-items: center;
+}
+
+@media (max-width: 540px) {
+    .tambor-card-layout {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+
+.columna-tambor-grafico {
+    flex: 0 0 145px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.columna-tambor-info {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
 }
 
 .box-deduccion-aceite-meta {
