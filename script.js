@@ -2465,6 +2465,17 @@ function actualizarPermisosFlotaRegistrada() {
     const badgeSoloLectura = document.getElementById("badgeFlotaSoloLectura");
     const badgeAdmin = document.getElementById("badgeFlotaAdmin");
 
+    // Elementos del menú lateral: Solo visibles para rol Administrador
+    const menuItemVeh = document.getElementById("menuItemRegistrarVehiculo");
+    const menuItemMaq = document.getElementById("menuItemRegistrarMaquinaria");
+
+    if (menuItemVeh) {
+        menuItemVeh.style.display = esAdmin ? "flex" : "none";
+    }
+    if (menuItemMaq) {
+        menuItemMaq.style.display = esAdmin ? "flex" : "none";
+    }
+
     if (btnRegUnidad) {
         btnRegUnidad.style.display = esAdmin ? "inline-flex" : "none";
     }
