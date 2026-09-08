@@ -408,9 +408,10 @@
                         <button class="btn-pestana btn-pestana-prog" data-cat="MARÍTIMO">Marítimo Mxx (5)</button>
                     </div>
 
-                    <div style="display:flex; gap:8px; align-items:center;">
+                    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                         <input type="text" id="inputBuscarPrograma" placeholder="🔍 Buscar por código, marca, equipo..." style="padding:8px 14px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; min-width:260px;">
                         <button class="btn-secundario" onclick="exportarPlanillaExcel()" title="Descargar Programa Maestro en archivo Excel nativo (.xlsx)">📊 Exportar a Excel (.xlsx)</button>
+                        <button class="btn-primario" id="btnNuevoEquipoPrograma" onclick="abrirModalNuevoEquipoPrograma()" style="display:none;" title="Registrar nuevo equipo o herramienta en la flota (Solo Administración)">➕ Nuevo Registro Flota</button>
                     </div>
                 </div>
 
@@ -453,7 +454,7 @@
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
                     <div>
                         <div style="font-size:12px; font-weight:800; color:#475569; text-transform:uppercase; letter-spacing:0.5px;">
-                            Seleccione un Equipo / Maquinaria:
+                            Seleccione un Equipo / Maquinaria / Herramienta:
                         </div>
                         <p style="font-size:12px; color:#64748b; margin:2px 0 0 0;">Catálogo de fichas técnicas con matriz de lubricantes y filtros equivalentes.</p>
                     </div>
@@ -461,6 +462,16 @@
                         <span>➕</span> Nueva Ficha Técnica
                     </button>
                 </div>
+
+                <!-- Pestañas de Filtro de Categoría para Fichas Técnicas -->
+                <div class="pestanas-filtro" style="margin-bottom:14px; gap:6px; display:flex; flex-wrap:wrap;">
+                    <button type="button" class="btn-pestana btn-pestana-ficha active" data-cat-ficha="TODOS" onclick="filtrarCategoriaFichas('TODOS')">Todos los Equipos</button>
+                    <button type="button" class="btn-pestana btn-pestana-ficha" data-cat-ficha="GRÚAS" onclick="filtrarCategoriaFichas('GRÚAS')">🏗️ Grúas & Portas</button>
+                    <button type="button" class="btn-pestana btn-pestana-ficha" data-cat-ficha="MÓVILES" onclick="filtrarCategoriaFichas('MÓVILES')">🚐 Móviles & Camionetas</button>
+                    <button type="button" class="btn-pestana btn-pestana-ficha" data-cat-ficha="AUXILIARES" onclick="filtrarCategoriaFichas('AUXILIARES')">⚙️ Auxiliares & Herramientas</button>
+                    <button type="button" class="btn-pestana btn-pestana-ficha" data-cat-ficha="MARÍTIMO" onclick="filtrarCategoriaFichas('MARÍTIMO')">⚓ Marítimo & Embarcaciones</button>
+                </div>
+
                 <div class="equipo-selector-grid" id="contenedorSelectorFichas">
                     <!-- Botones de equipos inyectados dinámicamente -->
                 </div>
@@ -1825,6 +1836,111 @@
                     </div>
                 </form>
             </div>
+
+            <!-- APARTADO DEDICADO: AGREGAR EQUIPOS AUXILIARES, HERRAMIENTAS Y MARÍTIMO -->
+            <div class="caja-blanca" style="margin-top:28px; border-top: 4px solid #0284c7; box-shadow: 0 10px 25px -5px rgba(2,132,199,0.1);">
+                <div class="caja-header" style="border-bottom: 1.5px solid #f1f5f9; padding-bottom: 14px; margin-bottom: 18px;">
+                    <div>
+                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                            <span style="font-size:22px;">⚙️⚓</span>
+                            <h3 style="font-size:18px; color:#0f172a; margin:0; font-weight:800;">Registrar Equipos Auxiliares, Herramientas y Marítimo</h3>
+                        </div>
+                        <p style="font-size:13px; color:#64748b; margin:0;">
+                            Alta rápida y parametrizada de generadores, torres de iluminación, compresores, herramientas de taller y embarcaciones con generación y sincronización automática de Ficha Técnica editable.
+                        </p>
+                    </div>
+                    <span class="badge badge-azul" style="font-size:12px; font-weight:700; padding:6px 12px;">
+                        🔄 Sincronización Automática con Fichas y Programa Maestro
+                    </span>
+                </div>
+
+                <form id="formAuxiliarHerramientaMaritimo" class="grid-form">
+                    <div class="campo-form">
+                        <label for="auxTipoRegistro">Tipo de Equipo / Categoría (*):</label>
+                        <select id="auxTipoRegistro" onchange="alCambiarTipoAuxiliarHerramienta()" required style="font-weight:700; color:#0284c7;">
+                            <option value="AUXILIARES" selected>⚙️ Equipo Auxiliar (Generador, Compresor, Torre de Luz)</option>
+                            <option value="HERRAMIENTA">🔧 Herramienta / Equipo Taller (Pistola Impacto, Gata, Soldadora)</option>
+                            <option value="MARÍTIMO">⚓ Embarcación / Marítimo (Bote, Lancha, Motor F/B)</option>
+                        </select>
+                    </div>
+
+                    <div class="campo-form">
+                        <label for="auxCodigo">Código Interno (*):</label>
+                        <input type="text" id="auxCodigo" placeholder="Ej: GEN-02, HER-05, LAN-01, X-01" required style="font-weight:700; text-transform:uppercase;">
+                    </div>
+
+                    <div class="campo-form" style="grid-column: span 2;">
+                        <label for="auxNombre">Nombre / Descripción del Equipo (*):</label>
+                        <input type="text" id="auxNombre" placeholder="Ej: Generador Diésel Insonorizado 60kVA / Lancha de Apoyo Marítimo" required>
+                    </div>
+
+                    <div class="campo-form">
+                        <label for="auxMarca">Marca (*):</label>
+                        <input type="text" id="auxMarca" placeholder="Ej: Cummins, Ingersoll Rand, Yamaha, Honda" required>
+                    </div>
+
+                    <div class="campo-form">
+                        <label for="auxModelo">Modelo / Especificación Técnica:</label>
+                        <input type="text" id="auxModelo" placeholder="Ej: C60D5, XP825, F150, GX390">
+                    </div>
+
+                    <div class="campo-form">
+                        <label for="auxCapacidad">Capacidad / Potencia / Medida:</label>
+                        <input type="text" id="auxCapacidad" placeholder="Ej: 60 kVA, 150 HP, 1 Pulg, 50 TON">
+                    </div>
+
+                    <div class="campo-form">
+                        <label for="auxAnio">Año:</label>
+                        <input type="number" id="auxAnio" value="2025">
+                    </div>
+
+                    <div class="campo-form">
+                        <label for="auxHorometro">Horómetro Inicial / Odómetro (Hrs o Km):</label>
+                        <input type="text" id="auxHorometro" placeholder="Ej: 120 hrs (o 0)" value="0 hrs">
+                    </div>
+
+                    <div class="campo-form">
+                        <label for="auxFrecuencia">Frecuencia de Mantención Preventiva:</label>
+                        <select id="auxFrecuencia">
+                            <option value="250 horas" selected>Cada 250 horas (Recomendado estándar)</option>
+                            <option value="100 horas">Cada 100 horas (Uso severo o marítimo)</option>
+                            <option value="500 horas">Cada 500 horas</option>
+                            <option value="Mensual">Mensual / Trimestral</option>
+                            <option value="Semestral">Semestral</option>
+                            <option value="Anual">Anual</option>
+                        </select>
+                    </div>
+
+                    <div class="campo-form">
+                        <label for="auxResponsable">Responsable / Operador Encargado:</label>
+                        <input type="text" id="auxResponsable" placeholder="Ej: Alexis Santos" value="Alexis Santos">
+                    </div>
+
+                    <div class="campo-form">
+                        <label for="auxEstado">Estado Operacional Inicial:</label>
+                        <select id="auxEstado">
+                            <option value="Operativo" selected>Operativo</option>
+                            <option value="En Mantención">En Mantención</option>
+                            <option value="Stand By">Stand By</option>
+                            <option value="Fuera de Servicio">Fuera de Servicio</option>
+                        </select>
+                    </div>
+
+                    <div class="campo-form" style="grid-column: 1/-1;">
+                        <label for="auxObservaciones">Observaciones / Ubicación / Insumos Iniciales:</label>
+                        <input type="text" id="auxObservaciones" placeholder="Ej: Ubicado en taller central, requiere filtro de aire y revisión de bornes...">
+                    </div>
+
+                    <div style="grid-column:1/-1; display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-top:10px;">
+                        <button type="submit" class="btn-primario" style="background:#0284c7; border-color:#0284c7; box-shadow:0 4px 12px rgba(2,132,199,0.3); font-weight:700; padding:10px 22px;">
+                            💾 Guardar Equipo y Generar Ficha Técnica
+                        </button>
+                        <button type="button" class="btn-secundario" onclick="document.getElementById('formAuxiliarHerramientaMaritimo').reset(); alCambiarTipoAuxiliarHerramienta();">
+                            🔄 Limpiar Formulario
+                        </button>
+                    </div>
+                </form>
+            </div>
         </section>
 
         <!-- =====================================================
@@ -2897,6 +3013,115 @@
                 <div style="background:#f8fafc; padding:14px 22px; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
                     <button type="button" class="btn-secundario" onclick="cerrarModalPerfilUsuario()">Cancelar</button>
                     <button type="button" class="btn-primario" id="btnGuardarAvatarPerfil" onclick="guardarAvatarPerfilUsuario()">💾 Guardar Nueva Foto</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- =====================================================
+             MODAL: EDITAR PARÁMETROS DE MANTENCIÓN DEL EQUIPO
+             (Exclusivo para Rol de Administración)
+        ===================================================== -->
+        <div id="modalEditarEquipoPrograma" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.65); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(4px);">
+            <div class="modal-contenido" style="background:#ffffff; max-width:740px; width:94%; border-radius:16px; box-shadow:0 24px 50px rgba(0,0,0,0.3); overflow:hidden; border:1px solid #cbd5e1; max-height:92vh; display:flex; flex-direction:column;">
+                <div style="background:linear-gradient(135deg, #0f172a, #1e3a8a); color:#ffffff; padding:16px 24px; display:flex; justify-content:space-between; align-items:center;">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <span style="font-size:22px;">⚙️</span>
+                        <div>
+                            <h3 style="font-size:17px; margin:0; color:#ffffff; font-weight:800;">Editar Parámetros de Mantención: <span id="lblEditProgCod" style="color:#38bdf8;">-</span></h3>
+                            <span style="font-size:11.5px; color:#94a3b8;">Modificar estado operacional, prioridad, horómetro y responsable (Solo Administración)</span>
+                        </div>
+                    </div>
+                    <button type="button" onclick="cerrarModalEditarEquipoPrograma()" style="background:transparent; border:none; color:#ffffff; font-size:22px; cursor:pointer;" title="Cerrar ventana">✕</button>
+                </div>
+
+                <div style="padding:18px 24px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:16px; background:#f8fafc;">
+                    <!-- Banner RBAC Informativo -->
+                    <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:10px 14px; display:flex; align-items:center; gap:10px;">
+                        <span style="font-size:20px;">🛡️</span>
+                        <div style="font-size:12px; color:#1e40af; line-height:1.4;">
+                            <strong>Seguridad de Operaciones:</strong> Esta sección permite actualizar el estado, prioridad, frecuencia y notas de cualquier equipo de la flota. <u>Solo los usuarios con rol de Administración</u> pueden modificar estos registros.
+                        </div>
+                    </div>
+
+                    <input type="hidden" id="editProgCod">
+
+                    <!-- Campos de Formulario -->
+                    <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:16px; display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:14px;">
+                        <div>
+                            <label style="font-size:11.5px; font-weight:800; text-transform:uppercase; color:#475569; display:block; margin-bottom:4px;">Nombre del Equipo / Herramienta *</label>
+                            <input type="text" id="editProgEquipo" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px; font-weight:700; color:#0f172a; box-sizing:border-box;" required>
+                        </div>
+
+                        <div>
+                            <label style="font-size:11.5px; font-weight:800; text-transform:uppercase; color:#475569; display:block; margin-bottom:4px;">Marca / Fabricante</label>
+                            <input type="text" id="editProgMarca" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px; color:#0f172a; box-sizing:border-box;">
+                        </div>
+
+                        <div>
+                            <label style="font-size:11.5px; font-weight:800; text-transform:uppercase; color:#475569; display:block; margin-bottom:4px;">Categoría en Flota *</label>
+                            <select id="editProgCat" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px; font-weight:700; color:#0f172a; box-sizing:border-box;">
+                                <option value="GRÚAS">GRÚAS (Gxx)</option>
+                                <option value="MÓVILES">MÓVILES (Cxx)</option>
+                                <option value="AUXILIARES">AUXILIARES & HERRAMIENTAS (Xxx)</option>
+                                <option value="MARÍTIMO">MARÍTIMO (Mxx)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label style="font-size:11.5px; font-weight:800; text-transform:uppercase; color:#475569; display:block; margin-bottom:4px;">Estado Operacional *</label>
+                            <select id="editProgEstado" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px; font-weight:700; color:#0f172a; box-sizing:border-box;">
+                                <option value="Operativo">🟢 Operativo</option>
+                                <option value="En Mantención">🟡 En Mantención</option>
+                                <option value="En Reparación">🟠 En Reparación</option>
+                                <option value="No Operativo">🔴 No Operativo</option>
+                                <option value="Fuera de Servicio">⚫ Fuera de Servicio</option>
+                                <option value="Operativo con Observación">🟣 Operativo con Observación</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label style="font-size:11.5px; font-weight:800; text-transform:uppercase; color:#475569; display:block; margin-bottom:4px;">Prioridad de Mantención *</label>
+                            <select id="editProgPrioridad" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px; font-weight:700; color:#0f172a; box-sizing:border-box;">
+                                <option value="Baja">Baja</option>
+                                <option value="Media">Media</option>
+                                <option value="Alta">Alta</option>
+                                <option value="Crítica">Crítica</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label style="font-size:11.5px; font-weight:800; text-transform:uppercase; color:#475569; display:block; margin-bottom:4px;">Horómetro / Kilometraje Actual</label>
+                            <input type="text" id="editProgHorometro" placeholder="Ej: 1.500 hrs, 18.400 km, N/A" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px; color:#0f172a; box-sizing:border-box;">
+                        </div>
+
+                        <div>
+                            <label style="font-size:11.5px; font-weight:800; text-transform:uppercase; color:#475569; display:block; margin-bottom:4px;">Frecuencia de Mantención</label>
+                            <input type="text" id="editProgFrecuencia" placeholder="Ej: 250 horas, Mensual, 10.000 km, Semanal" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px; color:#0f172a; box-sizing:border-box;">
+                        </div>
+
+                        <div>
+                            <label style="font-size:11.5px; font-weight:800; text-transform:uppercase; color:#475569; display:block; margin-bottom:4px;">Próximo Servicio Programado</label>
+                            <input type="text" id="editProgProx" placeholder="Ej: 25-09-2026, 20.000 km, Mensual" style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px; font-weight:700; color:#0f172a; box-sizing:border-box;">
+                        </div>
+
+                        <div style="grid-column: 1 / -1;">
+                            <label style="font-size:11.5px; font-weight:800; text-transform:uppercase; color:#475569; display:block; margin-bottom:4px;">Responsable / Técnico Asignado</label>
+                            <input type="text" id="editProgResponsable" placeholder="Ej: Alexis Santos, Daniel Mejias, Taller Central..." style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px; color:#0f172a; box-sizing:border-box;">
+                        </div>
+
+                        <div style="grid-column: 1 / -1;">
+                            <label style="font-size:11.5px; font-weight:800; text-transform:uppercase; color:#475569; display:block; margin-bottom:4px;">Observaciones / Reparaciones Faltantes / Notas</label>
+                            <textarea id="editProgObservaciones" rows="3" placeholder="Detalle técnico de fallas, reparaciones pendientes, repuestos solicitados, etc." style="width:100%; padding:9px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13px; color:#0f172a; font-family:inherit; box-sizing:border-box;"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="padding:14px 24px; background:#ffffff; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; gap:12px;">
+                    <span style="font-size:12px; color:#64748b;">🔒 Acción reservada para rol Administrador</span>
+                    <div style="display:flex; gap:10px;">
+                        <button type="button" class="btn-secundario" onclick="cerrarModalEditarEquipoPrograma()">Cancelar</button>
+                        <button type="button" class="btn-primario" onclick="guardarEdicionEquipoPrograma()">💾 Guardar Cambios en Mantención</button>
+                    </div>
                 </div>
             </div>
         </div>
