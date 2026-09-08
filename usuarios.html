@@ -846,6 +846,49 @@
     </div>
 </div>
 
+<!-- =====================================================
+     MODAL: EDITAR DATOS DE USUARIO (NOMBRE Y ROL)
+===================================================== -->
+<div id="modalEditarUsuario" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.65); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(4px);">
+    <div class="modal-card" style="max-width:460px; width:92%; background:#ffffff; border-radius:16px; box-shadow:0 24px 50px rgba(0,0,0,0.3); overflow:hidden;">
+        <div class="modal-header" style="background:linear-gradient(135deg, #0f172a, #1e3a8a); color:#ffffff; padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span style="font-size:22px;">✏️</span>
+                <div>
+                    <h3 id="modalEditarUsuarioTitulo" style="margin:0; color:#ffffff; font-size:16px; font-weight:800;">Modificar Datos de Usuario</h3>
+                    <span id="modalEditarUsuarioSubtitulo" style="font-size:12px; color:#94a3b8;">Actualizar nombre visible y rol de permisos</span>
+                </div>
+            </div>
+            <button type="button" class="btn-cerrar-modal" onclick="cerrarModalEditarUsuario()" style="background:transparent; border:none; color:#ffffff; font-size:20px; cursor:pointer;">✕</button>
+        </div>
+
+        <div class="modal-body" style="padding:20px; display:flex; flex-direction:column; gap:14px;">
+            <div>
+                <label style="font-size:12px; font-weight:700; color:#334155; display:block; margin-bottom:5px;">Identificador de Usuario (No modificable):</label>
+                <input type="text" id="editUsuarioId" disabled style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:8px; background:#f1f5f9; font-weight:700; color:#475569; box-sizing:border-box;">
+            </div>
+
+            <div>
+                <label style="font-size:12px; font-weight:700; color:#334155; display:block; margin-bottom:5px;">Nombre Completo y Apellidos:</label>
+                <input type="text" id="editUsuarioNombre" placeholder="Ej: Daniel Corssen" style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13.5px; box-sizing:border-box;">
+            </div>
+
+            <div>
+                <label style="font-size:12px; font-weight:700; color:#334155; display:block; margin-bottom:5px;">Rol en la Plataforma:</label>
+                <select id="editUsuarioRol" style="width:100%; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:13.5px; box-sizing:border-box;">
+                    <option value="admin">Administrador (Control total, mantención y flota)</option>
+                    <option value="operador">Operador / Mecánico (Acceso operativo básico)</option>
+                </select>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; border-top:1px solid #e2e8f0; padding-top:14px;">
+                <button type="button" class="btn-volver" style="margin:0;" onclick="cerrarModalEditarUsuario()">Cancelar</button>
+                <button type="button" class="btn-crear" style="margin:0; padding:10px 18px;" onclick="guardarDatosUsuario()">💾 Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     // =====================================================
     // 1. CATÁLOGO DE AVATARES OPCIONALES DEL SISTEMA
@@ -1195,22 +1238,30 @@
                     ? `<button class="btn-eliminar" disabled title="No se puede eliminar el administrador principal">Protegido</button>`
                     : `<button class="btn-eliminar" onclick="eliminarUsuario('${escapeHtml(u.usuario)}')">🗑️ Eliminar</button>`;
 
+                let nombreLimpio = u.nombre || u.usuario;
+                if (nombreLimpio.includes("Corsser")) {
+                    nombreLimpio = nombreLimpio.replace(/Corsser/gi, "Corssen");
+                }
+
                 const avatarHtml = obtenerAvatarHtml(u.avatar, 40);
 
                 return `
                     <tr>
                         <td style="text-align:center;">
-                            <div style="cursor:pointer;" onclick="abrirModalAvatar('${escapeHtml(u.usuario)}', '${escapeHtml(u.nombre)}', '${escapeHtml(u.avatar || '')}')" title="Click para cambiar foto">
+                            <div style="cursor:pointer;" onclick="abrirModalAvatar('${escapeHtml(u.usuario)}', '${escapeHtml(nombreLimpio)}', '${escapeHtml(u.avatar || '')}')" title="Click para cambiar foto">
                                 ${avatarHtml}
                             </div>
                         </td>
                         <td><strong>${escapeHtml(u.usuario)}</strong></td>
-                        <td>${escapeHtml(u.nombre)}</td>
+                        <td><strong>${escapeHtml(nombreLimpio)}</strong></td>
                         <td><span class="rol ${u.rol === 'admin' ? 'rol-admin' : 'rol-operador'}">${u.rol}</span></td>
                         <td>
                             <div class="acciones">
-                                <button class="btn-avatar-accion" onclick="abrirModalAvatar('${escapeHtml(u.usuario)}', '${escapeHtml(u.nombre)}', '${escapeHtml(u.avatar || '')}')">
-                                    🖼️ Cambiar Avatar
+                                <button class="btn-avatar-accion" style="background:#f8fafc; color:#1e293b; border-color:#cbd5e1; font-weight:700;" onclick="abrirModalEditarUsuario('${escapeHtml(u.usuario)}', '${escapeHtml(nombreLimpio)}', '${escapeHtml(u.rol)}')">
+                                    ✏️ Editar
+                                </button>
+                                <button class="btn-avatar-accion" onclick="abrirModalAvatar('${escapeHtml(u.usuario)}', '${escapeHtml(nombreLimpio)}', '${escapeHtml(u.avatar || '')}')">
+                                    🖼️ Avatar
                                 </button>
                                 <button class="btn-password" onclick="cambiarPassword('${escapeHtml(u.usuario)}')">
                                     🔑 Clave
@@ -1224,6 +1275,64 @@
         } catch (e) {
             console.error(e);
             alert("No se pudo conectar con el servidor.");
+        }
+    }
+
+    function abrirModalEditarUsuario(usuario, nombre, rol) {
+        document.getElementById("editUsuarioId").value = usuario;
+        let n = nombre || usuario;
+        if (n.includes("Corsser")) n = n.replace(/Corsser/gi, "Corssen");
+        document.getElementById("editUsuarioNombre").value = n;
+        document.getElementById("editUsuarioRol").value = rol || "operador";
+        document.getElementById("modalEditarUsuario").style.display = "flex";
+    }
+
+    function cerrarModalEditarUsuario() {
+        document.getElementById("modalEditarUsuario").style.display = "none";
+    }
+
+    async function guardarDatosUsuario() {
+        const usuario = document.getElementById("editUsuarioId").value.trim();
+        let nombre = document.getElementById("editUsuarioNombre").value.trim();
+        const rol = document.getElementById("editUsuarioRol").value;
+
+        if (!nombre) {
+            alert("El nombre completo es obligatorio.");
+            return;
+        }
+
+        if (nombre.includes("Corsser")) {
+            nombre = nombre.replace(/Corsser/gi, "Corssen");
+        }
+
+        try {
+            const resp = await fetch(`/api/usuarios/${encodeURIComponent(usuario)}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-usuario": usuarioLogueado
+                },
+                body: JSON.stringify({ nombre, rol })
+            });
+
+            if (resp.ok) {
+                alert(`✓ Datos de usuario '${usuario}' actualizados correctamente.`);
+                // Si se editó el usuario activo, sincronizar la sesión
+                if (usuario.toLowerCase() === usuarioLogueado.toLowerCase()) {
+                    sessionStorage.setItem("nombreUsuario", nombre);
+                    sessionStorage.setItem("rolUsuario", rol);
+                    const elUserTop = document.getElementById("usuarioActual");
+                    if (elUserTop) elUserTop.textContent = `${nombre} (${rol})`;
+                }
+                cerrarModalEditarUsuario();
+                cargarUsuarios();
+            } else {
+                const err = await resp.json().catch(() => ({}));
+                alert(err.mensaje || "Error al actualizar datos del usuario.");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Error de conexión al guardar modificaciones de usuario.");
         }
     }
 
