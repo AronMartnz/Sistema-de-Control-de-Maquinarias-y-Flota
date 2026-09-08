@@ -2459,6 +2459,23 @@ function actualizarPermisosFichasTecnicas() {
     }
 }
 
+function actualizarPermisosFlotaRegistrada() {
+    const esAdmin = esUsuarioAdministrador();
+    const btnRegUnidad = document.getElementById("btnRegistrarUnidadFlota");
+    const badgeSoloLectura = document.getElementById("badgeFlotaSoloLectura");
+    const badgeAdmin = document.getElementById("badgeFlotaAdmin");
+
+    if (btnRegUnidad) {
+        btnRegUnidad.style.display = esAdmin ? "inline-flex" : "none";
+    }
+    if (badgeSoloLectura) {
+        badgeSoloLectura.style.display = esAdmin ? "none" : "inline-flex";
+    }
+    if (badgeAdmin) {
+        badgeAdmin.style.display = esAdmin ? "inline-flex" : "none";
+    }
+}
+
 // -------------------------------------------------------------
 // FUNCIONES PARA MODAL DE EDICIÓN DE PROGRAMA MAESTRO (SOLO ADMIN)
 // -------------------------------------------------------------
@@ -3635,7 +3652,7 @@ function renderizarFlotaRegistrada() {
                                 ${tieneFicha ? `<button class="btn-secundario" style="padding:3px 6px; font-size:11px;" onclick="verFichaTecnica('${cod}')">🔍 Ficha</button>` : (esUsuarioAdministrador() ? `<button class="btn-secundario" style="padding:3px 6px; font-size:11px; color:#0284c7; border-color:#bae6fd; font-weight:700;" onclick="abrirModalNuevaFichaParaEquipo('${cod}')" title="Crear Ficha Técnica para este vehículo">➕ Ficha</button>` : '')}
                                 <button class="btn-primario" style="padding:3px 6px; font-size:11px;" onclick="iniciarMantencionParaEquipo('${cod}')" title="Crear OT y rebajar insumos">🔧 Mantención</button>
                                 <button class="btn-secundario" style="padding:3px 6px; font-size:11px; color:#0284c7;" onclick="irACargarCombustible('${v.patente || cod}')">⛽ Diésel</button>
-                                <button class="btn-peligro" style="padding:3px 6px; font-size:11px;" onclick="eliminarVehiculo(${i})">🗑️</button>
+                                ${esUsuarioAdministrador() ? `<button class="btn-peligro" style="padding:3px 6px; font-size:11px;" onclick="eliminarVehiculo(${i})" title="Eliminar vehículo (Solo Admin)">🗑️</button>` : ''}
                             </div>
                         </td>
                     </tr>
@@ -3685,7 +3702,7 @@ function renderizarFlotaRegistrada() {
                                 ${tieneFicha ? `<button class="btn-secundario" style="padding:3px 6px; font-size:11px;" onclick="verFichaTecnica('${cod}')">🔍 Ficha</button>` : (esUsuarioAdministrador() ? `<button class="btn-secundario" style="padding:3px 6px; font-size:11px; color:#0284c7; border-color:#bae6fd; font-weight:700;" onclick="abrirModalNuevaFichaParaEquipo('${cod}')" title="Crear Ficha Técnica para esta maquinaria">➕ Ficha</button>` : '')}
                                 <button class="btn-primario" style="padding:3px 6px; font-size:11px;" onclick="iniciarMantencionParaEquipo('${cod}')" title="Crear OT y rebajar insumos">🔧 Mantención</button>
                                 <button class="btn-secundario" style="padding:3px 6px; font-size:11px; color:#0284c7;" onclick="irACargarCombustible('${cod}')">⛽ Diésel</button>
-                                <button class="btn-peligro" style="padding:3px 6px; font-size:11px;" onclick="eliminarMaquinaria(${i})">🗑️</button>
+                                ${esUsuarioAdministrador() ? `<button class="btn-peligro" style="padding:3px 6px; font-size:11px;" onclick="eliminarMaquinaria(${i})" title="Eliminar maquinaria (Solo Admin)">🗑️</button>` : ''}
                             </div>
                         </td>
                     </tr>
@@ -3814,6 +3831,9 @@ function renderizarFlotaRegistrada() {
         if (bloqueAux) bloqueAux.style.display = "none";
         if (bloqueMar) bloqueMar.style.display = "block";
     }
+
+    // Actualizar visibilidad de controles y botones según permisos de administrador
+    actualizarPermisosFlotaRegistrada();
 }
 
 function renderizarTablasOriginales() {
@@ -4454,6 +4474,10 @@ function guardarAjusteManualEstanque(e) {
 
 function registrarVehiculo(e) {
     e.preventDefault();
+    if (!esUsuarioAdministrador()) {
+        alert("⛔ Acceso Restringido: Únicamente los usuarios con rol de Administrador tienen autorización para registrar vehículos.");
+        return;
+    }
     const patente = document.getElementById("patente")?.value.trim().toUpperCase();
     const codigoInput = document.getElementById("codigoVehiculo")?.value.trim().toUpperCase();
     const marca = document.getElementById("marca")?.value.trim();
@@ -4574,6 +4598,10 @@ function registrarVehiculo(e) {
 }
 
 function eliminarVehiculo(idx) {
+    if (!esUsuarioAdministrador()) {
+        alert("⛔ Acceso Denegado: Únicamente los usuarios con rol de Administrador pueden eliminar vehículos de la flota.");
+        return;
+    }
     const v = vehiculos[idx];
     if (!v) return;
     const cod = v.codigo || v.id;
@@ -4597,6 +4625,10 @@ function eliminarVehiculo(idx) {
 
 function registrarMaquinaria(e) {
     e.preventDefault();
+    if (!esUsuarioAdministrador()) {
+        alert("⛔ Acceso Restringido: Únicamente los usuarios con rol de Administrador tienen autorización para registrar maquinarias.");
+        return;
+    }
     const numeroMaquinaria = document.getElementById("numeroMaquinaria")?.value.trim().toUpperCase();
     const tipoMaquinaria = document.getElementById("tipoMaquinaria")?.value.trim();
     const categoria = document.getElementById("categoriaMaquinaria")?.value || "HORQUILLAS";
@@ -4967,6 +4999,10 @@ function registrarAuxiliarHerramientaMaritimo(e) {
 }
 
 function eliminarMaquinaria(idx) {
+    if (!esUsuarioAdministrador()) {
+        alert("⛔ Acceso Denegado: Únicamente los usuarios con rol de Administrador pueden eliminar maquinarias del catálogo.");
+        return;
+    }
     const m = maquinarias[idx];
     if (!m) return;
     const cod = m.numeroMaquinaria || m.id;
@@ -6398,6 +6434,17 @@ function navegarSeccion(idSeccion) {
 
     if (idSeccion === "fichasEquipos") {
         actualizarPermisosFichasTecnicas();
+    }
+
+    if (idSeccion === "vehiculos") {
+        actualizarPermisosFlotaRegistrada();
+        renderizarFlotaRegistrada();
+    }
+
+    if ((idSeccion === "registrarVehiculo" || idSeccion === "registrarMaquinaria") && !esUsuarioAdministrador()) {
+        alert("⛔ Acceso Restringido: Únicamente los usuarios con rol de Administrador pueden dar de alta o editar unidades de la flota.");
+        navegarSeccion("vehiculos");
+        return;
     }
 
     const menuItemActivo = document.querySelector(`.menu-item[href="#${idSeccion}"]`);
@@ -7976,6 +8023,7 @@ document.addEventListener("DOMContentLoaded", () => {
     renderizarSelectorFichas();
     renderizarDetalleFichaTecnica();
     actualizarPermisosFichasTecnicas();
+    actualizarPermisosFlotaRegistrada();
     renderizarTablasOriginales();
 
     // Eventos de Navegación del Menú
