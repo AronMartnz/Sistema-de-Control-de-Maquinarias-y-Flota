@@ -12,7 +12,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <link rel="stylesheet" href="/style.css?v=20260831_v3">
+    <link rel="stylesheet" href="/style.css?v=20260907_v7">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -83,8 +83,8 @@
 
         <a href="#moduloAceite" class="menu-item">
             <span>🛢️</span>
-            <span>Control Aceite (200L)</span>
-            <span id="badgeNivelAceiteMenu" class="badge badge-azul" style="margin-left:auto; font-size:11px; padding:2px 6px;">200L</span>
+            <span>Aceites (2 Tambores 200L)</span>
+            <span id="badgeNivelAceiteMenu" class="badge badge-azul" style="margin-left:auto; font-size:10px; padding:2px 6px;">T1: 200L | T2: 200L</span>
         </a>
 
         <div class="menu-separador"></div>
@@ -237,6 +237,63 @@
                     <div>
                         <div class="numero" id="dashMantencionesProximas" style="color:#ea580c;">0</div>
                         <div class="etiqueta">Mantenciones Próximas</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- =====================================================
+                 ESTADO DE LOS 2 TAMBORES DE ACEITE EN TALLER (DASHBOARD)
+            ===================================================== -->
+            <div class="caja-blanca" id="cajaDashboardTamboresAceite" style="margin-bottom:24px; padding:18px 20px; border-left:4px solid #2563eb;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div style="width:40px; height:40px; border-radius:10px; background:#eff6ff; color:#1d4ed8; display:flex; align-items:center; justify-content:center; font-size:22px;">
+                            🛢️
+                        </div>
+                        <div>
+                            <h3 style="margin:0; font-size:16px; color:#0f172a; font-weight:800; display:flex; align-items:center; gap:8px;">
+                                Control de Lubricantes en Taller (2 Tambores de 200 Litros)
+                                <span class="badge badge-azul" style="font-size:11px; font-weight:700;">400 Lts Totales</span>
+                            </h3>
+                            <p style="margin:2px 0 0 0; font-size:12px; color:#64748b;">
+                                Monitoreo volumétrico en tiempo real de los dos tambores activos para mantenciones de flota.
+                            </p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-secundario" onclick="navegarSeccion('moduloAceite')" style="font-size:12px; padding:7px 14px; font-weight:700; color:#1d4ed8; border-color:#93c5fd; background:#eff6ff;">
+                        🛢️ Ver Módulo de Aceite (2 Tambores) →
+                    </button>
+                </div>
+
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:14px;">
+                    <!-- Mini Widget Tambor 1 (Motor) -->
+                    <div style="background:#f8fafc; border:1.5px solid #bfdbfe; border-radius:12px; padding:14px; display:flex; gap:14px; align-items:center; cursor:pointer;" onclick="navegarSeccion('moduloAceite')" title="Ver Tambor 1 (Aceite de Motor)">
+                        <div style="font-size:38px; line-height:1; filter:drop-shadow(0 2px 4px rgba(37,99,235,0.2));">🛢️</div>
+                        <div style="flex:1;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                <span class="badge badge-azul" style="font-weight:700; font-size:10px;">TAMBOR 1 • MOTOR (15W-40)</span>
+                                <span id="dashNivelTambor1Txt" style="font-size:13px; font-weight:800; color:#1d4ed8;">200.0 / 200 L (100%)</span>
+                            </div>
+                            <div style="font-size:12.5px; font-weight:700; color:#0f172a; margin-bottom:6px;" id="dashNombreTambor1Txt">Aceite Valvoline Premium Blue 15W40</div>
+                            <div style="width:100%; height:12px; background:#e2e8f0; border-radius:6px; overflow:hidden; border:1px solid #cbd5e1;">
+                                <div id="dashBarraTambor1" style="width:100%; height:100%; background:linear-gradient(90deg, #3b82f6, #1d4ed8); border-radius:6px; transition:width 0.4s;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mini Widget Tambor 2 (Hidráulico) -->
+                    <div style="background:#f8fafc; border:1.5px solid #a7f3d0; border-radius:12px; padding:14px; display:flex; gap:14px; align-items:center; cursor:pointer;" onclick="navegarSeccion('moduloAceite')" title="Ver Tambor 2 (Aceite Hidráulico)">
+                        <div style="font-size:38px; line-height:1; filter:drop-shadow(0 2px 4px rgba(16,185,129,0.2));">🛢️</div>
+                        <div style="flex:1;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                <span class="badge badge-verde" style="font-weight:700; font-size:10px; background:#dcfce7; color:#15803d;">TAMBOR 2 • HIDRÁULICO (10W-30)</span>
+                                <span id="dashNivelTambor2Txt" style="font-size:13px; font-weight:800; color:#059669;">200.0 / 200 L (100%)</span>
+                            </div>
+                            <div style="font-size:12.5px; font-weight:700; color:#0f172a; margin-bottom:6px;" id="dashNombreTambor2Txt">Aceite Hidráulico Valvoline Unitrac 10W30</div>
+                            <div style="width:100%; height:12px; background:#e2e8f0; border-radius:6px; overflow:hidden; border:1px solid #cbd5e1;">
+                                <div id="dashBarraTambor2" style="width:100%; height:100%; background:linear-gradient(90deg, #10b981, #059669); border-radius:6px; transition:width 0.4s;"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -897,30 +954,69 @@
                         </div>
                     </div>
 
-                    <!-- BANNER ESPECIAL DE DEDUCCIÓN DE ACEITE DEL TAMBOR DE 200 LITROS -->
+                    <!-- BANNER ESPECIAL DE DEDUCCIÓN DE ACEITE DE LOS 2 TAMBORES (200L C/U) -->
                     <div id="boxDeduccionAceiteTambor" class="box-deduccion-aceite">
-                        <div class="box-deduccion-aceite-fila">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
                             <div style="display:flex; align-items:center; gap:10px;">
                                 <div style="font-size:26px;">🛢️</div>
                                 <div>
-                                    <div style="font-size:13.5px; font-weight:800; color:#1e40af;">Deducción Automática de Aceite (Tambor 200 Lts Taller)</div>
-                                    <div id="lblInfoAceiteSugeridoFicha" style="font-size:12px; color:#3b82f6;">Requisito según Ficha Técnica de la Máquina: <strong>0 Litros</strong></div>
+                                    <div style="font-size:14px; font-weight:800; color:#1e40af;">Deducción Automática de Lubricantes (2 Tambores de 200 Lts en Taller)</div>
+                                    <div style="font-size:11.5px; color:#64748b;">Descuente aceite de motor (15W-40), aceite hidráulico (10W-30) o ambos según la pauta del equipo.</div>
                                 </div>
                             </div>
-                            <div class="box-deduccion-aceite-controles">
-                                <div style="display:flex; align-items:center; gap:6px;">
-                                    <label for="inputLitrosAceiteDescontar" style="font-size:12px; font-weight:700; color:#1e3a8a; margin:0;">Litros a Ocupar:</label>
-                                    <input type="number" id="inputLitrosAceiteDescontar" value="0" min="0" max="200" step="0.5" oninput="calcularTotalMantencionForm()" style="width:90px; padding:6px 10px; font-size:14px; font-weight:800; text-align:center; border:1.5px solid #3b82f6; border-radius:8px; background:#ffffff; color:#1e40af;">
-                                    <span style="font-size:13px; font-weight:700; color:#1e40af;">Lts</span>
+                            <div style="font-size:13px; font-weight:800; color:#1e40af; background:#e0f2fe; padding:4px 12px; border-radius:20px; border:1px solid #bae6fd;">
+                                Total Lubricantes OT: <span id="lblTotalLubricantesOT" style="color:#0284c7;">$0</span> (<span id="lblTotalLitrosLubricantesOT">0.0 Lts</span>)
+                            </div>
+                        </div>
+
+                        <!-- Bloques Paralelos para los 2 Tambores -->
+                        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:12px;">
+                            <!-- Bloque Tambor 1: Aceite de Motor 15W-40 -->
+                            <div class="bloque-tambor-deduccion">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                    <span class="badge badge-azul" style="font-weight:700; font-size:10.5px;">TAMBOR 1 • MOTOR (15W-40)</span>
+                                    <span id="lblSaldoTamborActualMant" style="font-size:11.5px; color:#64748b;">Saldo: <strong style="color:#1e40af;">200.0 Lts</strong></span>
                                 </div>
-                                <div style="font-size:13px; font-weight:800; color:#1e40af;">
-                                    Costo: <span id="lblCostoAceiteOT">$0</span>
+                                <div id="lblNombreTambor1EnMant" style="font-size:12.5px; font-weight:700; color:#0f172a; margin-bottom:4px;">Aceite Valvoline Premium Blue 15W40</div>
+                                <div id="lblInfoAceiteSugeridoFicha" style="font-size:11.5px; color:#2563eb; margin-bottom:8px;">Requisito Ficha: <strong>0 Litros</strong></div>
+                                
+                                <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                                    <div style="display:flex; align-items:center; gap:6px;">
+                                        <label for="inputLitrosAceiteDescontar" style="font-size:12px; font-weight:700; color:#1e3a8a; margin:0;">Litros:</label>
+                                        <input type="number" id="inputLitrosAceiteDescontar" value="0" min="0" max="200" step="0.5" oninput="calcularTotalMantencionForm()" style="width:82px; padding:5px 8px; font-size:13.5px; font-weight:800; text-align:center; border:1.5px solid #3b82f6; border-radius:8px; background:#ffffff; color:#1e40af;">
+                                        <span style="font-size:12px; font-weight:700; color:#1e40af;">Lts</span>
+                                    </div>
+                                    <div style="font-size:12.5px; font-weight:800; color:#1e40af;">
+                                        Subtotal: <span id="lblCostoAceiteOT">$0</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bloque Tambor 2: Aceite Hidráulico 10W-30 / ISO 68 -->
+                            <div class="bloque-tambor-deduccion hidraulico">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                    <span class="badge badge-verde" style="font-weight:700; font-size:10.5px; background:#dcfce7; color:#15803d; border-color:#86efac;">TAMBOR 2 • HIDRÁULICO (10W-30)</span>
+                                    <span id="lblSaldoTambor2ActualMant" style="font-size:11.5px; color:#64748b;">Saldo: <strong style="color:#15803d;">200.0 Lts</strong></span>
+                                </div>
+                                <div id="lblNombreTambor2EnMant" style="font-size:12.5px; font-weight:700; color:#0f172a; margin-bottom:4px;">Aceite Hidráulico Valvoline Unitrac 10W30</div>
+                                <div id="lblInfoAceiteHidraulicoSugeridoFicha" style="font-size:11.5px; color:#059669; margin-bottom:8px;">Capacidad Ficha: <strong>Opcional / Según requerimiento</strong></div>
+                                
+                                <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                                    <div style="display:flex; align-items:center; gap:6px;">
+                                        <label for="inputLitrosAceiteHidraulicoDescontar" style="font-size:12px; font-weight:700; color:#065f46; margin:0;">Litros:</label>
+                                        <input type="number" id="inputLitrosAceiteHidraulicoDescontar" value="0" min="0" max="200" step="0.5" oninput="calcularTotalMantencionForm()" style="width:82px; padding:5px 8px; font-size:13.5px; font-weight:800; text-align:center; border:1.5px solid #10b981; border-radius:8px; background:#ffffff; color:#065f46;">
+                                        <span style="font-size:12px; font-weight:700; color:#065f46;">Lts</span>
+                                    </div>
+                                    <div style="font-size:12.5px; font-weight:800; color:#065f46;">
+                                        Subtotal: <span id="lblCostoAceiteHidraulicoOT">$0</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="box-deduccion-aceite-meta">
-                            <span id="lblSaldoTamborActualMant">Saldo disponible en tambor activo: <strong>200.0 Lts</strong></span>
-                            <span style="color:#1d4ed8; font-weight:600;">✓ Se rebajará de forma directa del Módulo de Aceite</span>
+
+                        <div class="box-deduccion-aceite-meta" style="margin-top:10px;">
+                            <span style="color:#64748b;">Los litros indicados se descontarán de forma automática de los tambores respectivos.</span>
+                            <span style="color:#1d4ed8; font-weight:600;">✓ Se rebajarán de forma directa del Módulo de Aceite</span>
                         </div>
                     </div>
 
@@ -1175,78 +1271,281 @@
         </section>
 
         <!-- =====================================================
-             5. MÓDULO ESPECIALIZADO DE CONTROL DE ACEITE (200 LITROS)
+             5. MÓDULO ESPECIALIZADO DE CONTROL DE ACEITE (2 TAMBORES 200 LITROS)
         ===================================================== -->
         <section class="panel" id="moduloAceite">
             <div class="titulo-panel">
-                <h2>🛢️ Control y Gestión de Aceite a Granel (Tambores 200 Lts)</h2>
-                <p>Monitoreo en tiempo real del saldo de lubricantes, consumo fraccionado por mantención según ficha técnica y registro de nuevos tambores.</p>
+                <h2>🛢️ Control y Gestión de Aceite a Granel (2 Tambores 200 Lts)</h2>
+                <p>Monitoreo en tiempo real de los 2 tambores en taller (Aceite de Motor 15W-40 y Aceite Hidráulico 10W-30), consumo fraccionado por mantención según ficha técnica y registro de aperturas/reemplazos.</p>
             </div>
 
-            <!-- TARJETAS Y MEDIDOR VISUAL DEL TAMBOR -->
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:20px; margin-bottom:24px;">
-                <!-- Tarjeta Visual del Tambor Activo -->
-                <div class="caja-blanca" style="background:linear-gradient(145deg, #ffffff, #f8fafc); border:2px solid #bfdbfe; position:relative; overflow:hidden;">
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
-                        <div>
-                            <span class="badge badge-azul" style="font-weight:700; font-size:11px;">TAMBOR ACTIVO EN TALLER</span>
-                            <h3 id="lblNombreTamborActivo" style="margin:6px 0 0 0; font-size:18px; color:#0f172a;">Aceite Valvoline Premium Blue 15W40</h3>
-                            <p style="margin:2px 0 0 0; font-size:12px; color:#64748b;">Tambor estándar de 200 Litros (CI-4 / Diésel Pesado)</p>
+            <!-- TARJETAS Y MEDIDOR VISUAL DE LOS 2 TAMBORES -->
+            <div class="grid-dos-tambores">
+                <!-- Tarjeta Visual Tambor 1: Aceite de Motor 15W-40 -->
+                <div class="tarjeta-tambor tambor-motor" style="background:linear-gradient(145deg, #ffffff, #f8fafc);">
+                    <div class="tambor-card-layout">
+                        <!-- Gráfico 3D del Tambor 1 (Azul Metálico - Motor) -->
+                        <div class="columna-tambor-grafico">
+                            <svg viewBox="0 0 170 250" style="width:100%; max-width:145px; height:auto; filter:drop-shadow(0 6px 10px rgba(15,23,42,0.18));" aria-label="Tambor 1 de Aceite de Motor 15W-40">
+                                <defs>
+                                    <linearGradient id="gradCuerpoTambor1" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" stop-color="#091e42" />
+                                        <stop offset="14%" stop-color="#1e3a8a" />
+                                        <stop offset="28%" stop-color="#3b82f6" />
+                                        <stop offset="55%" stop-color="#1d4ed8" />
+                                        <stop offset="85%" stop-color="#1e3a8a" />
+                                        <stop offset="100%" stop-color="#091e42" />
+                                    </linearGradient>
+                                    <linearGradient id="gradTapaTambor1" x1="0%" y1="0%" x2="0%" y2="100%">
+                                        <stop offset="0%" stop-color="#3b82f6" />
+                                        <stop offset="50%" stop-color="#1d4ed8" />
+                                        <stop offset="100%" stop-color="#0f172a" />
+                                    </linearGradient>
+                                    <linearGradient id="gradAceiteMotor" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" stop-color="#b45309" />
+                                        <stop offset="40%" stop-color="#f59e0b" />
+                                        <stop offset="75%" stop-color="#fbbf24" />
+                                        <stop offset="100%" stop-color="#92400e" />
+                                    </linearGradient>
+                                </defs>
+                                <ellipse cx="85" cy="238" rx="63" ry="9" fill="rgba(15,23,42,0.2)" />
+                                <!-- Chime inferior -->
+                                <path d="M 22,216 C 22,232 148,232 148,216 L 148,225 C 148,241 22,241 22,225 Z" fill="#091e42" />
+                                <path d="M 22,216 C 22,230 148,230 148,216 L 148,221 C 148,235 22,235 22,221 Z" fill="#1e3a8a" />
+                                <!-- Cuerpo del tambor -->
+                                <path d="M 22,38 L 22,218 C 22,234 148,234 148,218 L 148,38 C 148,54 22,54 22,38 Z" fill="url(#gradCuerpoTambor1)" />
+                                <!-- Aro superior -->
+                                <path d="M 20,95 C 20,109 150,109 150,95 L 150,101 C 150,115 20,115 20,101 Z" fill="#091e42" opacity="0.65" />
+                                <path d="M 20,94 C 20,107 150,107 150,94" stroke="#60a5fa" stroke-width="2.5" fill="none" opacity="0.75" />
+                                <!-- Aro inferior -->
+                                <path d="M 20,158 C 20,172 150,172 150,158 L 150,164 C 150,178 20,178 20,164 Z" fill="#091e42" opacity="0.65" />
+                                <path d="M 20,157 C 20,170 150,170 150,157" stroke="#60a5fa" stroke-width="2.5" fill="none" opacity="0.75" />
+                                <!-- Tapa superior -->
+                                <ellipse cx="85" cy="38" rx="63" ry="16" fill="#091e42" />
+                                <ellipse cx="85" cy="40" rx="60" ry="14" fill="url(#gradTapaTambor1)" stroke="#60a5fa" stroke-width="1.2" />
+                                <ellipse cx="85" cy="41" rx="55" ry="12" fill="#172554" />
+                                <!-- Tapones -->
+                                <circle cx="58" cy="41" r="5.5" fill="#cbd5e1" stroke="#334155" stroke-width="1.2" />
+                                <circle cx="58" cy="41" r="2.5" fill="#64748b" />
+                                <circle cx="112" cy="38" r="4" fill="#94a3b8" stroke="#334155" stroke-width="1" />
+                                <!-- Rótulo serigrafiado -->
+                                <rect x="36" y="58" width="98" height="26" rx="4" fill="rgba(9,30,66,0.55)" stroke="#3b82f6" stroke-width="0.8" />
+                                <text x="85" y="70" fill="#ffffff" font-size="7.5" font-weight="900" text-anchor="middle" font-family="sans-serif" letter-spacing="0.8">VALVOLINE 15W-40</text>
+                                <text x="85" y="79" fill="#93c5fd" font-size="6.5" font-weight="700" text-anchor="middle" font-family="sans-serif" letter-spacing="0.5">MOTOR DIÉSEL • 200L</text>
+                                <!-- Tubo / Visor de nivel transparente -->
+                                <g transform="translate(68, 104)">
+                                    <rect x="0" y="0" width="34" height="92" rx="6" fill="#091e42" stroke="#cbd5e1" stroke-width="1.5" />
+                                    <rect x="2" y="2" width="30" height="88" rx="4" fill="#0f172a" />
+                                    <!-- Escala -->
+                                    <line x1="2" y1="5" x2="8" y2="5" stroke="#94a3b8" stroke-width="1.2" />
+                                    <text x="11" y="8" fill="#94a3b8" font-size="5.5" font-weight="700">200L</text>
+                                    <line x1="2" y1="26" x2="7" y2="26" stroke="#64748b" stroke-width="1" />
+                                    <text x="11" y="29" fill="#64748b" font-size="5.5" font-weight="600">150L</text>
+                                    <line x1="2" y1="46" x2="8" y2="46" stroke="#94a3b8" stroke-width="1" />
+                                    <text x="11" y="49" fill="#94a3b8" font-size="5.5" font-weight="600">100L</text>
+                                    <line x1="2" y1="67" x2="7" y2="67" stroke="#64748b" stroke-width="1" />
+                                    <text x="11" y="70" fill="#64748b" font-size="5.5" font-weight="600">50L</text>
+                                    <line x1="2" y1="85" x2="8" y2="85" stroke="#ef4444" stroke-width="1.2" />
+                                    <!-- Columna de aceite de motor dinámico -->
+                                    <rect id="svgColumnaAceite1" x="3" y="5" width="28" height="82" rx="3" fill="url(#gradAceiteMotor)" opacity="0.95" style="transition:all 0.5s ease-in-out;" />
+                                    <!-- Brillo reflejo cristal -->
+                                    <line x1="6" y1="3" x2="6" y2="88" stroke="#ffffff" stroke-width="1.5" opacity="0.4" stroke-linecap="round" />
+                                </g>
+                                <!-- Badge Digital en base -->
+                                <rect x="40" y="208" width="90" height="18" rx="9" fill="#091e42" stroke="#3b82f6" stroke-width="1.5" />
+                                <text id="svgTextoLitros1" x="85" y="220.5" fill="#60a5fa" font-size="9" font-weight="900" text-anchor="middle" font-family="sans-serif">200.0 L (100%)</text>
+                            </svg>
                         </div>
-                        <div style="font-size:36px;">🛢️</div>
-                    </div>
 
-                    <!-- Barra Gráfica de Nivel de Aceite -->
-                    <div style="margin:16px 0 10px 0;">
-                        <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:700; margin-bottom:6px;">
-                            <span style="color:#475569;">Nivel de Aceite Restante:</span>
-                            <span id="lblPorcentajeAceite" style="color:#2563eb; font-size:15px; font-weight:800;">100% (200.0 / 200 L)</span>
-                        </div>
-                        <div style="width:100%; height:22px; background:#e2e8f0; border-radius:12px; overflow:hidden; position:relative; border:1px solid #cbd5e1; box-shadow:inset 0 2px 4px rgba(0,0,0,0.06);">
-                            <div id="barraProgresoAceite" style="width:100%; height:100%; background:linear-gradient(90deg, #3b82f6, #1d4ed8); border-radius:12px; transition:width 0.5s ease-in-out;"></div>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; font-size:11px; color:#94a3b8; margin-top:4px;">
-                            <span>0 L (Vacío)</span>
-                            <span style="color:#d97706; font-weight:600;">⚠️ Alerta crítica &lt; 35 L</span>
-                            <span>200 L (Lleno)</span>
-                        </div>
-                    </div>
+                        <!-- Columna de Información y Acciones Tambor 1 -->
+                        <div class="columna-tambor-info">
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+                                <div>
+                                    <span class="badge badge-azul" style="font-weight:700; font-size:11px;">🛢️ TAMBOR 1 • ACEITE DE MOTOR</span>
+                                    <h3 id="lblNombreTambor1" style="margin:4px 0 0 0; font-size:16px; color:#0f172a; font-weight:800;">Aceite Valvoline Premium Blue 15W40 CI-4</h3>
+                                    <p id="lblDetalleTambor1" style="margin:2px 0 0 0; font-size:12px; color:#64748b;">Tambor estándar de 200 Litros (CI-4 / Diésel Pesado)</p>
+                                </div>
+                            </div>
 
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; padding-top:12px; border-top:1px dashed #e2e8f0; font-size:12.5px;">
-                        <span style="color:#64748b;">Fecha Apertura Tambor: <strong id="lblFechaAperturaTambor" style="color:#0f172a;">2026-03-01</strong></span>
-                        <span style="color:#64748b;">Proveedor: <strong id="lblProveedorTambor" style="color:#0f172a;">LUVAL S.A.</strong></span>
+                            <!-- Barra Gráfica de Nivel Tambor 1 -->
+                            <div style="margin:10px 0;">
+                                <div style="display:flex; justify-content:space-between; font-size:12.5px; font-weight:700; margin-bottom:4px;">
+                                    <span style="color:#475569;">Saldo Disponible:</span>
+                                    <span id="lblPorcentajeAceite1" style="color:#2563eb; font-size:14.5px; font-weight:800;">100% (200.0 / 200 L)</span>
+                                </div>
+                                <div style="width:100%; height:16px; background:#e2e8f0; border-radius:10px; overflow:hidden; position:relative; border:1px solid #cbd5e1;">
+                                    <div id="barraProgresoAceite1" style="width:100%; height:100%; background:linear-gradient(90deg, #3b82f6, #1d4ed8); border-radius:10px; transition:width 0.5s ease-in-out;"></div>
+                                </div>
+                                <div style="display:flex; justify-content:space-between; font-size:10.5px; color:#94a3b8; margin-top:3px;">
+                                    <span>0 L (Vacío)</span>
+                                    <span style="color:#d97706; font-weight:600;">⚠️ Alerta &lt; 35 L</span>
+                                    <span>200 L (Lleno)</span>
+                                </div>
+                            </div>
+
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px; padding-top:8px; border-top:1px dashed #e2e8f0; font-size:11.5px;">
+                                <div><span style="color:#64748b;">Apertura:</span> <strong id="lblFechaAperturaTambor1" style="color:#0f172a;">2026-03-01</strong></div>
+                                <div><span style="color:#64748b;">Consumido:</span> <strong id="lblConsumidoTambor1" style="color:#2563eb;">0.0 L</strong></div>
+                                <div><span style="color:#64748b;">Proveedor:</span> <strong id="lblProveedorTambor1" style="color:#0f172a;">LUVAL S.A.</strong></div>
+                                <div><span style="color:#64748b;">Costo/Litro:</span> <strong id="lblCostoLitroTambor1" style="color:#059669;">$2.750</strong></div>
+                            </div>
+
+                            <div style="margin-top:10px;">
+                                <button type="button" class="btn-secundario" onclick="abrirModalNuevoTambor('tambor1')" style="width:100%; justify-content:center; font-weight:700; font-size:12px; color:#1d4ed8; border-color:#93c5fd; background:#eff6ff;">
+                                    🔄 Apertura / Reemplazar Tambor 1 (Motor)
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Resumen de Métricas de Lubricación -->
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-                    <div class="tarjeta-dash" style="margin:0;">
-                        <div class="tarjeta-icono" style="background:#eff6ff; color:#2563eb; font-size:22px;">📉</div>
-                        <div>
-                            <div class="numero" id="kpiLitrosConsumidosTambor">0.0 L</div>
-                            <div class="etiqueta">Consumido de este Tambor</div>
+                <!-- Tarjeta Visual Tambor 2: Aceite Hidráulico 10W-30 / ISO 68 -->
+                <div class="tarjeta-tambor tambor-hidraulico" style="background:linear-gradient(145deg, #ffffff, #f0fdf4);">
+                    <div class="tambor-card-layout">
+                        <!-- Gráfico 3D del Tambor 2 (Verde Metálico - Hidráulico) -->
+                        <div class="columna-tambor-grafico">
+                            <svg viewBox="0 0 170 250" style="width:100%; max-width:145px; height:auto; filter:drop-shadow(0 6px 10px rgba(6,78,59,0.18));" aria-label="Tambor 2 de Aceite Hidráulico 10W-30">
+                                <defs>
+                                    <linearGradient id="gradCuerpoTambor2" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" stop-color="#022c22" />
+                                        <stop offset="14%" stop-color="#064e3b" />
+                                        <stop offset="28%" stop-color="#10b981" />
+                                        <stop offset="55%" stop-color="#059669" />
+                                        <stop offset="85%" stop-color="#047857" />
+                                        <stop offset="100%" stop-color="#022c22" />
+                                    </linearGradient>
+                                    <linearGradient id="gradTapaTambor2" x1="0%" y1="0%" x2="0%" y2="100%">
+                                        <stop offset="0%" stop-color="#10b981" />
+                                        <stop offset="50%" stop-color="#059669" />
+                                        <stop offset="100%" stop-color="#022c22" />
+                                    </linearGradient>
+                                    <linearGradient id="gradAceiteHidraulico" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" stop-color="#047857" />
+                                        <stop offset="40%" stop-color="#10b981" />
+                                        <stop offset="75%" stop-color="#34d399" />
+                                        <stop offset="100%" stop-color="#065f46" />
+                                    </linearGradient>
+                                </defs>
+                                <ellipse cx="85" cy="238" rx="63" ry="9" fill="rgba(2,44,34,0.2)" />
+                                <!-- Chime inferior -->
+                                <path d="M 22,216 C 22,232 148,232 148,216 L 148,225 C 148,241 22,241 22,225 Z" fill="#022c22" />
+                                <path d="M 22,216 C 22,230 148,230 148,216 L 148,221 C 148,235 22,235 22,221 Z" fill="#064e3b" />
+                                <!-- Cuerpo del tambor -->
+                                <path d="M 22,38 L 22,218 C 22,234 148,234 148,218 L 148,38 C 148,54 22,54 22,38 Z" fill="url(#gradCuerpoTambor2)" />
+                                <!-- Aro superior -->
+                                <path d="M 20,95 C 20,109 150,109 150,95 L 150,101 C 150,115 20,115 20,101 Z" fill="#022c22" opacity="0.65" />
+                                <path d="M 20,94 C 20,107 150,107 150,94" stroke="#6ee7b7" stroke-width="2.5" fill="none" opacity="0.75" />
+                                <!-- Aro inferior -->
+                                <path d="M 20,158 C 20,172 150,172 150,158 L 150,164 C 150,178 20,178 20,164 Z" fill="#022c22" opacity="0.65" />
+                                <path d="M 20,157 C 20,170 150,170 150,157" stroke="#6ee7b7" stroke-width="2.5" fill="none" opacity="0.75" />
+                                <!-- Tapa superior -->
+                                <ellipse cx="85" cy="38" rx="63" ry="16" fill="#022c22" />
+                                <ellipse cx="85" cy="40" rx="60" ry="14" fill="url(#gradTapaTambor2)" stroke="#6ee7b7" stroke-width="1.2" />
+                                <ellipse cx="85" cy="41" rx="55" ry="12" fill="#064e3b" />
+                                <!-- Tapones -->
+                                <circle cx="58" cy="41" r="5.5" fill="#cbd5e1" stroke="#334155" stroke-width="1.2" />
+                                <circle cx="58" cy="41" r="2.5" fill="#64748b" />
+                                <circle cx="112" cy="38" r="4" fill="#94a3b8" stroke="#334155" stroke-width="1" />
+                                <!-- Rótulo serigrafiado -->
+                                <rect x="36" y="58" width="98" height="26" rx="4" fill="rgba(2,44,34,0.55)" stroke="#10b981" stroke-width="0.8" />
+                                <text x="85" y="70" fill="#ffffff" font-size="7.5" font-weight="900" text-anchor="middle" font-family="sans-serif" letter-spacing="0.8">VALVOLINE UNITRAC</text>
+                                <text x="85" y="79" fill="#a7f3d0" font-size="6.5" font-weight="700" text-anchor="middle" font-family="sans-serif" letter-spacing="0.5">HIDRÁULICO 10W-30 • 200L</text>
+                                <!-- Tubo / Visor de nivel transparente -->
+                                <g transform="translate(68, 104)">
+                                    <rect x="0" y="0" width="34" height="92" rx="6" fill="#022c22" stroke="#cbd5e1" stroke-width="1.5" />
+                                    <rect x="2" y="2" width="30" height="88" rx="4" fill="#022c22" />
+                                    <!-- Escala -->
+                                    <line x1="2" y1="5" x2="8" y2="5" stroke="#94a3b8" stroke-width="1.2" />
+                                    <text x="11" y="8" fill="#94a3b8" font-size="5.5" font-weight="700">200L</text>
+                                    <line x1="2" y1="26" x2="7" y2="26" stroke="#6ee7b7" stroke-width="1" />
+                                    <text x="11" y="29" fill="#6ee7b7" font-size="5.5" font-weight="600">150L</text>
+                                    <line x1="2" y1="46" x2="8" y2="46" stroke="#94a3b8" stroke-width="1" />
+                                    <text x="11" y="49" fill="#94a3b8" font-size="5.5" font-weight="600">100L</text>
+                                    <line x1="2" y1="67" x2="7" y2="67" stroke="#6ee7b7" stroke-width="1" />
+                                    <text x="11" y="70" fill="#6ee7b7" font-size="5.5" font-weight="600">50L</text>
+                                    <line x1="2" y1="85" x2="8" y2="85" stroke="#ef4444" stroke-width="1.2" />
+                                    <!-- Columna de aceite hidráulico verde dinámico -->
+                                    <rect id="svgColumnaAceite2" x="3" y="5" width="28" height="82" rx="3" fill="url(#gradAceiteHidraulico)" opacity="0.95" style="transition:all 0.5s ease-in-out;" />
+                                    <!-- Brillo reflejo cristal -->
+                                    <line x1="6" y1="3" x2="6" y2="88" stroke="#ffffff" stroke-width="1.5" opacity="0.4" stroke-linecap="round" />
+                                </g>
+                                <!-- Badge Digital en base -->
+                                <rect x="40" y="208" width="90" height="18" rx="9" fill="#022c22" stroke="#10b981" stroke-width="1.5" />
+                                <text id="svgTextoLitros2" x="85" y="220.5" fill="#6ee7b7" font-size="9" font-weight="900" text-anchor="middle" font-family="sans-serif">200.0 L (100%)</text>
+                            </svg>
+                        </div>
+
+                        <!-- Columna de Información y Acciones Tambor 2 -->
+                        <div class="columna-tambor-info">
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+                                <div>
+                                    <span class="badge badge-verde" style="font-weight:700; font-size:11px; background:#dcfce7; color:#15803d; border-color:#86efac;">🛢️ TAMBOR 2 • ACEITE HIDRÁULICO</span>
+                                    <h3 id="lblNombreTambor2" style="margin:4px 0 0 0; font-size:16px; color:#0f172a; font-weight:800;">Aceite Hidráulico Valvoline Unitrac 10W30</h3>
+                                    <p id="lblDetalleTambor2" style="margin:2px 0 0 0; font-size:12px; color:#64748b;">Tambor estándar de 200 Litros (ISO VG 68 / SAE 10W30)</p>
+                                </div>
+                            </div>
+
+                            <!-- Barra Gráfica de Nivel Tambor 2 -->
+                            <div style="margin:10px 0;">
+                                <div style="display:flex; justify-content:space-between; font-size:12.5px; font-weight:700; margin-bottom:4px;">
+                                    <span style="color:#475569;">Saldo Disponible:</span>
+                                    <span id="lblPorcentajeAceite2" style="color:#059669; font-size:14.5px; font-weight:800;">100% (200.0 / 200 L)</span>
+                                </div>
+                                <div style="width:100%; height:16px; background:#e2e8f0; border-radius:10px; overflow:hidden; position:relative; border:1px solid #cbd5e1;">
+                                    <div id="barraProgresoAceite2" style="width:100%; height:100%; background:linear-gradient(90deg, #10b981, #059669); border-radius:10px; transition:width 0.5s ease-in-out;"></div>
+                                </div>
+                                <div style="display:flex; justify-content:space-between; font-size:10.5px; color:#94a3b8; margin-top:3px;">
+                                    <span>0 L (Vacío)</span>
+                                    <span style="color:#d97706; font-weight:600;">⚠️ Alerta &lt; 35 L</span>
+                                    <span>200 L (Lleno)</span>
+                                </div>
+                            </div>
+
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px; padding-top:8px; border-top:1px dashed #e2e8f0; font-size:11.5px;">
+                                <div><span style="color:#64748b;">Apertura:</span> <strong id="lblFechaAperturaTambor2" style="color:#0f172a;">2026-03-01</strong></div>
+                                <div><span style="color:#64748b;">Consumido:</span> <strong id="lblConsumidoTambor2" style="color:#059669;">0.0 L</strong></div>
+                                <div><span style="color:#64748b;">Proveedor:</span> <strong id="lblProveedorTambor2" style="color:#0f172a;">LUVAL S.A.</strong></div>
+                                <div><span style="color:#64748b;">Costo/Litro:</span> <strong id="lblCostoLitroTambor2" style="color:#059669;">$2.600</strong></div>
+                            </div>
+
+                            <div style="margin-top:10px;">
+                                <button type="button" class="btn-secundario" onclick="abrirModalNuevoTambor('tambor2')" style="width:100%; justify-content:center; font-weight:700; font-size:12px; color:#047857; border-color:#6ee7b7; background:#f0fdf4;">
+                                    🔄 Apertura / Reemplazar Tambor 2 (Hidráulico)
+                                </button>
+                            </div>
                         </div>
                     </div>
-                    <div class="tarjeta-dash" style="margin:0;">
-                        <div class="tarjeta-icono" style="background:#ecfdf5; color:#059669; font-size:22px;">🚜</div>
-                        <div>
-                            <div class="numero" id="kpiMaquinasAbastecidasAceite">0</div>
-                            <div class="etiqueta">Equipos Abastecidos</div>
-                        </div>
+                </div>
+            </div>
+
+            <!-- RESUMEN CONSOLIDADO DE LUBRICANTES EN TALLER -->
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px; margin-bottom:24px;">
+                <div class="tarjeta-dash" style="margin:0;">
+                    <div class="tarjeta-icono" style="background:#eff6ff; color:#2563eb; font-size:22px;">🛢️</div>
+                    <div>
+                        <div class="numero" id="kpiLitrosTotalesTaller">400.0 L</div>
+                        <div class="etiqueta" id="kpiSubDetalleLitrosTotales">Saldo Total Taller (400L)</div>
                     </div>
-                    <div class="tarjeta-dash" style="margin:0;">
-                        <div class="tarjeta-icono" style="background:#fef2f2; color:#dc2626; font-size:22px;">💵</div>
-                        <div>
-                            <div class="numero" id="kpiCostoLitroAceite">$2.750</div>
-                            <div class="etiqueta">Costo Estimado por Litro</div>
-                        </div>
+                </div>
+                <div class="tarjeta-dash" style="margin:0;">
+                    <div class="tarjeta-icono" style="background:#f0fdf4; color:#059669; font-size:22px;">📉</div>
+                    <div>
+                        <div class="numero" id="kpiLitrosConsumidosTotal">0.0 L</div>
+                        <div class="etiqueta" id="kpiSubDetalleConsumoTotal">Consumo Acumulado Taller</div>
                     </div>
-                    <div class="tarjeta-dash" style="margin:0;">
-                        <div class="tarjeta-icono" style="background:#fffbeb; color:#d97706; font-size:22px;">🔄</div>
-                        <div>
-                            <div class="numero" id="kpiTamboresHistoricos">1</div>
-                            <div class="etiqueta">Tambores Gestionados</div>
-                        </div>
+                </div>
+                <div class="tarjeta-dash" style="margin:0;">
+                    <div class="tarjeta-icono" style="background:#ecfdf5; color:#047857; font-size:22px;">🚜</div>
+                    <div>
+                        <div class="numero" id="kpiMaquinasAbastecidasAceite">0</div>
+                        <div class="etiqueta">Equipos Abastecidos</div>
+                    </div>
+                </div>
+                <div class="tarjeta-dash" style="margin:0;">
+                    <div class="tarjeta-icono" style="background:#fef2f2; color:#dc2626; font-size:22px;">💵</div>
+                    <div>
+                        <div class="numero" id="kpiValorizacionStockAceite">$1.070.000</div>
+                        <div class="etiqueta">Valorización Total Stock</div>
                     </div>
                 </div>
             </div>
@@ -1256,11 +1555,14 @@
                 <div class="caja-header" style="flex-wrap:wrap; gap:12px;">
                     <div>
                         <h3 style="margin:0; font-size:16px;">Acciones Operacionales de Lubricantes</h3>
-                        <p style="margin:2px 0 0 0; font-size:12px; color:#64748b;">Registre una nueva apertura de tambor de 200L o active una nueva unidad.</p>
+                        <p style="margin:2px 0 0 0; font-size:12px; color:#64748b;">Registre una nueva apertura de tambor de 200L para motor o hidráulico, o ejecute una mantención.</p>
                     </div>
                     <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                        <button type="button" class="btn-primario" onclick="abrirModalNuevoTambor()" style="font-weight:700;">
-                            🛢️ Registrar Nuevo Tambor (200 L)
+                        <button type="button" class="btn-primario" onclick="abrirModalNuevoTambor('tambor1')" style="font-weight:700; background:#1d4ed8; border-color:#1d4ed8;">
+                            🛢️ Apertura Tambor 1 (Motor 200L)
+                        </button>
+                        <button type="button" class="btn-primario" onclick="abrirModalNuevoTambor('tambor2')" style="font-weight:700; background:#059669; border-color:#059669;">
+                            🛢️ Apertura Tambor 2 (Hidráulico 200L)
                         </button>
                         <button type="button" class="btn-secundario" onclick="navegarSeccion('registrarMantencion')">
                             🛠️ Ir a Nueva Mantención / OT
@@ -1271,12 +1573,20 @@
 
             <!-- HISTORIAL DE DESCUENTOS Y CONSUMO DE ACEITE -->
             <div class="caja-blanca">
-                <div class="caja-header">
+                <div class="caja-header" style="flex-wrap:wrap; gap:12px;">
                     <div>
-                        <h3 style="margin:0; font-size:16px;">📋 Historial de Descuentos y Consumo de Aceite por Máquina</h3>
-                        <p style="margin:2px 0 0 0; font-size:12px; color:#64748b;">Registro de litros fraccionados descontados automáticamente en cada Orden de Trabajo según la ficha del equipo.</p>
+                        <h3 style="margin:0; font-size:16px;">📋 Historial de Descuentos y Consumo de Lubricantes por Máquina</h3>
+                        <p style="margin:2px 0 0 0; font-size:12px; color:#64748b;">Registro trazable de litros fraccionados descontados automáticamente de cada tambor en cada Orden de Trabajo.</p>
                     </div>
-                    <div style="display:flex; gap:8px; align-items:center;">
+                    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <label for="filtroTamborAceite" style="font-size:12px; font-weight:700; color:#475569; margin:0;">Filtrar:</label>
+                            <select id="filtroTamborAceite" onchange="renderizarModuloAceite()" style="padding:5px 8px; font-size:12px; border-radius:6px; border:1px solid #cbd5e1; font-weight:600; color:#1e293b;">
+                                <option value="TODOS">Todos los Tambores</option>
+                                <option value="tambor1">🟦 Tambor 1 (Motor 15W-40)</option>
+                                <option value="tambor2">🟩 Tambor 2 (Hidráulico 10W-30)</option>
+                            </select>
+                        </div>
                         <button type="button" class="btn-secundario" onclick="vaciarHistorialConsumoAceite()" style="padding:6px 12px; font-size:12px; color:#dc2626; border-color:#fca5a5; font-weight:600;" title="Vaciar todo el historial de consumos de aceite">
                             🗑️ Vaciar Historial
                         </button>
@@ -1293,9 +1603,10 @@
                                 <th>Fecha</th>
                                 <th>Folio OT</th>
                                 <th>Máquina / Equipo</th>
+                                <th>Tambor / Lubricante</th>
                                 <th>Tipo de Mantención</th>
                                 <th>Litros Descontados</th>
-                                <th>Saldo Tambor Restante</th>
+                                <th>Saldo Restante</th>
                                 <th>Costo Lubricante ($)</th>
                                 <th>Técnico / Mecánico</th>
                                 <th style="text-align:center; width:95px;">Acción</th>
@@ -1310,16 +1621,24 @@
         </section>
 
         <!-- =====================================================
-             MODAL: REGISTRAR NUEVO TAMBOR DE 200 LITROS
+             MODAL: REGISTRAR NUEVO TAMBOR DE 200 LITROS (DUAL)
         ===================================================== -->
         <div id="modalNuevoTamborAceite" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.65); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(4px);">
-            <div class="modal-contenido" style="background:#ffffff; max-width:540px; width:92%; border-radius:16px; box-shadow:0 24px 50px rgba(0,0,0,0.3); overflow:hidden; border:1px solid #cbd5e1;">
-                <div style="background:#1e40af; color:#ffffff; padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
-                    <h3 style="font-size:17px; margin:0; color:#ffffff; font-weight:700;">🛢️ Apertura de Nuevo Tambor de Aceite</h3>
+            <div class="modal-contenido" style="background:#ffffff; max-width:560px; width:92%; border-radius:16px; box-shadow:0 24px 50px rgba(0,0,0,0.3); overflow:hidden; border:1px solid #cbd5e1;">
+                <div id="headerModalNuevoTambor" style="background:#1e40af; color:#ffffff; padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
+                    <h3 id="lblTituloModalNuevoTambor" style="font-size:17px; margin:0; color:#ffffff; font-weight:700;">🛢️ Apertura de Nuevo Tambor de Aceite</h3>
                     <button type="button" onclick="cerrarModalNuevoTambor()" style="background:transparent; border:none; color:#ffffff; font-size:20px; cursor:pointer;">✕</button>
                 </div>
 
                 <form id="formNuevoTamborAceite" onsubmit="guardarNuevoTamborAceite(event)" style="padding:22px;">
+                    <div class="campo-form" style="margin-bottom:14px;">
+                        <label for="selectTamborApertura" style="font-weight:700; color:#1e40af;">Seleccione el Tambor a Aperturar / Reemplazar (*):</label>
+                        <select id="selectTamborApertura" onchange="cambiarTipoTamborModal(this.value)" required style="width:100%; padding:9px 12px; font-weight:700; border:2px solid #3b82f6; border-radius:8px; background:#eff6ff; color:#1e3a8a;">
+                            <option value="tambor1">🛢️ Tambor 1: Aceite de Motor (15W-40 - 200 Lts)</option>
+                            <option value="tambor2">🛢️ Tambor 2: Aceite Hidráulico (10W-30 / ISO 68 - 200 Lts)</option>
+                        </select>
+                    </div>
+
                     <div class="campo-form" style="margin-bottom:12px;">
                         <label for="inputNombreAceiteTambor">Tipo y Especificación del Aceite (*):</label>
                         <input type="text" id="inputNombreAceiteTambor" value="Aceite Valvoline Premium Blue 15W40 CI-4" required style="width:100%;">
@@ -1339,8 +1658,8 @@
                     <div class="grid-form" style="grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
                         <div class="campo-form">
                             <label for="inputCostoTamborTotal">Costo Total Tambor ($ CLP):</label>
-                            <input type="number" id="inputCostoTamborTotal" value="550000" min="0" step="1000" style="width:100%;">
-                            <small style="color:#64748b; font-size:11px;">$2.750 aprox por litro</small>
+                            <input type="number" id="inputCostoTamborTotal" value="550000" min="0" step="1000" oninput="actualizarCostoLitroModal()" style="width:100%;">
+                            <small id="lblCostoEstimadoLitroModal" style="color:#64748b; font-size:11px;">$2.750 aprox por litro</small>
                         </div>
                         <div class="campo-form">
                             <label for="inputProveedorTambor">Proveedor / Distribuidor:</label>
@@ -1355,7 +1674,7 @@
 
                     <div style="display:flex; justify-content:flex-end; gap:10px;">
                         <button type="button" class="btn-secundario" onclick="cerrarModalNuevoTambor()">Cancelar</button>
-                        <button type="submit" class="btn-primario" style="background:#1e40af; border-color:#1e40af;">💾 Activar Nuevo Tambor de 200 L</button>
+                        <button type="submit" id="btnSubmitNuevoTambor" class="btn-primario" style="background:#1e40af; border-color:#1e40af;">💾 Activar y Llenar Tambor de 200 L</button>
                     </div>
                 </form>
             </div>
@@ -2926,6 +3245,6 @@
     </main>
 </div>
 
-<script src="/script.js?v=20260903_v4"></script>
+<script src="/script.js?v=20260907_v7"></script>
 </body>
 </html>
