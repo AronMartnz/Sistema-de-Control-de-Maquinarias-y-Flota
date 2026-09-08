@@ -1638,13 +1638,17 @@ function renderizarProgramaMaestro() {
             <td>${item.responsable || '-'}</td>
             <td style="max-width:260px; font-size:12px;">${item.observaciones || '<span style="color:#94a3b8;">Sin observaciones</span>'}</td>
             <td style="text-align:center;">
-                <div style="display:flex; gap:4px; justify-content:center;">
+                <div style="display:flex; gap:4px; justify-content:center; flex-wrap:wrap;">
                     <button class="btn-secundario" style="padding:4px 8px; font-size:11px;" onclick="verFichaTecnica('${item.cod}')" title="Ver ficha técnica">
                         🔍 Ficha
                     </button>
                     <button class="btn-primario" style="padding:4px 8px; font-size:11px;" onclick="iniciarMantencionParaEquipo('${item.cod}')" title="Crear Orden de Mantención y Rebajar Stock">
                         🔧 Mantención
                     </button>
+                    ${esUsuarioAdministrador() ? `
+                    <button class="btn-secundario" style="padding:4px 8px; font-size:11px; background:#eff6ff; border-color:#93c5fd; color:#1d4ed8; font-weight:700;" onclick="abrirModalEditarEquipoPrograma('${item.cod}')" title="Modificar parámetros de mantención (Solo Rol Administración)">
+                        ⚙️ Modificar
+                    </button>` : ''}
                 </div>
             </td>
         </tr>
@@ -2439,6 +2443,7 @@ function actualizarPermisosFichasTecnicas() {
     const btnNueva = document.getElementById("btnNuevaFichaTecnica");
     const btnEditar = document.getElementById("btnEditarFichaTecnica");
     const badgeRestringido = document.getElementById("badgeFichaSoloLectura");
+    const btnNuevoProg = document.getElementById("btnNuevoEquipoPrograma");
 
     if (btnNueva) {
         btnNueva.style.display = esAdmin ? "inline-flex" : "none";
@@ -2449,15 +2454,220 @@ function actualizarPermisosFichasTecnicas() {
     if (badgeRestringido) {
         badgeRestringido.style.display = esAdmin ? "none" : "inline-flex";
     }
+    if (btnNuevoProg) {
+        btnNuevoProg.style.display = esAdmin ? "inline-flex" : "none";
+    }
+}
+
+// -------------------------------------------------------------
+// FUNCIONES PARA MODAL DE EDICIÓN DE PROGRAMA MAESTRO (SOLO ADMIN)
+// -------------------------------------------------------------
+function abrirModalEditarEquipoPrograma(cod) {
+    if (!esUsuarioAdministrador()) {
+        alert("⛔ Acceso Denegado: Esta función está reservada exclusivamente para el Rol de Administración.");
+        return;
+    }
+
+    const item = corssenPrograma.find(p => String(p.cod).toUpperCase() === String(cod).toUpperCase());
+    if (!item) {
+        alert(`No se encontró el equipo con código ${cod}.`);
+        return;
+    }
+
+    document.getElementById("lblEditProgCod").textContent = `${item.cod} - ${item.equipo}`;
+    document.getElementById("editProgCod").value = item.cod;
+    document.getElementById("editProgEquipo").value = item.equipo || "";
+    document.getElementById("editProgMarca").value = item.marca || "";
+    document.getElementById("editProgCat").value = item.cat || "AUXILIARES";
+    document.getElementById("editProgEstado").value = item.estado || "Operativo";
+    document.getElementById("editProgPrioridad").value = item.prioridad || "Media";
+    document.getElementById("editProgHorometro").value = item.horometro || "";
+    document.getElementById("editProgFrecuencia").value = item.frecuencia || "";
+    document.getElementById("editProgProx").value = item.prox || "";
+    document.getElementById("editProgResponsable").value = item.responsable || "";
+    document.getElementById("editProgObservaciones").value = item.observaciones || "";
+
+    const modal = document.getElementById("modalEditarEquipoPrograma");
+    if (modal) {
+        modal.style.display = "flex";
+    }
+}
+
+function cerrarModalEditarEquipoPrograma() {
+    const modal = document.getElementById("modalEditarEquipoPrograma");
+    if (modal) {
+        modal.style.display = "none";
+    }
+}
+
+async function guardarEdicionEquipoPrograma() {
+    if (!esUsuarioAdministrador()) {
+        alert("⛔ Acceso Restringido: Únicamente los usuarios con rol de Administración tienen autorización para modificar parámetros de flota.");
+        return;
+    }
+
+    const cod = document.getElementById("editProgCod").value.trim();
+    const equipo = document.getElementById("editProgEquipo").value.trim();
+    const marca = document.getElementById("editProgMarca").value.trim();
+    const cat = document.getElementById("editProgCat").value;
+    const estado = document.getElementById("editProgEstado").value;
+    const prioridad = document.getElementById("editProgPrioridad").value;
+    const horometro = document.getElementById("editProgHorometro").value.trim();
+    const frecuencia = document.getElementById("editProgFrecuencia").value.trim();
+    const prox = document.getElementById("editProgProx").value.trim();
+    const responsable = document.getElementById("editProgResponsable").value.trim();
+    const observaciones = document.getElementById("editProgObservaciones").value.trim();
+
+    if (!cod || !equipo) {
+        alert("El código y el nombre del equipo son obligatorios.");
+        return;
+    }
+
+    const index = corssenPrograma.findIndex(p => String(p.cod).toUpperCase() === String(cod).toUpperCase());
+    const nuevoObj = {
+        cod,
+        equipo,
+        marca,
+        cat,
+        estado,
+        prioridad,
+        horometro,
+        frecuencia,
+        prox,
+        responsable,
+        observaciones,
+        actualizado_en: new Date().toISOString()
+    };
+
+    if (index !== -1) {
+        corssenPrograma[index] = nuevoObj;
+    } else {
+        corssenPrograma.push(nuevoObj);
+    }
+
+    // Persistir localmente en navegador
+    try {
+        localStorage.setItem("corssen_programa_v2", JSON.stringify(corssenPrograma));
+    } catch (e) {
+        console.warn("Error guardando corssen_programa_v2 en localStorage:", e);
+    }
+
+    // Persistir en servidor Express y base de datos Cloudflare
+    try {
+        const usuarioActual = sessionStorage.getItem("usuarioLogueado") || "admin";
+        await fetch(`/api/programa/${encodeURIComponent(cod)}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                "x-usuario": usuarioActual
+            },
+            body: JSON.stringify(nuevoObj)
+        });
+    } catch (errApi) {
+        console.warn("Sincronización remota programa diferida:", errApi);
+    }
+
+    // Sincronizar con ficha técnica si existe el equipo
+    if (corssenFichas && corssenFichas[cod]) {
+        corssenFichas[cod].nombre = equipo;
+        corssenFichas[cod].marca = marca;
+        corssenFichas[cod].estado = estado;
+        corssenFichas[cod].horometro = horometro;
+        corssenFichas[cod].prox = prox;
+        corssenFichas[cod].responsable = responsable;
+        try {
+            localStorage.setItem("corssen_fichas_v2", JSON.stringify(corssenFichas));
+        } catch (_) {}
+    }
+
+    alert(`✓ Datos de mantención actualizados con éxito para ${cod} (${equipo}).`);
+    cerrarModalEditarEquipoPrograma();
+    renderizarProgramaMaestro();
+}
+
+function abrirModalNuevoEquipoPrograma() {
+    if (!esUsuarioAdministrador()) {
+        alert("⛔ Acceso Restringido: Únicamente el Administrador puede registrar nuevos equipos.");
+        return;
+    }
+    const nuevoCod = prompt("Ingrese el Código único del nuevo equipo o herramienta (Ej: X-35, GPC-09, C-11, BAR-02):");
+    if (!nuevoCod || !nuevoCod.trim()) return;
+    const codLimpio = nuevoCod.trim().toUpperCase();
+
+    const existe = corssenPrograma.some(p => p.cod.toUpperCase() === codLimpio);
+    if (existe) {
+        alert(`El equipo con código ${codLimpio} ya existe. Abriendo formulario de edición.`);
+        abrirModalEditarEquipoPrograma(codLimpio);
+        return;
+    }
+
+    document.getElementById("lblEditProgCod").textContent = `${codLimpio} (Nuevo Equipo)`;
+    document.getElementById("editProgCod").value = codLimpio;
+    document.getElementById("editProgEquipo").value = "";
+    document.getElementById("editProgMarca").value = "CORSSEN";
+    document.getElementById("editProgCat").value = codLimpio.startsWith("G") ? "GRÚAS" : (codLimpio.startsWith("C") ? "MÓVILES" : (codLimpio.startsWith("M") ? "MARÍTIMO" : "AUXILIARES"));
+    document.getElementById("editProgEstado").value = "Operativo";
+    document.getElementById("editProgPrioridad").value = "Media";
+    document.getElementById("editProgHorometro").value = "";
+    document.getElementById("editProgFrecuencia").value = "250 hrs / Mensual";
+    document.getElementById("editProgProx").value = "";
+    document.getElementById("editProgResponsable").value = "Alexis Santos";
+    document.getElementById("editProgObservaciones").value = "";
+
+    const modal = document.getElementById("modalEditarEquipoPrograma");
+    if (modal) modal.style.display = "flex";
+}
+
+let categoriaFiltroFichasActual = "TODOS";
+
+function filtrarCategoriaFichas(cat) {
+    categoriaFiltroFichasActual = cat || "TODOS";
+    
+    // Actualizar botones visuales de pestañas
+    document.querySelectorAll(".btn-pestana-ficha").forEach(btn => {
+        const c = btn.getAttribute("data-cat-ficha");
+        if (c === categoriaFiltroFichasActual) {
+            btn.classList.add("active");
+        } else {
+            btn.classList.remove("active");
+        }
+    });
+
+    renderizarSelectorFichas();
 }
 
 function renderizarSelectorFichas() {
     const contenedor = document.getElementById("contenedorSelectorFichas");
     if (!contenedor) return;
 
-    const equiposDisponibles = Object.keys(corssenFichas);
+    const todosLosEquipos = Object.keys(corssenFichas);
+    
+    // Filtrar por categoría seleccionada
+    const equiposDisponibles = todosLosEquipos.filter(codigo => {
+        if (!categoriaFiltroFichasActual || categoriaFiltroFichasActual === "TODOS") return true;
+
+        const f = corssenFichas[codigo] || {};
+        const p = corssenPrograma.find(prog => (prog.cod || "").toUpperCase() === codigo.toUpperCase());
+        const catEquipo = (f.categoria || p?.cat || "").toUpperCase();
+
+        if (categoriaFiltroFichasActual === "GRÚAS") {
+            return catEquipo === "GRÚAS" || catEquipo === "PORTACONTENEDORES" || catEquipo === "HORQUILLAS" || codigo.startsWith("G");
+        }
+        if (categoriaFiltroFichasActual === "MÓVILES") {
+            return catEquipo === "MÓVILES" || codigo.startsWith("CAM") || codigo.startsWith("CMN") || codigo.startsWith("C");
+        }
+        if (categoriaFiltroFichasActual === "AUXILIARES") {
+            return catEquipo === "AUXILIARES" || catEquipo === "HERRAMIENTA" || catEquipo === "HERRAMIENTAS" || codigo.startsWith("GEN") || codigo.startsWith("HER") || codigo.startsWith("X");
+        }
+        if (categoriaFiltroFichasActual === "MARÍTIMO") {
+            return catEquipo === "MARÍTIMO" || catEquipo === "MARITIMO" || codigo.startsWith("LAN") || codigo.startsWith("M");
+        }
+        return catEquipo === categoriaFiltroFichasActual;
+    });
+
     if (!equiposDisponibles.includes(equipoSeleccionado) && equiposDisponibles.length > 0) {
         equipoSeleccionado = equiposDisponibles[0];
+        renderizarDetalleFichaTecnica();
     }
     equipoSeleccionadoFicha = equipoSeleccionado;
 
@@ -2476,14 +2686,19 @@ function renderizarSelectorFichas() {
     let botonNuevaFichaCard = "";
     if (esUsuarioAdministrador()) {
         botonNuevaFichaCard = `
-            <div class="btn-equipo-card" onclick="abrirModalNuevaFicha()" style="border:2px dashed #0284c7; background:#f0f9ff; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#0284c7; cursor:pointer;" title="Crear nueva ficha técnica para maquinaria o vehículo">
+            <div class="btn-equipo-card" onclick="abrirModalNuevaFicha()" style="border:2px dashed #0284c7; background:#f0f9ff; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#0284c7; cursor:pointer;" title="Crear nueva ficha técnica para maquinaria, auxiliares o marítimo">
                 <strong style="color:#0284c7; font-size:15px;">➕</strong>
                 <span style="color:#0369a1; font-weight:700;">Nueva Ficha</span>
             </div>
         `;
     }
 
-    contenedor.innerHTML = botonesEquipos + botonNuevaFichaCard;
+    if (equiposDisponibles.length === 0) {
+        contenedor.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:16px; color:#64748b; font-size:13px;">No hay fichas técnicas registradas en la categoría seleccionada.</div>` + botonNuevaFichaCard;
+    } else {
+        contenedor.innerHTML = botonesEquipos + botonNuevaFichaCard;
+    }
+
     actualizarPermisosFichasTecnicas();
 }
 
@@ -4509,6 +4724,246 @@ function registrarMaquinaria(e) {
     document.getElementById("formMaquinaria")?.reset();
     alert(`✓ Maquinaria "${numeroMaquinaria}" registrada y sincronizada exitosamente con:\n- Alertas Predictivas del Dashboard\n- Programa Maestro de Mantenciones\n- Ficha Técnica Oficial de Lubricación\n- Módulo de Emisión de OT`);
     navegarSeccion("vehiculos");
+}
+
+// -------------------------------------------------------------
+// GESTIÓN DE EQUIPOS AUXILIARES, HERRAMIENTAS Y MARÍTIMO
+// -------------------------------------------------------------
+function alCambiarTipoAuxiliarHerramienta() {
+    const tipo = document.getElementById("auxTipoRegistro")?.value || "AUXILIARES";
+    const inputCod = document.getElementById("auxCodigo");
+    const inputNombre = document.getElementById("auxNombre");
+    const inputMarca = document.getElementById("auxMarca");
+    const inputModelo = document.getElementById("auxModelo");
+    const inputCap = document.getElementById("auxCapacidad");
+    const selectFrec = document.getElementById("auxFrecuencia");
+
+    if (tipo === "MARÍTIMO") {
+        if (inputCod && (!inputCod.value || inputCod.value.startsWith("GEN") || inputCod.value.startsWith("HER"))) inputCod.placeholder = "Ej: LAN-01, M-02, BOT-01";
+        if (inputNombre && !inputNombre.value) inputNombre.placeholder = "Ej: Lancha de Operaciones Portuarias / Motor Fuera de Borda";
+        if (inputMarca && !inputMarca.value) inputMarca.placeholder = "Ej: Yamaha, Mercury, Evinrude, Yanmar";
+        if (inputModelo && !inputModelo.value) inputModelo.placeholder = "Ej: F150 FourStroke, V8 300, 4JH4";
+        if (inputCap && !inputCap.value) inputCap.placeholder = "Ej: 150 HP, 8 Pasajeros, 2 TON";
+        if (selectFrec) selectFrec.value = "100 horas";
+    } else if (tipo === "HERRAMIENTA") {
+        if (inputCod && (!inputCod.value || inputCod.value.startsWith("GEN") || inputCod.value.startsWith("LAN"))) inputCod.placeholder = "Ej: HER-01, TOL-04, X-05";
+        if (inputNombre && !inputNombre.value) inputNombre.placeholder = "Ej: Pistola de Impacto Neumática 1 pulg / Gata Hidráulica 50T";
+        if (inputMarca && !inputMarca.value) inputMarca.placeholder = "Ej: Ingersoll Rand, Chicago Pneumatic, Mega, Bosch";
+        if (inputModelo && !inputModelo.value) inputModelo.placeholder = "Ej: 285B-6, MG-50, GWS 22-230";
+        if (inputCap && !inputCap.value) inputCap.placeholder = "Ej: 1 Pulg / 2.000 Nm / 50 TON";
+        if (selectFrec) selectFrec.value = "Mensual";
+    } else {
+        // AUXILIARES
+        if (inputCod && (!inputCod.value || inputCod.value.startsWith("HER") || inputCod.value.startsWith("LAN"))) inputCod.placeholder = "Ej: GEN-01, COM-02, TOR-01, X-01";
+        if (inputNombre && !inputNombre.value) inputNombre.placeholder = "Ej: Generador Diésel Insonorizado 60kVA / Compresor de Tornillo";
+        if (inputMarca && !inputMarca.value) inputMarca.placeholder = "Ej: Cummins, Caterpillar, Atlas Copco, Doosan";
+        if (inputModelo && !inputModelo.value) inputModelo.placeholder = "Ej: C60D5, XAS 97, G70";
+        if (inputCap && !inputCap.value) inputCap.placeholder = "Ej: 60 kVA, 185 CFM, 70 kVA";
+        if (selectFrec) selectFrec.value = "250 horas";
+    }
+}
+
+function registrarAuxiliarHerramientaMaritimo(e) {
+    if (e && e.preventDefault) e.preventDefault();
+
+    if (!esUsuarioAdministrador()) {
+        alert("⛔ Acceso Restringido: Únicamente los usuarios con rol de Administrador tienen autorización para dar de alta nuevos equipos auxiliares, herramientas o marítimo.");
+        return;
+    }
+
+    const tipoRegistro = document.getElementById("auxTipoRegistro")?.value || "AUXILIARES";
+    const codigo = document.getElementById("auxCodigo")?.value.trim().toUpperCase();
+    const nombre = document.getElementById("auxNombre")?.value.trim();
+    const marca = document.getElementById("auxMarca")?.value.trim();
+    const modelo = document.getElementById("auxModelo")?.value.trim() || "Estándar";
+    const capacidad = document.getElementById("auxCapacidad")?.value.trim() || "N/A";
+    const anio = parseInt(document.getElementById("auxAnio")?.value) || new Date().getFullYear();
+    const horometroStr = document.getElementById("auxHorometro")?.value.trim() || "0 hrs";
+    const frecuencia = document.getElementById("auxFrecuencia")?.value || "250 horas";
+    const responsable = document.getElementById("auxResponsable")?.value.trim() || "Alexis Santos";
+    const estado = document.getElementById("auxEstado")?.value || "Operativo";
+    const observaciones = document.getElementById("auxObservaciones")?.value.trim() || "";
+
+    if (!codigo || !nombre || !marca) {
+        alert("Por favor complete los campos obligatorios: Código Interno, Nombre y Marca.");
+        return;
+    }
+
+    const numHoro = parseFloat(horometroStr.replace(/[^\d.]/g, "")) || 0;
+    const unidadMedida = horometroStr.toLowerCase().includes("km") ? "km" : "hrs";
+
+    // Calcular próximo servicio estimado
+    let proxServicio = "";
+    if (frecuencia.includes("100")) proxServicio = `${numHoro + 100} ${unidadMedida}`;
+    else if (frecuencia.includes("200")) proxServicio = `${numHoro + 200} ${unidadMedida}`;
+    else if (frecuencia.includes("250")) proxServicio = `${numHoro + 250} ${unidadMedida}`;
+    else if (frecuencia.includes("500")) proxServicio = `${numHoro + 500} ${unidadMedida}`;
+    else proxServicio = "Próximo Ciclo";
+
+    // Determinar categoría maestra
+    let catMaestra = "AUXILIARES";
+    if (tipoRegistro === "MARÍTIMO") catMaestra = "MARÍTIMO";
+    else if (tipoRegistro === "HERRAMIENTA") catMaestra = "AUXILIARES";
+
+    // 1. SINCRONIZAR EN CATÁLOGO DE MAQUINARIAS / EQUIPOS
+    const idxExistente = maquinarias.findIndex(m => (m.numeroMaquinaria || m.id || "").toUpperCase() === codigo);
+    const itemMaq = {
+        id: codigo,
+        numeroMaquinaria: codigo,
+        patenteMaquinaria: codigo,
+        tipoMaquinaria: nombre,
+        marcaMaquinaria: marca,
+        modeloMaquinaria: modelo,
+        capacidadMaquinaria: capacidad,
+        anioMaquinaria: anio,
+        combustibleMaquinaria: (tipoRegistro === "MARÍTIMO" ? "Gasolina / Diésel Marino" : (tipoRegistro === "HERRAMIENTA" ? "Eléctrico / Neumático" : "Diésel")),
+        horometro: numHoro,
+        estado: estado,
+        responsable: responsable,
+        categoria: catMaestra,
+        fechaRegistro: new Date().toISOString()
+    };
+
+    if (idxExistente >= 0) {
+        maquinarias[idxExistente] = itemMaq;
+    } else {
+        maquinarias.push(itemMaq);
+    }
+
+    // 2. SINCRONIZAR EN PROGRAMA MAESTRO (corssenPrograma)
+    const progIndex = corssenPrograma.findIndex(p => (p.cod || "").toUpperCase() === codigo);
+    const itemProg = {
+        cod: codigo,
+        equipo: `${nombre.toUpperCase()} ${modelo ? modelo.toUpperCase() : ''}`.trim(),
+        marca: marca.toUpperCase(),
+        cat: catMaestra,
+        estado: estado,
+        prioridad: (estado.toLowerCase().includes("fuera") ? "Alta" : "Media"),
+        horometro: `${numHoro} ${unidadMedida}`,
+        frecuencia: frecuencia,
+        prox: proxServicio,
+        responsable: responsable,
+        observaciones: observaciones || `Alta de equipo ${tipoRegistro.toLowerCase()} el ${new Date().toLocaleDateString('es-CL')}`
+    };
+
+    if (progIndex >= 0) {
+        corssenPrograma[progIndex] = itemProg;
+    } else {
+        corssenPrograma.push(itemProg);
+    }
+
+    // 3. SINCRONIZAR O CREAR FICHA TÉCNICA OFICIAL (corssenFichas)
+    // Generar pauta de aceites y filtros adaptada a la naturaleza del equipo
+    let aceitesPredeterminados = [];
+    let filtrosPredeterminados = [];
+
+    if (tipoRegistro === "MARÍTIMO") {
+        aceitesPredeterminados = [
+            { tipo: "Aceite de Motor Marino", modelo: "10W-30 / 15W-40 Marino TC-W3 / FC-W", cantidad: "8 Lts", proveedor: "Yamalube / Luval" },
+            { tipo: "Aceite Pata / Transmisión Marina", modelo: "SAE 90 Marino / GL-5", cantidad: "1.2 Lts", proveedor: "Yamalube / Luval" },
+            { tipo: "Grasa Marina Chasis y Ejes", modelo: "Grasa Marina Resistente a Agua Salada", cantidad: "Cartucho", proveedor: "Luval" }
+        ];
+        filtrosPredeterminados = [
+            { elemento: "Filtro Aceite Motor Marino", alt1: "Yamaha / Mercury OEM", alt2: "Baldwin B1400", alt3: "Sierra 18-7915", alt4: "Donaldson P550963" },
+            { elemento: "Filtro Separador Agua/Combustible 10 Micron", alt1: "Racor S3213", alt2: "Sierra 18-7919", alt3: "Baldwin BF7783-D", alt4: "Donaldson P551843" },
+            { elemento: "Filtro Combustible en Línea", alt1: "OEM Original", alt2: "Sierra 18-7866", alt3: "Baldwin BF7863", alt4: "Fleetguard FF5375" }
+        ];
+    } else if (tipoRegistro === "HERRAMIENTA") {
+        aceitesPredeterminados = [
+            { tipo: "Aceite para Herramientas Neumáticas", modelo: "ISO VG 32 Neumático con Antidesgaste", cantidad: "0.5 Lts", proveedor: "Luval" },
+            { tipo: "Aceite Hidráulico Gatas", modelo: "ISO VG 46 / 68 Hidráulico", cantidad: "2 Lts", proveedor: "Luval" },
+            { tipo: "Grasa para Rodamientos e Impacto", modelo: "Grasa Litio Complejo EP-2", cantidad: "Cartucho", proveedor: "Luval" }
+        ];
+        filtrosPredeterminados = [
+            { elemento: "Filtro Regulador de Aire / Trampa Agua", alt1: "SMC / Parker 5 Micron", alt2: "Norgren F74G", alt3: "Festo LFR", alt4: "Original OEM" },
+            { elemento: "Filtro Silenciador de Escape", alt1: "SMC AN-Series", alt2: "Parker 0450", alt3: "Festo U-Series", alt4: "Original OEM" }
+        ];
+    } else {
+        // AUXILIARES (Generadores, Torres de luz, Compresores)
+        aceitesPredeterminados = [
+            { tipo: "Aceite de Motor Diésel", modelo: "15W-40 CI-4 / CK-4 Heavy Duty", cantidad: "12 Lts", proveedor: "Luval" },
+            { tipo: "Aceite para Compresor / Hidráulico", modelo: "ISO VG 46 / 68 Rotativo o Tornillo", cantidad: "18 Lts", proveedor: "Luval" },
+            { tipo: "Líquido Refrigerante", modelo: "50/50 OAT Larga Duración", cantidad: "15 Lts", proveedor: "Luval" }
+        ];
+        filtrosPredeterminados = [
+            { elemento: "Filtro Aceite Motor Diésel", alt1: "Baldwin BD7309", alt2: "Donaldson P550008", alt3: "Fleetguard LF3349", alt4: "Original OEM" },
+            { elemento: "Filtro Petróleo / Separador de Agua", alt1: "Baldwin BF1280", alt2: "Donaldson P550440", alt3: "Fleetguard FS19855", alt4: "Original OEM" },
+            { elemento: "Filtro Aire Primario", alt1: "Baldwin RS3544", alt2: "Donaldson P772579", alt3: "Fleetguard AF25437", alt4: "Original OEM" }
+        ];
+    }
+
+    if (!corssenFichas[codigo]) {
+        corssenFichas[codigo] = {
+            codigo: codigo,
+            nombre: nombre,
+            marca: marca,
+            modelo: modelo,
+            capacidad: capacidad,
+            anio: anio,
+            motor: (tipoRegistro === "MARÍTIMO" ? `Motor Marino ${marca}` : `${marca} ${modelo}`),
+            patente: "",
+            responsable: responsable,
+            estado: estado.toUpperCase(),
+            horometro: `${numHoro} ${unidadMedida}`,
+            prox: proxServicio,
+            categoria: catMaestra,
+            aceites: aceitesPredeterminados,
+            filtros: filtrosPredeterminados,
+            historial: [
+                {
+                    fecha: new Date().toLocaleDateString("es-CL"),
+                    horometro: `${numHoro} ${unidadMedida}`,
+                    prox: proxServicio,
+                    descripcion: `Alta oficial en catálogo como ${tipoRegistro} y configuración de pauta técnica inicial`,
+                    insumos: "Pauta base de lubricantes y matriz de repuestos equivalentes"
+                }
+            ],
+            pendientes: observaciones ? [observaciones] : []
+        };
+    } else {
+        // Actualizar datos generales si ya existía
+        corssenFichas[codigo].nombre = nombre;
+        corssenFichas[codigo].marca = marca;
+        corssenFichas[codigo].modelo = modelo;
+        corssenFichas[codigo].capacidad = capacidad;
+        corssenFichas[codigo].anio = anio;
+        corssenFichas[codigo].responsable = responsable;
+        corssenFichas[codigo].estado = estado.toUpperCase();
+        corssenFichas[codigo].categoria = catMaestra;
+        corssenFichas[codigo].horometro = `${numHoro} ${unidadMedida}`;
+        corssenFichas[codigo].prox = proxServicio;
+        if (!corssenFichas[codigo].aceites || corssenFichas[codigo].aceites.length === 0) {
+            corssenFichas[codigo].aceites = aceitesPredeterminados;
+        }
+        if (!corssenFichas[codigo].filtros || corssenFichas[codigo].filtros.length === 0) {
+            corssenFichas[codigo].filtros = filtrosPredeterminados;
+        }
+    }
+
+    // Seleccionar automáticamente el equipo registrado
+    equipoSeleccionado = codigo;
+    equipoSeleccionadoFicha = codigo;
+
+    // 4. PERSISTIR DATOS Y ACTUALIZAR TODAS LAS VISTAS
+    guardarTodo();
+    poblarSelectorEquiposMantencion();
+    poblarSelectorEquiposCompatiblesStock();
+    renderizarSelectorFichas();
+    renderizarDetalleFichaTecnica();
+    renderizarProgramaMaestro();
+    renderizarFlotaRegistrada();
+    renderizarTablasOriginales();
+    renderizarDashboard();
+    renderizarAlertasMantencionesDashboard();
+
+    // Resetear formulario
+    document.getElementById("formAuxiliarHerramientaMaritimo")?.reset();
+    alCambiarTipoAuxiliarHerramienta();
+
+    if (confirm(`✓ Equipo "${codigo} - ${nombre}" registrado y sincronizado exitosamente.\n\nSe dio de alta en:\n• Programa Maestro de Mantención (${catMaestra})\n• Fichas Técnicas Multimarca (con matriz de lubricantes y filtros)\n• Alertas y Módulo de OT\n\n¿Desea ir a ver y editar su Ficha Técnica ahora?`)) {
+        navegarSeccion("fichasEquipos");
+        seleccionarEquipoFicha(codigo);
+    }
 }
 
 function eliminarMaquinaria(idx) {
@@ -7602,9 +8057,10 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("formIngresoMercaderia")?.addEventListener("submit", registrarIngresoMercaderia);
     document.getElementById("formIngresoStock")?.addEventListener("submit", registrarIngresoMercaderia);
 
-    // Formularios Originales
+    // Formularios Originales y Equipos Auxiliares/Herramientas/Marítimo
     document.getElementById("formVehiculo")?.addEventListener("submit", registrarVehiculo);
     document.getElementById("formMaquinaria")?.addEventListener("submit", registrarMaquinaria);
+    document.getElementById("formAuxiliarHerramientaMaritimo")?.addEventListener("submit", registrarAuxiliarHerramientaMaritimo);
     document.getElementById("formCarga")?.addEventListener("submit", registrarCargaCombustible);
 
     // =====================================================
