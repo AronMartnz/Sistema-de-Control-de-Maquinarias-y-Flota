@@ -12,7 +12,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <link rel="stylesheet" href="/style.css?v=20260907_v7">
+    <link rel="stylesheet" href="/style.css?v=20260908_responsive_v8">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -2300,9 +2300,19 @@
              8. FLOTA REGISTRADA
         ===================================================== -->
         <section class="panel" id="vehiculos">
-            <div class="titulo-panel">
-                <h2>Flota y Maquinarias Registradas en CORSSEN LOGÍSTICA</h2>
-                <p>Catálogo maestro y control integral de todas las camionetas, camiones, grúas portacontenedores, horquillas, equipos auxiliares y marítimos registrados.</p>
+            <div class="titulo-panel" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
+                <div>
+                    <h2>Flota y Maquinarias Registradas en CORSSEN LOGÍSTICA</h2>
+                    <p>Catálogo maestro y control integral de todas las camionetas, camiones, grúas portacontenedores, horquillas, equipos auxiliares y marítimos registrados.</p>
+                </div>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <span id="badgeFlotaSoloLectura" class="badge" style="display:none; background:#fef3c7; color:#b45309; border:1px solid #fde68a; font-size:12px; padding:6px 12px; font-weight:700;">
+                        🔒 Modo Consulta (Edición exclusiva para Administrador)
+                    </span>
+                    <span id="badgeFlotaAdmin" class="badge" style="display:none; background:#eff6ff; color:#1e40af; border:1px solid #bfdbfe; font-size:12px; padding:6px 12px; font-weight:700;">
+                        🛡️ Modo Administrador (Edición y Control Activo)
+                    </span>
+                </div>
             </div>
 
             <!-- Controles y Filtros de la Flota -->
@@ -2319,7 +2329,7 @@
                     <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
                         <input type="text" id="inputBuscarFlota" placeholder="🔍 Buscar por código, patente, marca, modelo o responsable..." style="padding:8px 14px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; min-width:260px;">
                         <button class="btn-secundario" onclick="exportarFlotaExcel()" title="Exportar catálogo completo de Flota y Maquinarias a Excel (.xlsx)">📊 Exportar Flota Excel (.xlsx)</button>
-                        <button class="btn-primario" onclick="navegarSeccion('registrarVehiculo')">➕ Registrar Unidad</button>
+                        <button class="btn-primario" id="btnRegistrarUnidadFlota" onclick="navegarSeccion('registrarVehiculo')" title="Solo rol Administrador">➕ Registrar Unidad</button>
                     </div>
                 </div>
             </div>
