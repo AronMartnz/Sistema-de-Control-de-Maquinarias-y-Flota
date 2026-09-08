@@ -537,19 +537,39 @@ let pestanaInventarioActiva = "EXISTENCIAS";
 let pestanaCombustibleActiva = "DESPACHOS";
 
 // =========================================================
-// ESTADO ESPECIALIZADO: CONTROL DE ACEITE A GRANEL (200 LITROS)
+// ESTADO ESPECIALIZADO: CONTROL DE ACEITE A GRANEL (2 TAMBORES 200 LITROS)
 // =========================================================
-let estadoTamborAceite = {
-    nombre: "Aceite Valvoline Premium Blue 15W40 CI-4",
-    capacidad: 200,
-    actual: 200,
-    costoTotal: 550000,
-    costoPorLitro: 2750,
-    proveedor: "LUVAL S.A.",
-    factura: "FAC-84920",
-    fechaApertura: "2026-03-01",
-    estado: "Activo"
+let estadoTamboresAceite = {
+    tambor1: {
+        id: "tambor1",
+        nombre: "Aceite Valvoline Premium Blue 15W40 CI-4",
+        tipo: "Aceite de Motor (15W-40)",
+        capacidad: 200,
+        actual: 167,
+        costoTotal: 550000,
+        costoPorLitro: 2750,
+        proveedor: "LUVAL S.A.",
+        factura: "FAC-84920",
+        fechaApertura: "2026-03-01",
+        estado: "Activo"
+    },
+    tambor2: {
+        id: "tambor2",
+        nombre: "Aceite Hidráulico Valvoline Unitrac 10W30 / ISO 68",
+        tipo: "Aceite Hidráulico (10W-30)",
+        capacidad: 200,
+        actual: 200,
+        costoTotal: 520000,
+        costoPorLitro: 2600,
+        proveedor: "LUVAL S.A.",
+        factura: "FAC-84925",
+        fechaApertura: "2026-03-01",
+        estado: "Activo"
+    }
 };
+
+// Alias retrocompatible
+let estadoTamborAceite = estadoTamboresAceite.tambor1;
 
 const DATOS_HISTORIAL_ACEITE_DEFAULT = [
     {
@@ -558,6 +578,9 @@ const DATOS_HISTORIAL_ACEITE_DEFAULT = [
         folioOT: "OT-2026-001",
         codigoEquipo: "GPC-01",
         equipoNombre: "Grúa Portacontenedores Taylor 40T",
+        tamborId: "tambor1",
+        tipoAceite: "Aceite de Motor (15W-40)",
+        nombreAceite: "Aceite Valvoline Premium Blue 15W40 CI-4",
         tipoMantencion: "Preventiva 250 Hrs",
         litrosDescontados: 33,
         saldoRestante: 167,
@@ -873,15 +896,59 @@ function cargarTodo() {
             inventario = JSON.parse(JSON.stringify(DATOS_INVENTARIO_DEFAULT));
         }
 
-        // Cargar estado especializado del Tambor de Aceite (200L)
-        const tamborGuardado = localStorage.getItem("corssen_tambor_aceite_v1");
-        if (tamborGuardado) {
+        // Cargar estado especializado de los 2 Tambores de Aceite (200L c/u)
+        const tamboresGuardados = localStorage.getItem("corssen_tambores_aceite_v2");
+        if (tamboresGuardados) {
             try {
-                estadoTamborAceite = JSON.parse(tamborGuardado);
+                estadoTamboresAceite = JSON.parse(tamboresGuardados);
             } catch (e) {
-                console.error("Error al parsear estadoTamborAceite:", e);
+                console.error("Error al parsear estadoTamboresAceite:", e);
+            }
+        } else {
+            // Migración desde v1
+            const tamborGuardado = localStorage.getItem("corssen_tambor_aceite_v1");
+            if (tamborGuardado) {
+                try {
+                    const parsedV1 = JSON.parse(tamborGuardado);
+                    if (parsedV1 && parsedV1.nombre) {
+                        estadoTamboresAceite.tambor1 = { ...estadoTamboresAceite.tambor1, ...parsedV1 };
+                    }
+                } catch (e) {
+                    console.error("Error al migrar estadoTamborAceite:", e);
+                }
             }
         }
+        if (!estadoTamboresAceite.tambor1) {
+            estadoTamboresAceite.tambor1 = {
+                id: "tambor1",
+                nombre: "Aceite Valvoline Premium Blue 15W40 CI-4",
+                tipo: "Aceite de Motor (15W-40)",
+                capacidad: 200,
+                actual: 200,
+                costoTotal: 550000,
+                costoPorLitro: 2750,
+                proveedor: "LUVAL S.A.",
+                factura: "FAC-84920",
+                fechaApertura: "2026-03-01",
+                estado: "Activo"
+            };
+        }
+        if (!estadoTamboresAceite.tambor2) {
+            estadoTamboresAceite.tambor2 = {
+                id: "tambor2",
+                nombre: "Aceite Hidráulico Valvoline Unitrac 10W30 / ISO 68",
+                tipo: "Aceite Hidráulico (10W-30)",
+                capacidad: 200,
+                actual: 200,
+                costoTotal: 520000,
+                costoPorLitro: 2600,
+                proveedor: "LUVAL S.A.",
+                factura: "FAC-84925",
+                fechaApertura: "2026-03-01",
+                estado: "Activo"
+            };
+        }
+        estadoTamborAceite = estadoTamboresAceite.tambor1;
 
         const histAceiteGuardado = JSON.parse(localStorage.getItem("corssen_historial_aceite_v1") || "null");
         if (histAceiteGuardado !== null && Array.isArray(histAceiteGuardado)) {
@@ -1001,7 +1068,8 @@ function guardarTodo() {
         localStorage.setItem("flota_cargas", JSON.stringify(cargas));
         localStorage.setItem("flota_mantenciones_v3", JSON.stringify(mantenciones));
         localStorage.setItem("flota_inventario_v3", JSON.stringify(inventario));
-        localStorage.setItem("corssen_tambor_aceite_v1", JSON.stringify(estadoTamborAceite));
+        localStorage.setItem("corssen_tambores_aceite_v2", JSON.stringify(estadoTamboresAceite));
+        localStorage.setItem("corssen_tambor_aceite_v1", JSON.stringify(estadoTamboresAceite?.tambor1 || estadoTamborAceite));
         localStorage.setItem("corssen_historial_aceite_v1", JSON.stringify(historialConsumoAceite));
         localStorage.setItem("corssen_tanque_combustible_v1", JSON.stringify(estadoTanqueCombustible));
         localStorage.setItem("corssen_historial_recargas_comb_v1", JSON.stringify(historialRecargasCombustible));
@@ -5247,33 +5315,64 @@ function manejarCambioEquipoMantencion() {
 }
 
 function actualizarRequerimientoAceiteMantencion(ficha) {
-    const inputLitros = document.getElementById("inputLitrosAceiteDescontar");
-    const lblSugerido = document.getElementById("lblInfoAceiteSugeridoFicha");
-    const lblSaldo = document.getElementById("lblSaldoTamborActualMant");
+    const inputLitrosMotor = document.getElementById("inputLitrosAceiteDescontar");
+    const inputLitrosHidraulico = document.getElementById("inputLitrosAceiteHidraulicoDescontar");
+    const lblSugeridoMotor = document.getElementById("lblInfoAceiteSugeridoFicha");
+    const lblSugeridoHidraulico = document.getElementById("lblInfoAceiteHidraulicoSugeridoFicha");
+    const lblSaldoMotor = document.getElementById("lblSaldoTamborActualMant");
+    const lblSaldoHidraulico = document.getElementById("lblSaldoTambor2ActualMant");
+    const lblNombreT1 = document.getElementById("lblNombreTambor1EnMant");
+    const lblNombreT2 = document.getElementById("lblNombreTambor2EnMant");
 
-    if (lblSaldo) {
-        lblSaldo.innerHTML = `Saldo disponible en tambor activo: <strong>${(estadoTamborAceite.actual || 0).toFixed(1)} Lts</strong> (${estadoTamborAceite.nombre || 'Valvoline 15W40'})`;
+    const t1 = estadoTamboresAceite?.tambor1 || estadoTamborAceite || {};
+    const t2 = estadoTamboresAceite?.tambor2 || {};
+
+    if (lblNombreT1) lblNombreT1.textContent = t1.nombre || "Aceite Valvoline Premium Blue 15W40";
+    if (lblNombreT2) lblNombreT2.textContent = t2.nombre || "Aceite Hidráulico Valvoline Unitrac 10W30";
+
+    const saldoT1 = t1.actual !== undefined ? t1.actual : 200;
+    const saldoT2 = t2.actual !== undefined ? t2.actual : 200;
+
+    if (lblSaldoMotor) {
+        lblSaldoMotor.innerHTML = `Saldo disponible: <strong style="color:#1e40af;">${saldoT1.toFixed(1)} Lts</strong>`;
+    }
+    if (lblSaldoHidraulico) {
+        lblSaldoHidraulico.innerHTML = `Saldo disponible: <strong style="color:#15803d;">${saldoT2.toFixed(1)} Lts</strong>`;
     }
 
-    let litrosReq = 0;
-    let descAceite = "Sin especificación de litros";
+    let litrosMotorReq = 0;
+    let descMotor = "Sin especificación en ficha";
+    let descHidraulico = "Opcional / Según requerimiento";
 
     if (ficha && ficha.aceites && ficha.aceites.length > 0) {
-        const motOil = ficha.aceites.find(a => a.tipo.toLowerCase().includes("motor")) || ficha.aceites[0];
-        if (motOil && motOil.capacidad) {
-            const capNum = parseFloat(motOil.capacidad.replace(/[^0-9.]/g, ""));
+        const motOil = ficha.aceites.find(a => (a.tipo || "").toLowerCase().includes("motor")) || ficha.aceites[0];
+        if (motOil && (motOil.capacidad || motOil.cantidad)) {
+            const valStr = String(motOil.capacidad || motOil.cantidad);
+            const capNum = parseFloat(valStr.replace(/[^0-9.]/g, ""));
             if (!isNaN(capNum) && capNum > 0) {
-                litrosReq = capNum;
-                descAceite = `${motOil.viscosidad || motOil.tipo} - ${motOil.capacidad}`;
+                litrosMotorReq = capNum;
+                descMotor = `${motOil.viscosidad || motOil.tipo || "15W40"} (${valStr})`;
             }
+        }
+
+        const hidOil = ficha.aceites.find(a => (a.tipo || "").toLowerCase().includes("hidráulico") || (a.tipo || "").toLowerCase().includes("hidraulico"));
+        if (hidOil && (hidOil.capacidad || hidOil.cantidad)) {
+            descHidraulico = `${hidOil.viscosidad || hidOil.tipo || "10W30"} (${hidOil.capacidad || hidOil.cantidad})`;
         }
     }
 
-    if (inputLitros) {
-        inputLitros.value = litrosReq;
+    if (inputLitrosMotor) {
+        inputLitrosMotor.value = litrosMotorReq;
     }
-    if (lblSugerido) {
-        lblSugerido.innerHTML = `Requisito según Ficha Técnica: <strong>${litrosReq > 0 ? litrosReq + ' Litros' : 'N/A'}</strong> <span style="font-size:11px; color:#64748b;">(${descAceite})</span>`;
+    if (lblSugeridoMotor) {
+        lblSugeridoMotor.innerHTML = `Requisito según Ficha: <strong>${litrosMotorReq > 0 ? litrosMotorReq + ' Litros' : 'N/A'}</strong> <span style="font-size:11px; color:#64748b;">(${descMotor})</span>`;
+    }
+
+    if (inputLitrosHidraulico && (!inputLitrosHidraulico.value || inputLitrosHidraulico.value === "0")) {
+        inputLitrosHidraulico.value = 0;
+    }
+    if (lblSugeridoHidraulico) {
+        lblSugeridoHidraulico.innerHTML = `Capacidad Ficha: <strong>${descHidraulico}</strong>`;
     }
 
     calcularTotalMantencionForm();
@@ -5464,25 +5563,47 @@ function calcularTotalMantencionForm() {
         totalInsumos += (costoUnit * cant);
     });
 
-    // Calcular costo de Aceite del Tambor de 200L
-    const litrosAceite = parseFloat(document.getElementById("inputLitrosAceiteDescontar")?.value) || 0;
-    const costoLitroAceite = estadoTamborAceite.costoPorLitro || 2750;
-    const subtotalAceite = litrosAceite * costoLitroAceite;
+    // Calcular costo de Aceite Tambor 1 (Motor 15W-40)
+    const litrosMotor = parseFloat(document.getElementById("inputLitrosAceiteDescontar")?.value) || 0;
+    const costoLitroMotor = estadoTamboresAceite?.tambor1?.costoPorLitro || 2750;
+    const subtotalMotor = litrosMotor * costoLitroMotor;
 
-    const lblCostoAceite = document.getElementById("lblCostoAceiteOT");
-    if (lblCostoAceite) {
-        lblCostoAceite.textContent = `$${subtotalAceite.toLocaleString('es-CL')}`;
+    const lblCostoMotor = document.getElementById("lblCostoAceiteOT");
+    if (lblCostoMotor) {
+        lblCostoMotor.textContent = `$${subtotalMotor.toLocaleString('es-CL')}`;
+    }
+
+    // Calcular costo de Aceite Tambor 2 (Hidráulico 10W-30)
+    const litrosHidraulico = parseFloat(document.getElementById("inputLitrosAceiteHidraulicoDescontar")?.value) || 0;
+    const costoLitroHidraulico = estadoTamboresAceite?.tambor2?.costoPorLitro || 2600;
+    const subtotalHidraulico = litrosHidraulico * costoLitroHidraulico;
+
+    const lblCostoHidraulico = document.getElementById("lblCostoAceiteHidraulicoOT");
+    if (lblCostoHidraulico) {
+        lblCostoHidraulico.textContent = `$${subtotalHidraulico.toLocaleString('es-CL')}`;
+    }
+
+    const subtotalLubricantesTotal = subtotalMotor + subtotalHidraulico;
+    const litrosTotalesOT = litrosMotor + litrosHidraulico;
+
+    const lblTotalLub = document.getElementById("lblTotalLubricantesOT");
+    if (lblTotalLub) {
+        lblTotalLub.textContent = `$${subtotalLubricantesTotal.toLocaleString('es-CL')}`;
+    }
+    const lblTotalLitrosLub = document.getElementById("lblTotalLitrosLubricantesOT");
+    if (lblTotalLitrosLub) {
+        lblTotalLitrosLub.textContent = `${litrosTotalesOT.toFixed(1)} Lts`;
     }
 
     const costoManoObra = parseFloat(document.getElementById("inputMantCostoManoObra")?.value) || 0;
-    const totalOT = totalInsumos + subtotalAceite + costoManoObra;
+    const totalOT = totalInsumos + subtotalLubricantesTotal + costoManoObra;
 
     const elResumenInsumos = document.getElementById("resumenCostoInsumos");
     const elCardInsumos = document.getElementById("labelSubtotalInsumosCard");
     const elTotalOT = document.getElementById("labelMantCostoTotal");
 
-    if (elResumenInsumos) elResumenInsumos.textContent = `$${(totalInsumos + subtotalAceite).toLocaleString('es-CL')}`;
-    if (elCardInsumos) elCardInsumos.textContent = `$${(totalInsumos + subtotalAceite).toLocaleString('es-CL')}`;
+    if (elResumenInsumos) elResumenInsumos.textContent = `$${(totalInsumos + subtotalLubricantesTotal).toLocaleString('es-CL')}`;
+    if (elCardInsumos) elCardInsumos.textContent = `$${(totalInsumos + subtotalLubricantesTotal).toLocaleString('es-CL')}`;
     if (elTotalOT) elTotalOT.textContent = `$${totalOT.toLocaleString('es-CL')}`;
 }
 
@@ -5575,39 +5696,82 @@ function registrarNuevaMantencion(e) {
         }
     });
 
-    // 2. Deducir Aceite del Tambor de 200 Litros (Módulo de Aceite)
-    const litrosAceite = parseFloat(document.getElementById("inputLitrosAceiteDescontar")?.value) || 0;
-    let costoAceiteTotal = 0;
+    // 2. Deducir Aceite de Motor (Tambor 1 - 200L)
+    const litrosMotor = parseFloat(document.getElementById("inputLitrosAceiteDescontar")?.value) || 0;
+    let costoMotorTotal = 0;
+    const t1 = estadoTamboresAceite?.tambor1 || estadoTamborAceite;
 
-    if (litrosAceite > 0) {
-        const costoLitro = estadoTamborAceite.costoPorLitro || 2750;
-        costoAceiteTotal = litrosAceite * costoLitro;
-        costoInsumos += costoAceiteTotal;
+    if (litrosMotor > 0 && t1) {
+        const costoLitro = t1.costoPorLitro || 2750;
+        costoMotorTotal = litrosMotor * costoLitro;
+        costoInsumos += costoMotorTotal;
 
-        // Descontar saldo del tambor
-        estadoTamborAceite.actual = Math.max(0, (estadoTamborAceite.actual || 200) - litrosAceite);
+        // Descontar saldo del tambor 1
+        t1.actual = Math.max(0, (t1.actual !== undefined ? t1.actual : 200) - litrosMotor);
 
         insumosConsumidos.push({
-            detalle: `Aceite a Granel (${estadoTamborAceite.nombre})`,
-            modelo: "Tambor 200L",
+            detalle: `Aceite a Granel Motor (${t1.nombre || 'Valvoline 15W-40'})`,
+            modelo: "Tambor 1 (200L)",
             marca: "Valvoline",
-            cantidad: litrosAceite,
+            cantidad: litrosMotor,
             medida: "LITROS",
             costoUnitario: costoLitro,
-            costoTotal: costoAceiteTotal
+            costoTotal: costoMotorTotal
         });
 
-        // Registrar en historial especializado de aceite
         historialConsumoAceite.unshift({
-            id: `ACEITE-${Date.now()}`,
+            id: `ACEITE-T1-${Date.now()}`,
+            tamborId: "tambor1",
+            tipoAceite: "Aceite de Motor (15W-40)",
+            nombreAceite: t1.nombre || "Aceite Valvoline Premium Blue 15W40 CI-4",
             fecha,
             folioOT: folio,
             codigoEquipo,
             equipoNombre,
             tipoMantencion: tipo,
-            litrosDescontados: litrosAceite,
-            saldoRestante: estadoTamborAceite.actual,
-            costoTotal: costoAceiteTotal,
+            litrosDescontados: litrosMotor,
+            saldoRestante: t1.actual,
+            costoTotal: costoMotorTotal,
+            tecnico
+        });
+    }
+
+    // 2.1. Deducir Aceite Hidráulico (Tambor 2 - 200L)
+    const litrosHidraulico = parseFloat(document.getElementById("inputLitrosAceiteHidraulicoDescontar")?.value) || 0;
+    let costoHidraulicoTotal = 0;
+    const t2 = estadoTamboresAceite?.tambor2;
+
+    if (litrosHidraulico > 0 && t2) {
+        const costoLitroH = t2.costoPorLitro || 2600;
+        costoHidraulicoTotal = litrosHidraulico * costoLitroH;
+        costoInsumos += costoHidraulicoTotal;
+
+        // Descontar saldo del tambor 2
+        t2.actual = Math.max(0, (t2.actual !== undefined ? t2.actual : 200) - litrosHidraulico);
+
+        insumosConsumidos.push({
+            detalle: `Aceite a Granel Hidráulico (${t2.nombre || 'Unitrac 10W-30'})`,
+            modelo: "Tambor 2 (200L)",
+            marca: "Valvoline",
+            cantidad: litrosHidraulico,
+            medida: "LITROS",
+            costoUnitario: costoLitroH,
+            costoTotal: costoHidraulicoTotal
+        });
+
+        historialConsumoAceite.unshift({
+            id: `ACEITE-T2-${Date.now()}`,
+            tamborId: "tambor2",
+            tipoAceite: "Aceite Hidráulico (10W-30)",
+            nombreAceite: t2.nombre || "Aceite Hidráulico Valvoline Unitrac 10W30",
+            fecha,
+            folioOT: folio,
+            codigoEquipo,
+            equipoNombre,
+            tipoMantencion: tipo,
+            litrosDescontados: litrosHidraulico,
+            saldoRestante: t2.actual,
+            costoTotal: costoHidraulicoTotal,
             tecnico
         });
     }
@@ -5714,9 +5878,19 @@ function registrarNuevaMantencion(e) {
     if (bannerInfo) bannerInfo.style.display = "none";
     const inputLitrosAceite = document.getElementById("inputLitrosAceiteDescontar");
     if (inputLitrosAceite) inputLitrosAceite.value = 0;
+    const inputLitrosAceiteH = document.getElementById("inputLitrosAceiteHidraulicoDescontar");
+    if (inputLitrosAceiteH) inputLitrosAceiteH.value = 0;
     calcularTotalMantencionForm();
 
-    alert(`✓ Mantención registrada exitosamente con Folio ${folio}.\n${litrosAceite > 0 ? `🛢️ Se han descontado ${litrosAceite} Lts de Aceite del Tambor (Saldo restante: ${estadoTamborAceite.actual.toFixed(1)} L).\n` : ''}Se han descontado ${insumosConsumidos.length} insumos y registrado en el historial.`);
+    let msgAceite = "";
+    if (litrosMotor > 0) {
+        msgAceite += `🛢️ Tambor 1 (Motor): Descontados ${litrosMotor} L (Saldo: ${(t1?.actual ?? 0).toFixed(1)} L)\n`;
+    }
+    if (litrosHidraulico > 0) {
+        msgAceite += `🛢️ Tambor 2 (Hidráulico): Descontados ${litrosHidraulico} L (Saldo: ${(t2?.actual ?? 0).toFixed(1)} L)\n`;
+    }
+
+    alert(`✓ Mantención registrada exitosamente con Folio ${folio}.\n${msgAceite}Se han descontado ${insumosConsumidos.length} insumos y registrado en el historial.`);
     navegarSeccion("gestionMantenciones");
 }
 
@@ -5759,7 +5933,7 @@ function navegarSeccion(idSeccion) {
         window.renderizarModuloRespaldos();
     }
 
-    if (idSeccion === "moduloAceite" && typeof window.renderizarModuloAceite === "function") {
+    if ((idSeccion === "moduloAceite" || idSeccion === "dashboard") && typeof window.renderizarModuloAceite === "function") {
         window.renderizarModuloAceite();
     }
 
@@ -5785,106 +5959,256 @@ function navegarSeccion(idSeccion) {
 }
 
 // =========================================================
-// 12. GESTIÓN Y CONTROL DE ACEITE A GRANEL (200 LITROS)
+// 12. GESTIÓN Y CONTROL DE ACEITE A GRANEL (2 TAMBORES 200 LITROS)
 // =========================================================
 
 function renderizarModuloAceite() {
-    const elNombre = document.getElementById("lblNombreTamborActivo");
-    const elPorcentaje = document.getElementById("lblPorcentajeAceite");
-    const barra = document.getElementById("barraProgresoAceite");
-    const elFecha = document.getElementById("lblFechaAperturaTambor");
-    const elProveedor = document.getElementById("lblProveedorTambor");
+    const t1 = estadoTamboresAceite?.tambor1 || {
+        id: "tambor1",
+        nombre: "Aceite Valvoline Premium Blue 15W40 CI-4",
+        tipo: "Aceite de Motor (15W-40)",
+        capacidad: 200,
+        actual: 200,
+        costoTotal: 550000,
+        costoPorLitro: 2750,
+        proveedor: "LUVAL S.A.",
+        factura: "FAC-84920",
+        fechaApertura: "2026-03-01"
+    };
 
+    const t2 = estadoTamboresAceite?.tambor2 || {
+        id: "tambor2",
+        nombre: "Aceite Hidráulico Valvoline Unitrac 10W30 / ISO 68",
+        tipo: "Aceite Hidráulico (10W-30)",
+        capacidad: 200,
+        actual: 200,
+        costoTotal: 520000,
+        costoPorLitro: 2600,
+        proveedor: "LUVAL S.A.",
+        factura: "FAC-84925",
+        fechaApertura: "2026-03-01"
+    };
+
+    // Cálculos Tambor 1 (Motor 15W-40)
+    const capTotal1 = t1.capacidad || 200;
+    const saldoActual1 = Math.max(0, t1.actual !== undefined ? t1.actual : 200);
+    const porcentaje1 = Math.min(100, Math.max(0, (saldoActual1 / capTotal1) * 100));
+    const litrosConsumidosTambor1 = Math.max(0, capTotal1 - saldoActual1);
+
+    // Cálculos Tambor 2 (Hidráulico 10W-30)
+    const capTotal2 = t2.capacidad || 200;
+    const saldoActual2 = Math.max(0, t2.actual !== undefined ? t2.actual : 200);
+    const porcentaje2 = Math.min(100, Math.max(0, (saldoActual2 / capTotal2) * 100));
+    const litrosConsumidosTambor2 = Math.max(0, capTotal2 - saldoActual2);
+
+    // 1. Renderizar Tarjeta Tambor 1
+    const elNombre1 = document.getElementById("lblNombreTambor1");
+    const elDetalle1 = document.getElementById("lblDetalleTambor1");
+    const elPorcentaje1 = document.getElementById("lblPorcentajeAceite1");
+    const barra1 = document.getElementById("barraProgresoAceite1");
+    const elSaldoDisp1 = document.getElementById("lblLitrosDisponibles1");
+    const elFecha1 = document.getElementById("lblFechaAperturaTambor1");
+    const elConsumido1 = document.getElementById("lblConsumidoTambor1");
+    const elProveedor1 = document.getElementById("lblProveedorTambor1");
+    const elCostoLitro1 = document.getElementById("lblCostoLitroTambor1");
+
+    if (elNombre1) elNombre1.textContent = t1.nombre || "Aceite Valvoline Premium Blue 15W40 CI-4";
+    if (elDetalle1) elDetalle1.textContent = `Tambor estándar de 200 Litros (${t1.tipo || 'Aceite de Motor 15W-40'})`;
+    if (elPorcentaje1) {
+        elPorcentaje1.textContent = `${porcentaje1.toFixed(1)}% (${saldoActual1.toFixed(1)} / ${capTotal1} L)`;
+        elPorcentaje1.style.color = saldoActual1 <= 35 ? "#dc2626" : saldoActual1 <= 70 ? "#d97706" : "#2563eb";
+    }
+    if (barra1) {
+        barra1.style.width = `${porcentaje1}%`;
+        barra1.style.background = saldoActual1 <= 35 
+            ? "linear-gradient(90deg, #ef4444, #b91c1c)" 
+            : saldoActual1 <= 70 
+                ? "linear-gradient(90deg, #f59e0b, #d97706)" 
+                : "linear-gradient(90deg, #3b82f6, #1d4ed8)";
+    }
+    if (elSaldoDisp1) elSaldoDisp1.textContent = `${saldoActual1.toFixed(1)} Lts`;
+    if (elFecha1) elFecha1.textContent = t1.fechaApertura || "2026-03-01";
+    if (elConsumido1) elConsumido1.textContent = `${litrosConsumidosTambor1.toFixed(1)} L`;
+    if (elProveedor1) elProveedor1.textContent = t1.proveedor || "LUVAL S.A.";
+    if (elCostoLitro1) {
+        const c1 = t1.costoPorLitro || Math.round((t1.costoTotal || 550000) / capTotal1);
+        elCostoLitro1.textContent = `$${c1.toLocaleString('es-CL')}`;
+    }
+
+    // Gráfico SVG 3D Tambor 1 (Motor)
+    const maxTuboH = 82;
+    const baseTuboY = 87;
+    const hSvg1 = Math.max(2, Math.min(maxTuboH, (saldoActual1 / capTotal1) * maxTuboH));
+    const ySvg1 = baseTuboY - hSvg1;
+    const svgCol1 = document.getElementById("svgColumnaAceite1");
+    if (svgCol1) {
+        svgCol1.setAttribute("y", ySvg1.toFixed(1));
+        svgCol1.setAttribute("height", hSvg1.toFixed(1));
+    }
+    const svgTxt1 = document.getElementById("svgTextoLitros1");
+    if (svgTxt1) {
+        svgTxt1.textContent = `${saldoActual1.toFixed(1)} L (${porcentaje1.toFixed(0)}%)`;
+        svgTxt1.setAttribute("fill", saldoActual1 <= 35 ? "#ef4444" : "#60a5fa");
+    }
+
+    // 2. Renderizar Tarjeta Tambor 2
+    const elNombre2 = document.getElementById("lblNombreTambor2");
+    const elDetalle2 = document.getElementById("lblDetalleTambor2");
+    const elPorcentaje2 = document.getElementById("lblPorcentajeAceite2");
+    const barra2 = document.getElementById("barraProgresoAceite2");
+    const elSaldoDisp2 = document.getElementById("lblLitrosDisponibles2");
+    const elFecha2 = document.getElementById("lblFechaAperturaTambor2");
+    const elConsumido2 = document.getElementById("lblConsumidoTambor2");
+    const elProveedor2 = document.getElementById("lblProveedorTambor2");
+    const elCostoLitro2 = document.getElementById("lblCostoLitroTambor2");
+
+    if (elNombre2) elNombre2.textContent = t2.nombre || "Aceite Hidráulico Valvoline Unitrac 10W30 / ISO 68";
+    if (elDetalle2) elDetalle2.textContent = `Tambor estándar de 200 Litros (${t2.tipo || 'Aceite Hidráulico 10W-30'})`;
+    if (elPorcentaje2) {
+        elPorcentaje2.textContent = `${porcentaje2.toFixed(1)}% (${saldoActual2.toFixed(1)} / ${capTotal2} L)`;
+        elPorcentaje2.style.color = saldoActual2 <= 35 ? "#dc2626" : saldoActual2 <= 70 ? "#d97706" : "#059669";
+    }
+    if (barra2) {
+        barra2.style.width = `${porcentaje2}%`;
+        barra2.style.background = saldoActual2 <= 35 
+            ? "linear-gradient(90deg, #ef4444, #b91c1c)" 
+            : saldoActual2 <= 70 
+                ? "linear-gradient(90deg, #f59e0b, #d97706)" 
+                : "linear-gradient(90deg, #10b981, #059669)";
+    }
+    if (elSaldoDisp2) elSaldoDisp2.textContent = `${saldoActual2.toFixed(1)} Lts`;
+    if (elFecha2) elFecha2.textContent = t2.fechaApertura || "2026-03-01";
+    if (elConsumido2) elConsumido2.textContent = `${litrosConsumidosTambor2.toFixed(1)} L`;
+    if (elProveedor2) elProveedor2.textContent = t2.proveedor || "LUVAL S.A.";
+    if (elCostoLitro2) {
+        const c2 = t2.costoPorLitro || Math.round((t2.costoTotal || 520000) / capTotal2);
+        elCostoLitro2.textContent = `$${c2.toLocaleString('es-CL')}`;
+    }
+
+    // Gráfico SVG 3D Tambor 2 (Hidráulico)
+    const hSvg2 = Math.max(2, Math.min(maxTuboH, (saldoActual2 / capTotal2) * maxTuboH));
+    const ySvg2 = baseTuboY - hSvg2;
+    const svgCol2 = document.getElementById("svgColumnaAceite2");
+    if (svgCol2) {
+        svgCol2.setAttribute("y", ySvg2.toFixed(1));
+        svgCol2.setAttribute("height", hSvg2.toFixed(1));
+    }
+    const svgTxt2 = document.getElementById("svgTextoLitros2");
+    if (svgTxt2) {
+        svgTxt2.textContent = `${saldoActual2.toFixed(1)} L (${porcentaje2.toFixed(0)}%)`;
+        svgTxt2.setAttribute("fill", saldoActual2 <= 35 ? "#ef4444" : "#6ee7b7");
+    }
+
+    // Dashboard mini-widgets de ambos tambores
+    const dashNivel1 = document.getElementById("dashNivelTambor1Txt");
+    const dashBarra1 = document.getElementById("dashBarraTambor1");
+    const dashNombre1 = document.getElementById("dashNombreTambor1Txt");
+    if (dashNivel1) dashNivel1.textContent = `${saldoActual1.toFixed(1)} / ${capTotal1} L (${porcentaje1.toFixed(0)}%)`;
+    if (dashBarra1) {
+        dashBarra1.style.width = `${porcentaje1}%`;
+        dashBarra1.style.background = saldoActual1 <= 35 ? "#ef4444" : "#2563eb";
+    }
+    if (dashNombre1) dashNombre1.textContent = t1.nombre || "Aceite Valvoline Premium Blue 15W40";
+
+    const dashNivel2 = document.getElementById("dashNivelTambor2Txt");
+    const dashBarra2 = document.getElementById("dashBarraTambor2");
+    const dashNombre2 = document.getElementById("dashNombreTambor2Txt");
+    if (dashNivel2) dashNivel2.textContent = `${saldoActual2.toFixed(1)} / ${capTotal2} L (${porcentaje2.toFixed(0)}%)`;
+    if (dashBarra2) {
+        dashBarra2.style.width = `${porcentaje2}%`;
+        dashBarra2.style.background = saldoActual2 <= 35 ? "#ef4444" : "#10b981";
+    }
+    if (dashNombre2) dashNombre2.textContent = t2.nombre || "Aceite Hidráulico Valvoline Unitrac 10W30";
+
+    const kpiTotalesTaller = document.getElementById("kpiLitrosTotalesTaller");
+    if (kpiTotalesTaller) {
+        kpiTotalesTaller.textContent = `${(saldoActual1 + saldoActual2).toFixed(1)} L`;
+    }
+    const kpiSubDetalleTotales = document.getElementById("kpiSubDetalleLitrosTotales");
+    if (kpiSubDetalleTotales) {
+        kpiSubDetalleTotales.textContent = `T1: ${saldoActual1.toFixed(0)}L | T2: ${saldoActual2.toFixed(0)}L (Saldo Taller)`;
+    }
+
+    // 3. KPIs Generales del Módulo (Ambos Tambores)
     const elKpiConsumido = document.getElementById("kpiLitrosConsumidosTambor");
     const elKpiMaquinas = document.getElementById("kpiMaquinasAbastecidasAceite");
     const elKpiCostoL = document.getElementById("kpiCostoLitroAceite");
     const elKpiTambores = document.getElementById("kpiTamboresHistoricos");
 
-    const capTotal = estadoTamborAceite.capacidad || 200;
-    const saldoActual = Math.max(0, estadoTamborAceite.actual !== undefined ? estadoTamborAceite.actual : 200);
-    const porcentaje = Math.min(100, Math.max(0, (saldoActual / capTotal) * 100));
-    const litrosConsumidosTambor = Math.max(0, capTotal - saldoActual);
-
-    if (elNombre) elNombre.textContent = estadoTamborAceite.nombre || "Aceite Valvoline Premium Blue 15W40";
-    if (elPorcentaje) {
-        elPorcentaje.textContent = `${porcentaje.toFixed(1)}% (${saldoActual.toFixed(1)} / ${capTotal} L)`;
-        if (saldoActual <= 35) {
-            elPorcentaje.style.color = "#dc2626";
-        } else if (saldoActual <= 70) {
-            elPorcentaje.style.color = "#d97706";
-        } else {
-            elPorcentaje.style.color = "#2563eb";
-        }
-    }
-
-    if (barra) {
-        barra.style.width = `${porcentaje}%`;
-        if (saldoActual <= 35) {
-            barra.style.background = "linear-gradient(90deg, #ef4444, #b91c1c)";
-        } else if (saldoActual <= 70) {
-            barra.style.background = "linear-gradient(90deg, #f59e0b, #d97706)";
-        } else {
-            barra.style.background = "linear-gradient(90deg, #3b82f6, #1d4ed8)";
-        }
-    }
-
-    if (elFecha) elFecha.textContent = estadoTamborAceite.fechaApertura || "2026-03-01";
-    if (elProveedor) elProveedor.textContent = estadoTamborAceite.proveedor || "LUVAL S.A.";
-
-    // KPIs
-    if (elKpiConsumido) elKpiConsumido.textContent = `${litrosConsumidosTambor.toFixed(1)} L`;
+    const totalLitrosConsumidos = litrosConsumidosTambor1 + litrosConsumidosTambor2;
+    if (elKpiConsumido) elKpiConsumido.textContent = `${totalLitrosConsumidos.toFixed(1)} L`;
     if (elKpiMaquinas) {
-        const maquinasUnicas = new Set(historialConsumoAceite.map(h => h.codigoEquipo)).size;
+        const maquinasUnicas = new Set((historialConsumoAceite || []).map(h => h.codigoEquipo)).size;
         elKpiMaquinas.textContent = maquinasUnicas;
     }
     if (elKpiCostoL) {
-        const costoL = estadoTamborAceite.costoPorLitro || (estadoTamborAceite.costoTotal ? Math.round(estadoTamborAceite.costoTotal / capTotal) : 2750);
-        elKpiCostoL.textContent = `$${costoL.toLocaleString('es-CL')}`;
+        const costoPromedio = Math.round(((t1.costoPorLitro || 2750) + (t2.costoPorLitro || 2600)) / 2);
+        elKpiCostoL.textContent = `$${costoPromedio.toLocaleString('es-CL')}`;
     }
-    if (elKpiTambores) elKpiTambores.textContent = "1 Activo";
+    if (elKpiTambores) elKpiTambores.textContent = "2 Activos";
 
-    // Actualizar badge en menú lateral
+    // 4. Actualizar badge en menú lateral
     const badgeMenu = document.getElementById("badgeNivelAceiteMenu");
     if (badgeMenu) {
-        badgeMenu.textContent = `${saldoActual.toFixed(0)}L`;
-        if (saldoActual <= 35) {
+        const totalSaldo = saldoActual1 + saldoActual2;
+        badgeMenu.textContent = `T1:${saldoActual1.toFixed(0)}L | T2:${saldoActual2.toFixed(0)}L`;
+        badgeMenu.title = `Tambor 1 (Motor): ${saldoActual1.toFixed(1)} L | Tambor 2 (Hidráulico): ${saldoActual2.toFixed(1)} L`;
+        if (saldoActual1 <= 35 || saldoActual2 <= 35) {
             badgeMenu.className = "badge badge-rojo";
-        } else if (saldoActual <= 70) {
+        } else if (saldoActual1 <= 70 || saldoActual2 <= 70) {
             badgeMenu.className = "badge badge-naranja";
         } else {
             badgeMenu.className = "badge badge-azul";
         }
     }
 
-    // Actualizar saldo disponible en formulario de mantención si está visible
-    const lblSaldoMant = document.getElementById("lblSaldoTamborActualMant");
-    if (lblSaldoMant) {
-        lblSaldoMant.innerHTML = `Saldo disponible en tambor activo: <strong>${saldoActual.toFixed(1)} Lts</strong> (${estadoTamborAceite.nombre || 'Valvoline 15W40'})`;
-    }
+    // 5. Actualizar saldos en formulario de mantención si está visible
+    const lblSaldoMant1 = document.getElementById("lblSaldoTamborActualMant");
+    const lblSaldoMant2 = document.getElementById("lblSaldoTambor2ActualMant");
+    const lblNombreMant1 = document.getElementById("lblNombreTambor1EnMant");
+    const lblNombreMant2 = document.getElementById("lblNombreTambor2EnMant");
 
-    // Renderizar tabla de historial de consumos
+    if (lblNombreMant1) lblNombreMant1.textContent = t1.nombre || "Aceite Valvoline Premium Blue 15W40";
+    if (lblNombreMant2) lblNombreMant2.textContent = t2.nombre || "Aceite Hidráulico Valvoline Unitrac 10W30";
+    if (lblSaldoMant1) lblSaldoMant1.innerHTML = `Saldo: <strong style="color:#1e40af;">${saldoActual1.toFixed(1)} Lts</strong>`;
+    if (lblSaldoMant2) lblSaldoMant2.innerHTML = `Saldo: <strong style="color:#15803d;">${saldoActual2.toFixed(1)} Lts</strong>`;
+
+    // 6. Renderizar tabla de historial de consumos con filtro de tambor
     const tbody = document.getElementById("tbodyHistorialConsumoAceite");
     if (!tbody) return;
 
-    if (!historialConsumoAceite || historialConsumoAceite.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:24px; color:#64748b;">No hay consumos de aceite registrados aún para este tambor.</td></tr>`;
+    const filtro = document.getElementById("filtroTamborAceite")?.value || "TODOS";
+    const consumosFiltrados = (historialConsumoAceite || []).filter(item => {
+        if (filtro === "TODOS") return true;
+        const itemTamborId = item.tamborId || (item.tipoAceite?.toLowerCase().includes("hidráulico") || item.tipoAceite?.toLowerCase().includes("hidraulico") ? "tambor2" : "tambor1");
+        return itemTamborId === filtro;
+    });
+
+    if (consumosFiltrados.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:24px; color:#64748b;">No hay consumos de aceite registrados${filtro !== "TODOS" ? " para este tambor" : ""}.</td></tr>`;
         return;
     }
 
-    tbody.innerHTML = historialConsumoAceite.map((item, index) => {
+    tbody.innerHTML = consumosFiltrados.map((item, index) => {
         const itemId = item.id || `ACEITE-AUTO-${index}`;
+        const esT2 = item.tamborId === "tambor2" || (item.tipoAceite && (item.tipoAceite.toLowerCase().includes("hidráulico") || item.tipoAceite.toLowerCase().includes("hidraulico")));
+        const badgeTambor = esT2 
+            ? `<span class="badge" style="background:#dcfce7; color:#15803d; border:1px solid #bbf7d0; font-weight:700;">🛢️ T2 • Hidráulico 10W30</span>` 
+            : `<span class="badge badge-azul" style="font-weight:700;">🛢️ T1 • Motor 15W40</span>`;
+
         return `
             <tr>
                 <td><strong>${item.fecha || '-'}</strong></td>
                 <td><span class="badge badge-azul">${item.folioOT || 'OT General'}</span></td>
                 <td><strong>${item.codigoEquipo || '-'}</strong> ${item.equipoNombre ? `<br><small style="color:#64748b;">${item.equipoNombre}</small>` : ''}</td>
+                <td>${badgeTambor}</td>
                 <td>${item.tipoMantencion || 'Mantención Periódica'}</td>
-                <td><strong style="color:#2563eb; font-size:14px;">-${(item.litrosDescontados || 0).toFixed(1)} Lts</strong></td>
+                <td><strong style="color:${esT2 ? '#059669' : '#2563eb'}; font-size:14px;">-${(item.litrosDescontados || 0).toFixed(1)} Lts</strong></td>
                 <td><span class="badge badge-gris">${(item.saldoRestante !== undefined ? item.saldoRestante : 0).toFixed(1)} Lts Disp.</span></td>
                 <td><strong style="color:#059669;">$${(item.costoTotal || 0).toLocaleString('es-CL')}</strong></td>
                 <td>${item.tecnico || 'Alexis Santos'}</td>
                 <td style="text-align:center;">
-                    <button type="button" class="btn-peligro" onclick="eliminarConsumoAceite('${itemId}')" title="Eliminar este consumo y reincorporar los litros al tambor" style="padding:4px 8px; font-size:11px; background:#fee2e2; color:#dc2626; border:1px solid #fecaca; border-radius:6px; cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:4px; transition:background 0.2s;">
+                    <button type="button" class="btn-peligro" onclick="eliminarConsumoAceite('${itemId}')" title="Eliminar este consumo y reincorporar los litros al tambor correspondiente" style="padding:4px 8px; font-size:11px; background:#fee2e2; color:#dc2626; border:1px solid #fecaca; border-radius:6px; cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:4px; transition:background 0.2s;">
                         🗑️ Eliminar
                     </button>
                 </td>
@@ -5916,28 +6240,36 @@ function eliminarConsumoAceite(id) {
     const folio = consumo.folioOT || "S/F";
     const fecha = consumo.fecha || "-";
 
+    const esT2 = consumo.tamborId === "tambor2" || (consumo.tipoAceite && (consumo.tipoAceite.toLowerCase().includes("hidráulico") || consumo.tipoAceite.toLowerCase().includes("hidraulico")));
+    const tamborDestinoKey = esT2 ? "tambor2" : "tambor1";
+    const tamborDestinoNombre = esT2 ? "Tambor 2 (Hidráulico 10W-30)" : "Tambor 1 (Motor 15W-40)";
+
     const mensajeConfirm = `¿Está seguro de eliminar el registro de consumo de aceite?\n\n` +
         `• Máquina / Equipo: ${equipo}\n` +
         `• Folio OT: ${folio}\n` +
         `• Fecha: ${fecha}\n` +
+        `• Origen: ${tamborDestinoNombre}\n` +
         `• Litros descontados: ${litros.toFixed(1)} Lts\n\n` +
-        `⚠️ Al eliminar este registro, los ${litros.toFixed(1)} Lts se reincorporarán automáticamente al saldo disponible del tambor de aceite.`;
+        `⚠️ Al eliminar este registro, los ${litros.toFixed(1)} Lts se reincorporarán automáticamente al saldo disponible de ${tamborDestinoNombre}.`;
 
     if (!confirm(mensajeConfirm)) return;
 
-    // 1. Reincorporar litros al tambor de aceite
-    if (litros > 0 && estadoTamborAceite) {
-        const capMax = Number(estadoTamborAceite.capacidad) || 200;
-        const actual = Number(estadoTamborAceite.actual) || 0;
-        estadoTamborAceite.actual = Math.min(capMax, actual + litros);
+    // 1. Reincorporar litros al tambor específico
+    if (litros > 0 && estadoTamboresAceite && estadoTamboresAceite[tamborDestinoKey]) {
+        const targetDrum = estadoTamboresAceite[tamborDestinoKey];
+        const capMax = Number(targetDrum.capacidad) || 200;
+        const actual = Number(targetDrum.actual) || 0;
+        targetDrum.actual = Math.min(capMax, actual + litros);
     }
 
     // 2. Eliminar del array
     historialConsumoAceite.splice(idx, 1);
     localStorage.setItem("corssen_historial_aceite_v1", JSON.stringify(historialConsumoAceite));
+    localStorage.setItem("corssen_tambores_aceite_v2", JSON.stringify(estadoTamboresAceite));
+    localStorage.setItem("corssen_tambor_aceite_v1", JSON.stringify(estadoTamboresAceite.tambor1));
     localStorage.setItem("corssen_ultima_modificacion_ts", String(Date.now()));
 
-    // 3. Persistir en almacenamiento local y disparar respaldo inmediato en nube
+    // 3. Persistir y respaldar
     guardarTodo();
     if (typeof window.ejecutarAutoBackupSistema === "function") {
         window.ejecutarAutoBackupSistema("Consumo de aceite eliminado", "AUTOMATICO", true);
@@ -5950,9 +6282,9 @@ function eliminarConsumoAceite(id) {
     }
 
     if (typeof mostrarNotificacionToast === "function") {
-        mostrarNotificacionToast(`Registro de ${equipo} eliminado y ${litros.toFixed(1)} Lts restituidos al tambor.`, "success");
+        mostrarNotificacionToast(`Registro de ${equipo} eliminado y ${litros.toFixed(1)} Lts restituidos a ${tamborDestinoNombre}.`, "success");
     } else {
-        alert(`Registro de ${equipo} eliminado correctamente. Se devolvieron ${litros.toFixed(1)} Lts al tambor.`);
+        alert(`Registro de ${equipo} eliminado correctamente. Se devolvieron ${litros.toFixed(1)} Lts a ${tamborDestinoNombre}.`);
     }
 }
 
@@ -5967,31 +6299,48 @@ window.vaciarHistorialConsumoAceite = function() {
     }
 
     const totalRegistros = historialConsumoAceite.length;
-    let sumaLitros = 0;
+    let sumaLitrosT1 = 0;
+    let sumaLitrosT2 = 0;
+
     historialConsumoAceite.forEach(h => {
-        sumaLitros += Number(h.litrosDescontados || 0);
+        const litros = Number(h.litrosDescontados || 0);
+        const esT2 = h.tamborId === "tambor2" || (h.tipoAceite && (h.tipoAceite.toLowerCase().includes("hidráulico") || h.tipoAceite.toLowerCase().includes("hidraulico")));
+        if (esT2) {
+            sumaLitrosT2 += litros;
+        } else {
+            sumaLitrosT1 += litros;
+        }
     });
 
     const mensajeConfirm = `⚠️ ¿Está seguro de VACIAR TODO el historial de consumos de aceite (${totalRegistros} registros)?\n\n` +
-        `• Se reincorporarán hasta ${sumaLitros.toFixed(1)} Lts al tambor activo (hasta el tope de capacidad).\n` +
+        `• Se reincorporarán hasta ${sumaLitrosT1.toFixed(1)} Lts al Tambor 1 (Motor).\n` +
+        `• Se reincorporarán hasta ${sumaLitrosT2.toFixed(1)} Lts al Tambor 2 (Hidráulico).\n` +
         `• Esta acción eliminará permanentemente los consumos tanto localmente como en la base de datos de Cloudflare.`;
 
     if (!confirm(mensajeConfirm)) return;
 
-    // 1. Reincorporar litros al tambor
-    if (sumaLitros > 0 && estadoTamborAceite) {
-        const capMax = Number(estadoTamborAceite.capacidad) || 200;
-        const actual = Number(estadoTamborAceite.actual) || 0;
-        estadoTamborAceite.actual = Math.min(capMax, actual + sumaLitros);
+    // 1. Reincorporar litros a cada tambor
+    if (estadoTamboresAceite) {
+        if (estadoTamboresAceite.tambor1 && sumaLitrosT1 > 0) {
+            const capMax1 = Number(estadoTamboresAceite.tambor1.capacidad) || 200;
+            const actual1 = Number(estadoTamboresAceite.tambor1.actual) || 0;
+            estadoTamboresAceite.tambor1.actual = Math.min(capMax1, actual1 + sumaLitrosT1);
+        }
+        if (estadoTamboresAceite.tambor2 && sumaLitrosT2 > 0) {
+            const capMax2 = Number(estadoTamboresAceite.tambor2.capacidad) || 200;
+            const actual2 = Number(estadoTamboresAceite.tambor2.actual) || 0;
+            estadoTamboresAceite.tambor2.actual = Math.min(capMax2, actual2 + sumaLitrosT2);
+        }
     }
 
     // 2. Vaciar array
     historialConsumoAceite = [];
     localStorage.setItem("corssen_historial_aceite_v1", JSON.stringify([]));
-    localStorage.setItem("corssen_tambor_aceite_v1", JSON.stringify(estadoTamborAceite));
+    localStorage.setItem("corssen_tambores_aceite_v2", JSON.stringify(estadoTamboresAceite));
+    localStorage.setItem("corssen_tambor_aceite_v1", JSON.stringify(estadoTamboresAceite.tambor1));
     localStorage.setItem("corssen_ultima_modificacion_ts", String(Date.now()));
 
-    // 3. Guardar y respaldar en nube de inmediato
+    // 3. Guardar y respaldar
     guardarTodo();
     if (typeof window.ejecutarAutoBackupSistema === "function") {
         window.ejecutarAutoBackupSistema("Vaciado completo de historial de consumo de aceite", "AUTOMATICO", true);
@@ -6010,15 +6359,61 @@ window.vaciarHistorialConsumoAceite = function() {
     }
 };
 
-function abrirModalNuevoTambor() {
-    const form = document.getElementById("formNuevoTamborAceite");
-    if (form) form.reset();
+function abrirModalNuevoTambor(tamborId) {
+    const targetId = tamborId === "tambor2" ? "tambor2" : "tambor1";
+    const selectTambor = document.getElementById("selectTamborApertura");
+    if (selectTambor) {
+        selectTambor.value = targetId;
+    }
+
+    cambiarTipoTamborModal(targetId);
+
     const inputFecha = document.getElementById("inputFechaAperturaTambor");
     if (inputFecha) {
         inputFecha.value = new Date().toISOString().split("T")[0];
     }
+
     const modal = document.getElementById("modalNuevoTamborAceite");
     if (modal) modal.style.display = "flex";
+}
+
+function cambiarTipoTamborModal(tamborId) {
+    const header = document.getElementById("headerModalNuevoTambor");
+    const titulo = document.getElementById("lblTituloModalNuevoTambor");
+    const btnSubmit = document.getElementById("btnSubmitNuevoTambor");
+    const inputNombre = document.getElementById("inputNombreAceiteTambor");
+    const inputCosto = document.getElementById("inputCostoTamborTotal");
+    const inputProveedor = document.getElementById("inputProveedorTambor");
+    const inputCapacidad = document.getElementById("inputCapacidadTambor");
+
+    const t = estadoTamboresAceite?.[tamborId] || {};
+
+    if (tamborId === "tambor2") {
+        if (header) header.style.background = "#047857";
+        if (titulo) titulo.textContent = "🛢️ Apertura de Nuevo Tambor 2 (Aceite Hidráulico 10W-30)";
+        if (btnSubmit) {
+            btnSubmit.textContent = "💾 Activar y Llenar Tambor 2 (Hidráulico 200L)";
+            btnSubmit.style.background = "#059669";
+            btnSubmit.style.borderColor = "#059669";
+        }
+        if (inputNombre) inputNombre.value = t.nombre || "Aceite Hidráulico Valvoline Unitrac 10W30 / ISO 68";
+        if (inputCosto) inputCosto.value = t.costoTotal || 520000;
+        if (inputProveedor) inputProveedor.value = t.proveedor || "LUVAL S.A.";
+    } else {
+        if (header) header.style.background = "#1e40af";
+        if (titulo) titulo.textContent = "🛢️ Apertura de Nuevo Tambor 1 (Aceite de Motor 15W-40)";
+        if (btnSubmit) {
+            btnSubmit.textContent = "💾 Activar y Llenar Tambor 1 (Motor 200L)";
+            btnSubmit.style.background = "#1e40af";
+            btnSubmit.style.borderColor = "#1e40af";
+        }
+        if (inputNombre) inputNombre.value = t.nombre || "Aceite Valvoline Premium Blue 15W40 CI-4";
+        if (inputCosto) inputCosto.value = t.costoTotal || 550000;
+        if (inputProveedor) inputProveedor.value = t.proveedor || "LUVAL S.A.";
+    }
+
+    if (inputCapacidad) inputCapacidad.value = t.capacidad || 200;
+    actualizarCostoLitroModal();
 }
 
 function cerrarModalNuevoTambor() {
@@ -6026,20 +6421,42 @@ function cerrarModalNuevoTambor() {
     if (modal) modal.style.display = "none";
 }
 
+function actualizarCostoLitroModal() {
+    const cap = parseFloat(document.getElementById("inputCapacidadTambor")?.value) || 200;
+    const costo = parseFloat(document.getElementById("inputCostoTamborTotal")?.value) || 0;
+    const costoL = Math.round(costo / cap);
+    const lbl = document.getElementById("lblCostoLitroModalCalc");
+    if (lbl) {
+        lbl.textContent = `$${costoL.toLocaleString('es-CL')} / Litro`;
+    }
+}
+
 function guardarNuevoTamborAceite(e) {
     if (e && e.preventDefault) e.preventDefault();
 
-    const nombre = document.getElementById("inputNombreAceiteTambor")?.value.trim() || "Aceite Valvoline Premium Blue 15W40 CI-4";
+    const tamborId = document.getElementById("selectTamborApertura")?.value || "tambor1";
+    const esT2 = tamborId === "tambor2";
+
+    const nombreDefault = esT2 
+        ? "Aceite Hidráulico Valvoline Unitrac 10W30 / ISO 68" 
+        : "Aceite Valvoline Premium Blue 15W40 CI-4";
+    const tipoDefault = esT2 
+        ? "Aceite Hidráulico (10W-30)" 
+        : "Aceite de Motor (15W-40)";
+
+    const nombre = document.getElementById("inputNombreAceiteTambor")?.value.trim() || nombreDefault;
     const capacidad = parseFloat(document.getElementById("inputCapacidadTambor")?.value) || 200;
     const fechaApertura = document.getElementById("inputFechaAperturaTambor")?.value || new Date().toISOString().split("T")[0];
-    const costoTotal = parseFloat(document.getElementById("inputCostoTamborTotal")?.value) || 550000;
+    const costoTotal = parseFloat(document.getElementById("inputCostoTamborTotal")?.value) || (esT2 ? 520000 : 550000);
     const proveedor = document.getElementById("inputProveedorTambor")?.value.trim() || "LUVAL S.A.";
     const factura = document.getElementById("inputFacturaTambor")?.value.trim() || "";
 
     const costoPorLitro = Math.round(costoTotal / capacidad);
 
-    estadoTamborAceite = {
+    const nuevoTambor = {
+        id: tamborId,
         nombre,
+        tipo: tipoDefault,
         capacidad,
         actual: capacidad, // Se inicia al 100% lleno
         costoTotal,
@@ -6050,15 +6467,23 @@ function guardarNuevoTamborAceite(e) {
         estado: "Activo"
     };
 
+    if (!estadoTamboresAceite) {
+        estadoTamboresAceite = {};
+    }
+    estadoTamboresAceite[tamborId] = nuevoTambor;
+    if (tamborId === "tambor1") {
+        estadoTamborAceite = nuevoTambor;
+    }
+
     // Registrar apertura en el Kárdex general como evento de recepción
     inventario.unshift({
         id: `MOV-TAMBOR-${Date.now()}`,
         tipo: "INGRESO",
         fecha: fechaApertura,
-        folioOT: factura || "APERTURA-TAMBOR",
+        folioOT: factura || (esT2 ? "APERTURA-TAMBOR-2-HIDRAULICO" : "APERTURA-TAMBOR-1-MOTOR"),
         codigoEquipo: "TALLER-LUBRICANTES",
         equipoNombre: "Bodega de Lubricantes Central",
-        insumoDetalle: `Tambor de Aceite a Granel (${nombre})`,
+        insumoDetalle: `Nuevo Tambor de Aceite a Granel (${nuevoTambor.tipo}: ${nombre})`,
         cantidad: capacidad,
         medida: "LITROS",
         costoUnitario: costoPorLitro,
@@ -6072,7 +6497,8 @@ function guardarNuevoTamborAceite(e) {
     renderizarKardexMovimientos();
     cerrarModalNuevoTambor();
 
-    alert(`✓ Nuevo tambor de ${capacidad} Litros registrado y activado con éxito.\nSaldo inicial listo para descontar en mantenciones: ${capacidad} Litros.`);
+    const tagTambor = esT2 ? "Tambor 2 (Aceite Hidráulico)" : "Tambor 1 (Aceite de Motor)";
+    alert(`✓ Nuevo ${tagTambor} de ${capacidad} Litros registrado y activado con éxito.\nSaldo inicial listo para descontar en mantenciones: ${capacidad} Litros.`);
 }
 
 function exportarConsumosAceiteExcel() {
@@ -6081,42 +6507,63 @@ function exportarConsumosAceiteExcel() {
         "Folio OT",
         "Código Equipo",
         "Nombre / Denominación",
+        "Tambor / Tipo Aceite",
         "Tipo de Mantención",
         "Litros Descontados (Lts)",
-        "Saldo Tambor Restante (Lts)",
+        "Saldo Restante (Lts)",
         "Costo Total ($ CLP)",
         "Mecánico Responsable"
     ];
 
-    const filas = (historialConsumoAceite || []).map(item => [
-        item.fecha || "",
-        item.folioOT || "",
-        item.codigoEquipo || "",
-        item.equipoNombre || "",
-        item.tipoMantencion || "",
-        item.litrosDescontados || 0,
-        item.saldoRestante !== undefined ? item.saldoRestante : 0,
-        item.costoTotal || 0,
-        item.tecnico || "Alexis Santos"
-    ]);
+    const filas = (historialConsumoAceite || []).map(item => {
+        const esT2 = item.tamborId === "tambor2" || (item.tipoAceite && (item.tipoAceite.toLowerCase().includes("hidráulico") || item.tipoAceite.toLowerCase().includes("hidraulico")));
+        const tipoDesc = esT2 ? "Tambor 2 - Hidráulico (10W-30)" : "Tambor 1 - Motor (15W-40)";
+
+        return [
+            item.fecha || "",
+            item.folioOT || "",
+            item.codigoEquipo || "",
+            item.equipoNombre || "",
+            tipoDesc,
+            item.tipoMantencion || "",
+            item.litrosDescontados || 0,
+            item.saldoRestante !== undefined ? item.saldoRestante : 0,
+            item.costoTotal || 0,
+            item.tecnico || "Alexis Santos"
+        ];
+    });
+
+    const t1 = estadoTamboresAceite?.tambor1 || {};
+    const t2 = estadoTamboresAceite?.tambor2 || {};
 
     const resumenTambor = [
-        ["ESTADO ACTUAL DEL TAMBOR DE ACEITE (200 LITROS)"],
-        ["Nombre:", estadoTamborAceite.nombre || "Valvoline 15W40"],
-        ["Capacidad Inicial:", `${estadoTamborAceite.capacidad || 200} Litros`],
-        ["Saldo Actual Disponible:", `${(estadoTamborAceite.actual || 0).toFixed(1)} Litros`],
-        ["Costo Estimado por Litro:", `$${(estadoTamborAceite.costoPorLitro || 2750).toLocaleString('es-CL')}`],
-        ["Proveedor:", estadoTamborAceite.proveedor || "LUVAL S.A."],
-        ["Fecha de Apertura:", estadoTamborAceite.fechaApertura || ""],
+        ["ESTADO ACTUAL DE LOS TAMBORES DE ACEITE A GRANEL (2 X 200 LITROS)"],
+        ["-- TAMBOR 1: ACEITE DE MOTOR (15W-40) --"],
+        ["Nombre:", t1.nombre || "Valvoline Premium Blue 15W40 CI-4"],
+        ["Capacidad Inicial:", `${t1.capacidad || 200} Litros`],
+        ["Saldo Actual Disponible:", `${(t1.actual !== undefined ? t1.actual : 200).toFixed(1)} Litros`],
+        ["Costo Estimado por Litro:", `$${(t1.costoPorLitro || 2750).toLocaleString('es-CL')}`],
+        ["Proveedor:", t1.proveedor || "LUVAL S.A."],
+        ["Fecha de Apertura:", t1.fechaApertura || ""],
+        ["Factura / Guía:", t1.factura || ""],
+        [""],
+        ["-- TAMBOR 2: ACEITE HIDRÁULICO (10W-30 / ISO 68) --"],
+        ["Nombre:", t2.nombre || "Valvoline Unitrac 10W30 / ISO 68"],
+        ["Capacidad Inicial:", `${t2.capacidad || 200} Litros`],
+        ["Saldo Actual Disponible:", `${(t2.actual !== undefined ? t2.actual : 200).toFixed(1)} Litros`],
+        ["Costo Estimado por Litro:", `$${(t2.costoPorLitro || 2600).toLocaleString('es-CL')}`],
+        ["Proveedor:", t2.proveedor || "LUVAL S.A."],
+        ["Fecha de Apertura:", t2.fechaApertura || ""],
+        ["Factura / Guía:", t2.factura || ""],
         [""]
     ];
 
     const datosCompletos = [...resumenTambor, encabezados, ...filas];
 
-    descargarLibroExcel("CORSSEN_CONSUMO_ACEITE_200L", [{
-        nombre: "Control Aceite 200L",
+    descargarLibroExcel("CORSSEN_CONTROL_ACEITE_2_TAMBORES", [{
+        nombre: "Control 2 Tambores Aceite",
         datos: datosCompletos,
-        anchos: [14, 16, 16, 32, 26, 20, 22, 18, 22]
+        anchos: [14, 16, 16, 32, 28, 26, 20, 22, 18, 22]
     }]);
 }
 
@@ -6965,7 +7412,15 @@ async function sincronizarConUltimoRespaldoNube(forzarRecarga = false) {
             if (data.flota_cargas) cargas = JSON.parse(JSON.stringify(data.flota_cargas));
             if (data.flota_mantenciones_v3) mantenciones = JSON.parse(JSON.stringify(data.flota_mantenciones_v3));
             if (data.flota_inventario_v3) inventario = JSON.parse(JSON.stringify(data.flota_inventario_v3));
-            if (data.corssen_tambor_aceite_v1) estadoTamborAceite = JSON.parse(JSON.stringify(data.corssen_tambor_aceite_v1));
+            if (data.corssen_tambores_aceite_v2) {
+                estadoTamboresAceite = JSON.parse(JSON.stringify(data.corssen_tambores_aceite_v2));
+                estadoTamborAceite = estadoTamboresAceite.tambor1;
+            } else if (data.corssen_tambor_aceite_v1) {
+                estadoTamborAceite = JSON.parse(JSON.stringify(data.corssen_tambor_aceite_v1));
+                if (estadoTamboresAceite) {
+                    estadoTamboresAceite.tambor1 = estadoTamborAceite;
+                }
+            }
             if (data.corssen_historial_aceite_v1) historialConsumoAceite = JSON.parse(JSON.stringify(data.corssen_historial_aceite_v1));
             if (data.corssen_tanque_combustible_v1) estadoTanqueCombustible = JSON.parse(JSON.stringify(data.corssen_tanque_combustible_v1));
             if (data.corssen_historial_recargas_comb_v1) historialRecargasCombustible = JSON.parse(JSON.stringify(data.corssen_historial_recargas_comb_v1));
@@ -6993,7 +7448,8 @@ async function sincronizarConUltimoRespaldoNube(forzarRecarga = false) {
             localStorage.setItem("flota_cargas", JSON.stringify(cargas));
             localStorage.setItem("flota_mantenciones_v3", JSON.stringify(mantenciones));
             localStorage.setItem("flota_inventario_v3", JSON.stringify(inventario));
-            localStorage.setItem("corssen_tambor_aceite_v1", JSON.stringify(estadoTamborAceite));
+            localStorage.setItem("corssen_tambores_aceite_v2", JSON.stringify(estadoTamboresAceite));
+            localStorage.setItem("corssen_tambor_aceite_v1", JSON.stringify(estadoTamboresAceite?.tambor1 || estadoTamborAceite));
             localStorage.setItem("corssen_historial_aceite_v1", JSON.stringify(historialConsumoAceite));
             localStorage.setItem("corssen_tanque_combustible_v1", JSON.stringify(estadoTanqueCombustible));
             localStorage.setItem("corssen_historial_recargas_comb_v1", JSON.stringify(historialRecargasCombustible));
@@ -7601,7 +8057,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 flota_cargas: JSON.parse(JSON.stringify(cargas || [])),
                 flota_mantenciones_v3: JSON.parse(JSON.stringify(mantenciones || [])),
                 flota_inventario_v3: JSON.parse(JSON.stringify(inventario || [])),
-                corssen_tambor_aceite_v1: JSON.parse(JSON.stringify(estadoTamborAceite || {})),
+                corssen_tambores_aceite_v2: JSON.parse(JSON.stringify(estadoTamboresAceite || {})),
+                corssen_tambor_aceite_v1: JSON.parse(JSON.stringify(estadoTamboresAceite?.tambor1 || estadoTamborAceite || {})),
                 corssen_historial_aceite_v1: JSON.parse(JSON.stringify(historialConsumoAceite || [])),
                 corssen_tanque_combustible_v1: JSON.parse(JSON.stringify(estadoTanqueCombustible || {})),
                 corssen_historial_recargas_comb_v1: JSON.parse(JSON.stringify(historialRecargasCombustible || []))
@@ -7614,7 +8071,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 totalStock: (corssenStock || []).length,
                 totalCargas: (cargas || []).length,
                 combustibleActual: estadoTanqueCombustible?.actual || 0,
-                aceiteActual: estadoTamborAceite?.actual || 0
+                aceiteActual: (estadoTamboresAceite?.tambor1?.actual || 0) + (estadoTamboresAceite?.tambor2?.actual || 0)
             }
         };
     }
@@ -8024,7 +8481,15 @@ document.addEventListener("DOMContentLoaded", () => {
         if (data.flota_cargas) cargas = JSON.parse(JSON.stringify(data.flota_cargas));
         if (data.flota_mantenciones_v3) mantenciones = JSON.parse(JSON.stringify(data.flota_mantenciones_v3));
         if (data.flota_inventario_v3) inventario = JSON.parse(JSON.stringify(data.flota_inventario_v3));
-        if (data.corssen_tambor_aceite_v1) estadoTamborAceite = JSON.parse(JSON.stringify(data.corssen_tambor_aceite_v1));
+        if (data.corssen_tambores_aceite_v2) {
+            estadoTamboresAceite = JSON.parse(JSON.stringify(data.corssen_tambores_aceite_v2));
+            estadoTamborAceite = estadoTamboresAceite.tambor1;
+        } else if (data.corssen_tambor_aceite_v1) {
+            estadoTamborAceite = JSON.parse(JSON.stringify(data.corssen_tambor_aceite_v1));
+            if (estadoTamboresAceite) {
+                estadoTamboresAceite.tambor1 = estadoTamborAceite;
+            }
+        }
         if (data.corssen_historial_aceite_v1) historialConsumoAceite = JSON.parse(JSON.stringify(data.corssen_historial_aceite_v1));
         if (data.corssen_tanque_combustible_v1) estadoTanqueCombustible = JSON.parse(JSON.stringify(data.corssen_tanque_combustible_v1));
         if (data.corssen_historial_recargas_comb_v1) historialRecargasCombustible = JSON.parse(JSON.stringify(data.corssen_historial_recargas_comb_v1));
@@ -8447,4 +8912,3 @@ document.addEventListener("DOMContentLoaded", () => {
         }, { passive: true });
     }
 });
-
