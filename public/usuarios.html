@@ -1313,7 +1313,7 @@
         }
 
         try {
-            const resp = await fetch(`/api/usuarios/${encodeURIComponent(usuario)}`, {
+            let resp = await fetch(`/api/usuarios/${encodeURIComponent(usuario)}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -1321,6 +1321,18 @@
                 },
                 body: JSON.stringify({ nombre, rol })
             });
+
+            // Si el servidor o CDN no admite PUT (404/405), reintentar automáticamente con POST
+            if (!resp.ok && (resp.status === 404 || resp.status === 405)) {
+                resp = await fetch(`/api/usuarios/${encodeURIComponent(usuario)}`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "x-usuario": usuarioLogueado || "admin"
+                    },
+                    body: JSON.stringify({ nombre, rol })
+                });
+            }
 
             if (resp.ok) {
                 alert(`✓ Datos de usuario '${usuario}' actualizados correctamente.`);
@@ -1335,7 +1347,8 @@
                 await cargarUsuarios();
             } else {
                 const err = await resp.json().catch(() => ({}));
-                alert(err.mensaje || "Error al actualizar datos del usuario.");
+                const detalle = err.mensaje || (resp.status === 403 ? "No tienes permisos de administrador" : `Código de respuesta HTTP ${resp.status}`);
+                alert(`⚠️ Error al actualizar usuario: ${detalle}`);
             }
         } catch (e) {
             console.error(e);
