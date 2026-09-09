@@ -154,7 +154,10 @@ export default {
         if (passValida) {
           const esAdmin = uNorm === "admin" || (uFound && uFound.rol === "admin");
           const avatarFinal = (uFound && uFound.avatar) ? uFound.avatar : (esAdmin ? "avatar-admin" : "avatar-mecanico");
-          const nombreFinal = (uFound && uFound.nombre) ? uFound.nombre : (esAdmin ? "Administrador General" : "Operador Principal");
+          let nombreFinal = (uFound && uFound.nombre) ? uFound.nombre : (esAdmin ? "Administrador General" : "Operador Principal");
+          if (nombreFinal.includes("Corsser")) {
+            nombreFinal = nombreFinal.replace(/Corsser/gi, "Corssen");
+          }
           const rolFinal = (uFound && uFound.rol) ? uFound.rol : (esAdmin ? "admin" : "operador");
 
           return new Response(JSON.stringify({
@@ -184,12 +187,18 @@ export default {
     if (path === "/api/usuarios" && request.method === "GET") {
       try {
         const users = await obtenerUsuarios();
-        return new Response(JSON.stringify(users.map(u => ({
-          usuario: u.usuario,
-          nombre: u.nombre || u.usuario,
-          rol: u.rol || "operador",
-          avatar: u.avatar || (u.rol === "admin" ? "avatar-admin" : "avatar-mecanico")
-        }))), {
+        return new Response(JSON.stringify(users.map(u => {
+          let uNombre = u.nombre || u.usuario;
+          if (uNombre.includes("Corsser")) {
+            uNombre = uNombre.replace(/Corsser/gi, "Corssen");
+          }
+          return {
+            usuario: u.usuario,
+            nombre: uNombre,
+            rol: u.rol || "operador",
+            avatar: u.avatar || (u.rol === "admin" ? "avatar-admin" : "avatar-mecanico")
+          };
+        })), {
           headers: { ...corsHeaders, "Content-Type": "application/json" }
         });
       } catch (err) {
@@ -367,6 +376,161 @@ export default {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" }
       });
+    }
+
+    // API Usuarios - PUT actualizar datos (Nombre y Rol - Solo Admin)
+    if (path.startsWith("/api/usuarios/") && request.method === "PUT") {
+      const userToUpdate = decodeURIComponent(path.split("/")[3] || "").toLowerCase().trim();
+      try {
+        const body = await request.json().catch(() => ({}));
+        let { nombre, rol } = body;
+        if (!nombre || typeof nombre !== "string" || nombre.trim().length === 0) {
+          return new Response(JSON.stringify({ mensaje: "El nombre es obligatorio" }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
+        }
+        nombre = String(nombre).trim();
+        if (nombre.includes("Corsser")) {
+          nombre = nombre.replace(/Corsser/gi, "Corssen");
+        }
+
+        // Obtener la lista actual de usuarios (de D1, KV o memoria)
+        let listaActual = await obtenerUsuarios();
+        let existeEnLista = listaActual.find(u => (u.usuario || "").toLowerCase() === userToUpdate);
+
+        // 1. Actualizar en D1 SQL si existe el binding
+        if (env && env.DB) {
+          try {
+            await env.DB.prepare(
+              "UPDATE usuarios SET nombre = ?, rol = ?, actualizado_en = CURRENT_TIMESTAMP WHERE LOWER(usuario) = LOWER(?)"
+            ).bind(nombre, (userToUpdate === "admin" ? "admin" : (rol || "operador")), userToUpdate).run();
+          } catch(e) {
+            console.warn("Error actualizando en D1 usuarios:", e);
+          }
+        }
+
+        // 2. Actualizar en la lista unificada
+        if (existeEnLista) {
+          listaActual = listaActual.map(u => {
+            if ((u.usuario || "").toLowerCase() === userToUpdate) {
+              return { 
+                ...u, 
+                nombre, 
+                rol: (userToUpdate === "admin" ? "admin" : (rol || u.rol || "operador")) 
+              };
+            }
+            return u;
+          });
+        } else {
+          // Si por alguna razón no estaba en la lista, agregarlo para persistir
+          listaActual.push({
+            usuario: userToUpdate,
+            nombre: nombre,
+            rol: (userToUpdate === "admin" ? "admin" : (rol || "operador")),
+            password: "1234",
+            avatar: (rol === "admin" ? "avatar-admin" : "avatar-mecanico")
+          });
+        }
+
+        // Sincronizar memoria interna
+        IN_MEMORY_USERS = listaActual;
+
+        // 3. Persistir en Cloudflare KV
+        if (kv) {
+          try {
+            await kv.put("usuarios_lista", JSON.stringify(listaActual));
+          } catch(eKV) {
+            console.warn("Error guardando en KV:", eKV);
+          }
+        }
+
+        return new Response(JSON.stringify({ 
+          mensaje: `Datos de usuario '${userToUpdate}' actualizados correctamente`,
+          usuario: {
+            usuario: userToUpdate,
+            nombre: nombre,
+            rol: (userToUpdate === "admin" ? "admin" : (rol || "operador"))
+          }
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      } catch (err) {
+        console.error("Error en PUT /api/usuarios:", err);
+        return new Response(JSON.stringify({ mensaje: "Error al actualizar datos del usuario: " + (err.message || "") }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+    }
+
+    // API Programa - GET y PUT (Solo Admin para modificar)
+    if (path.startsWith("/api/programa")) {
+      if (request.method === "GET") {
+        if (env && env.DB) {
+          try {
+            const { results } = await env.DB.prepare("SELECT * FROM corssen_programa").all();
+            return new Response(JSON.stringify(results || []), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" }
+            });
+          } catch(e) {
+            console.warn("Error leyendo corssen_programa en D1:", e);
+          }
+        }
+        return new Response(JSON.stringify([]), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+
+      if (request.method === "PUT" || request.method === "POST") {
+        const cod = decodeURIComponent(path.split("/")[3] || "").trim();
+        try {
+          const body = await request.json();
+          if (env && env.DB && cod) {
+            try {
+              await env.DB.prepare(`
+                INSERT INTO corssen_programa (cod, equipo, marca, cat, estado, prioridad, horometro, frecuencia, prox, responsable, observaciones, actualizado_en)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                ON CONFLICT(cod) DO UPDATE SET
+                  equipo=excluded.equipo,
+                  marca=excluded.marca,
+                  cat=excluded.cat,
+                  estado=excluded.estado,
+                  prioridad=excluded.prioridad,
+                  horometro=excluded.horometro,
+                  frecuencia=excluded.frecuencia,
+                  prox=excluded.prox,
+                  responsable=excluded.responsable,
+                  observaciones=excluded.observaciones,
+                  actualizado_en=CURRENT_TIMESTAMP
+              `).bind(
+                cod,
+                body.equipo || "",
+                body.marca || "",
+                body.cat || "AUXILIARES",
+                body.estado || "Operativo",
+                body.prioridad || "Media",
+                body.horometro || "",
+                body.frecuencia || "",
+                body.prox || "",
+                body.responsable || "",
+                body.observaciones || ""
+              ).run();
+            } catch (eD1) {
+              console.warn("Error guardando en D1 corssen_programa:", eD1);
+            }
+          }
+          return new Response(JSON.stringify({ mensaje: "Mantención de equipo actualizada con éxito" }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
+        } catch(err) {
+          return new Response(JSON.stringify({ mensaje: "Error actualizando equipo" }), {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
+        }
+      }
     }
 
     // API Backup - Guardar Respaldo en la Nube KV y D1 (/api/backup/guardar)
