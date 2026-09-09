@@ -399,59 +399,20 @@ export default {
         let listaActual = await obtenerUsuarios();
         let existeEnLista = listaActual.find(u => (u.usuario || "").toLowerCase() === userToUpdate);
 
-        // 1. Actualizar en D1 SQL si existe el binding
-        if (env && env.DB) {
-          try {
-            await env.DB.prepare(
-              "UPDATE usuarios SET nombre = ?, rol = ?, actualizado_en = CURRENT_TIMESTAMP WHERE LOWER(usuario) = LOWER(?)"
-            ).bind(nombre, (userToUpdate === "admin" ? "admin" : (rol || "operador")), userToUpdate).run();
-          } catch(e) {
-            console.warn("Error actualizando en D1 usuarios:", e);
-          }
-        }
+        const usuarioActualizado = {
+          usuario: userToUpdate,
+          nombre: nombre,
+          rol: (userToUpdate === "admin" ? "admin" : (rol || (existeEnLista && existeEnLista.rol) || "operador")),
+          password: (existeEnLista && existeEnLista.password) ? existeEnLista.password : "1234",
+          avatar: (existeEnLista && existeEnLista.avatar) ? existeEnLista.avatar : (rol === "admin" ? "avatar-admin" : "avatar-mecanico")
+        };
 
-        // 2. Actualizar en la lista unificada
-        if (existeEnLista) {
-          listaActual = listaActual.map(u => {
-            if ((u.usuario || "").toLowerCase() === userToUpdate) {
-              return { 
-                ...u, 
-                nombre, 
-                rol: (userToUpdate === "admin" ? "admin" : (rol || u.rol || "operador")) 
-              };
-            }
-            return u;
-          });
-        } else {
-          // Si por alguna razón no estaba en la lista, agregarlo para persistir
-          listaActual.push({
-            usuario: userToUpdate,
-            nombre: nombre,
-            rol: (userToUpdate === "admin" ? "admin" : (rol || "operador")),
-            password: "1234",
-            avatar: (rol === "admin" ? "avatar-admin" : "avatar-mecanico")
-          });
-        }
-
-        // Sincronizar memoria interna
-        IN_MEMORY_USERS = listaActual;
-
-        // 3. Persistir en Cloudflare KV
-        if (kv) {
-          try {
-            await kv.put("usuarios_lista", JSON.stringify(listaActual));
-          } catch(eKV) {
-            console.warn("Error guardando en KV:", eKV);
-          }
-        }
+        // Persistir en D1, KV y memoria con la función centralizada
+        await persistirUsuario(usuarioActualizado);
 
         return new Response(JSON.stringify({ 
           mensaje: `Datos de usuario '${userToUpdate}' actualizados correctamente`,
-          usuario: {
-            usuario: userToUpdate,
-            nombre: nombre,
-            rol: (userToUpdate === "admin" ? "admin" : (rol || "operador"))
-          }
+          usuario: usuarioActualizado
         }), {
           status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" }
