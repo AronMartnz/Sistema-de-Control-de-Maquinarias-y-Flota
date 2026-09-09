@@ -350,6 +350,54 @@ export default {
         }
 
         // ==========================================
+        // USUARIOS: ACTUALIZAR DATOS (NOMBRE Y ROL)
+        // ==========================================
+        const matchUpdate = path.match(/^\/api\/usuarios\/([^\/]+)$/);
+        if (matchUpdate && (request.method === "PUT" || request.method === "POST" || request.method === "PATCH")) {
+            const esAdmin = await verificarAdmin();
+            if (!esAdmin) {
+                return jsonResponse({ mensaje: "No tienes permisos de administrador." }, 403);
+            }
+
+            const targetUser = decodeURIComponent(matchUpdate[1]).trim().toLowerCase();
+            const body: any = await request.json().catch(() => ({}));
+            let { nombre, rol } = body;
+
+            if (!nombre || typeof nombre !== "string" || nombre.trim().length === 0) {
+                return jsonResponse({ mensaje: "El nombre es obligatorio." }, 400);
+            }
+
+            nombre = String(nombre).trim();
+            if (nombre.includes("Corsser")) {
+                nombre = nombre.replace(/Corsser/gi, "Corssen");
+            }
+
+            const usuarios = await obtenerUsuarios(env);
+            const idx = usuarios.findIndex(u => String(u.usuario).toLowerCase() === targetUser);
+            if (idx === -1) {
+                return jsonResponse({ mensaje: "Usuario no encontrado." }, 404);
+            }
+
+            usuarios[idx].nombre = nombre;
+            if (rol && (rol === "admin" || rol === "operador")) {
+                if (targetUser !== "admin") {
+                    usuarios[idx].rol = rol;
+                }
+            }
+
+            await guardarUsuarioD1(env, usuarios[idx]);
+
+            return jsonResponse({
+                mensaje: `Datos de usuario '${targetUser}' actualizados correctamente.`,
+                usuario: {
+                    usuario: usuarios[idx].usuario,
+                    nombre: usuarios[idx].nombre,
+                    rol: usuarios[idx].rol
+                }
+            });
+        }
+
+        // ==========================================
         // USUARIOS: ELIMINAR
         // ==========================================
         const matchDelete = path.match(/^\/api\/usuarios\/([^\/]+)$/);
