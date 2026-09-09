@@ -1123,11 +1123,37 @@ window.toggleMostrarTodasAlertasDash = toggleMostrarTodasAlertasDash;
 
 function filtrarAlertasMantencionDash(filtro, btn) {
     filtroAlertaMantencionDash = filtro;
-    document.querySelectorAll('.btn-filtro-alerta-mant').forEach(b => b.classList.remove('active'));
-    if (btn) btn.classList.add('active');
+    document.querySelectorAll('.btn-filtro-alerta-mant').forEach(b => {
+        if (b.getAttribute('data-filtro') === filtro || b === btn) {
+            b.classList.add('active');
+        } else {
+            b.classList.remove('active');
+        }
+    });
+    const sel = document.getElementById("selectFiltroEstadoMantDash");
+    if (sel && sel.value !== filtro) {
+        sel.value = filtro;
+    }
     renderizarAlertasMantencionesDashboard();
 }
 window.filtrarAlertasMantencionDash = filtrarAlertasMantencionDash;
+
+function cambiarFiltroEstadoDesdeSelector(valor) {
+    filtroAlertaMantencionDash = valor;
+    document.querySelectorAll('.btn-filtro-alerta-mant').forEach(b => {
+        if (b.getAttribute('data-filtro') === valor) {
+            b.classList.add('active');
+        } else {
+            b.classList.remove('active');
+        }
+    });
+    const sel = document.getElementById("selectFiltroEstadoMantDash");
+    if (sel && sel.value !== valor) {
+        sel.value = valor;
+    }
+    renderizarAlertasMantencionesDashboard();
+}
+window.cambiarFiltroEstadoDesdeSelector = cambiarFiltroEstadoDesdeSelector;
 
 function extraerNumeroHorometro(str) {
     if (!str) return null;
@@ -1185,7 +1211,7 @@ function obtenerListaAlertasMantencion() {
         let icono = '📅';
 
         if (esTaller) {
-            tipoAlerta = 'vencida';
+            tipoAlerta = 'taller'; // Separar de vencida regular para permitir filtro específico de Taller
             badge = 'EN TALLER';
             badgeClase = 'badge-rojo';
             nivel = 'critica';
@@ -1324,10 +1350,10 @@ function obtenerListaAlertasMantencion() {
         });
     });
 
-    // Ordenar: primero 'vencida', luego 'proxima', luego 'programada'
-    const pesoAlerta = { 'vencida': 1, 'proxima': 2, 'programada': 3 };
+    // Ordenar: primero 'vencida', luego 'proxima', luego 'taller', luego 'programada'
+    const pesoAlerta = { 'vencida': 1, 'proxima': 2, 'taller': 3, 'programada': 4 };
     lista.sort((a, b) => {
-        const pesoDiff = pesoAlerta[a.tipoAlerta] - pesoAlerta[b.tipoAlerta];
+        const pesoDiff = (pesoAlerta[a.tipoAlerta] || 5) - (pesoAlerta[b.tipoAlerta] || 5);
         if (pesoDiff !== 0) return pesoDiff;
         if (a.restanteNum !== null && b.restanteNum !== null) {
             return a.restanteNum - b.restanteNum;
@@ -1347,9 +1373,10 @@ function renderizarAlertasMantencionesDashboard() {
     // Conteo por categorías
     const totalTodas = listaCompleta.length;
     const totalProx = listaCompleta.filter(i => i.tipoAlerta === 'proxima').length;
-    const totalVenc = listaCompleta.filter(i => i.tipoAlerta === 'vencida').length;
+    const totalTaller = listaCompleta.filter(i => i.tipoAlerta === 'taller' || i.badge === 'EN TALLER').length;
+    const totalVenc = listaCompleta.filter(i => i.tipoAlerta === 'vencida' && i.badge !== 'EN TALLER').length;
     const totalProg = listaCompleta.filter(i => i.tipoAlerta === 'programada').length;
-    const totalCriticas = totalProx + totalVenc;
+    const totalCriticas = totalProx + totalVenc + totalTaller;
 
     // Actualizar contadores en la UI
     const elDashProx = document.getElementById("dashMantencionesProximas");
@@ -1364,20 +1391,30 @@ function renderizarAlertasMantencionesDashboard() {
     const elContProx = document.getElementById("contFiltroMantProx");
     if (elContProx) elContProx.textContent = totalProx;
 
+    const elContTaller = document.getElementById("contFiltroMantTaller");
+    if (elContTaller) elContTaller.textContent = totalTaller;
+
     const elContVenc = document.getElementById("contFiltroMantVenc");
     if (elContVenc) elContVenc.textContent = totalVenc;
 
     const elContProg = document.getElementById("contFiltroMantProg");
     if (elContProg) elContProg.textContent = totalProg;
 
+    // Sincronizar selector dropdown si existe
+    const selEstado = document.getElementById("selectFiltroEstadoMantDash");
+    if (selEstado && selEstado.value !== (filtroAlertaMantencionDash || 'TODAS')) {
+        selEstado.value = filtroAlertaMantencionDash || 'TODAS';
+    }
+
     // Filtro de texto del buscador rápido
     const inputBuscar = document.getElementById("inputBuscarAlertaMant");
     const textoBuscar = (inputBuscar?.value || "").toLowerCase().trim();
 
     const filtradas = listaCompleta.filter(item => {
-        // Filtro por pestaña
+        // Filtro por pestaña o selector rápido
         if (filtroAlertaMantencionDash === 'PROXIMAS' && item.tipoAlerta !== 'proxima') return false;
-        if (filtroAlertaMantencionDash === 'VENCIDAS' && item.tipoAlerta !== 'vencida') return false;
+        if (filtroAlertaMantencionDash === 'TALLER' && (item.tipoAlerta !== 'taller' && item.badge !== 'EN TALLER')) return false;
+        if (filtroAlertaMantencionDash === 'VENCIDAS' && (item.tipoAlerta !== 'vencida' || item.badge === 'EN TALLER')) return false;
         if (filtroAlertaMantencionDash === 'PROGRAMADAS' && item.tipoAlerta !== 'programada') return false;
 
         // Filtro de texto
@@ -1443,6 +1480,9 @@ function renderizarAlertasMantencionesDashboard() {
         if (item.tipoAlerta === 'vencida') {
             claseBorde = 'alerta-vencida';
             colorBarra = '#ef4444';
+        } else if (item.tipoAlerta === 'taller' || item.badge === 'EN TALLER') {
+            claseBorde = 'alerta-taller alerta-vencida';
+            colorBarra = '#dc2626';
         } else if (item.tipoAlerta === 'proxima') {
             claseBorde = 'alerta-proxima';
             colorBarra = '#f59e0b';
