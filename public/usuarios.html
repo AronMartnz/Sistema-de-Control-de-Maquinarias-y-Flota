@@ -1305,12 +1305,19 @@
             nombre = nombre.replace(/Corsser/gi, "Corssen");
         }
 
+        const btnGuardar = document.querySelector("#modalEditarUsuario .btn-crear");
+        const textoOriginalBtn = btnGuardar ? btnGuardar.textContent : "💾 Guardar Cambios";
+        if (btnGuardar) {
+            btnGuardar.disabled = true;
+            btnGuardar.textContent = "Guardando...";
+        }
+
         try {
             const resp = await fetch(`/api/usuarios/${encodeURIComponent(usuario)}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
-                    "x-usuario": usuarioLogueado
+                    "x-usuario": usuarioLogueado || "admin"
                 },
                 body: JSON.stringify({ nombre, rol })
             });
@@ -1318,21 +1325,26 @@
             if (resp.ok) {
                 alert(`✓ Datos de usuario '${usuario}' actualizados correctamente.`);
                 // Si se editó el usuario activo, sincronizar la sesión
-                if (usuario.toLowerCase() === usuarioLogueado.toLowerCase()) {
+                if (usuario.toLowerCase() === String(usuarioLogueado).toLowerCase()) {
                     sessionStorage.setItem("nombreUsuario", nombre);
                     sessionStorage.setItem("rolUsuario", rol);
                     const elUserTop = document.getElementById("usuarioActual");
                     if (elUserTop) elUserTop.textContent = `${nombre} (${rol})`;
                 }
                 cerrarModalEditarUsuario();
-                cargarUsuarios();
+                await cargarUsuarios();
             } else {
                 const err = await resp.json().catch(() => ({}));
                 alert(err.mensaje || "Error al actualizar datos del usuario.");
             }
         } catch (e) {
             console.error(e);
-            alert("Error de conexión al guardar modificaciones de usuario.");
+            alert("Error de conexión al guardar modificaciones de usuario: " + (e.message || ""));
+        } finally {
+            if (btnGuardar) {
+                btnGuardar.disabled = false;
+                btnGuardar.textContent = textoOriginalBtn;
+            }
         }
     }
 
