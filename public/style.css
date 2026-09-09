@@ -682,6 +682,11 @@ a {
     background: linear-gradient(180deg, #fffafa 0%, #ffffff 100%);
 }
 
+.tarjeta-alerta-mant.alerta-taller {
+    border-left-color: #dc2626;
+    background: linear-gradient(180deg, #fff5f5 0%, #ffffff 100%);
+}
+
 .tarjeta-alerta-mant.alerta-proxima {
     border-left-color: #f59e0b;
     background: linear-gradient(180deg, #fffdfa 0%, #ffffff 100%);
