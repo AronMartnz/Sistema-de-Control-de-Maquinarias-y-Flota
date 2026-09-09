@@ -328,10 +328,11 @@
                     </div>
                     <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
                         <div class="pestanas-filtro" style="margin-bottom:0;">
-                            <button type="button" class="btn-pestana btn-filtro-alerta-mant active" onclick="filtrarAlertasMantencionDash('TODAS', this)">Todas (<span id="contFiltroMantTodas">0</span>)</button>
-                            <button type="button" class="btn-pestana btn-filtro-alerta-mant" onclick="filtrarAlertasMantencionDash('PROXIMAS', this)">⚠️ Próximas (<span id="contFiltroMantProx">0</span>)</button>
-                            <button type="button" class="btn-pestana btn-filtro-alerta-mant" onclick="filtrarAlertasMantencionDash('VENCIDAS', this)">🚨 Vencidas/Taller (<span id="contFiltroMantVenc">0</span>)</button>
-                            <button type="button" class="btn-pestana btn-filtro-alerta-mant" onclick="filtrarAlertasMantencionDash('PROGRAMADAS', this)">📅 Programadas (<span id="contFiltroMantProg">0</span>)</button>
+                            <button type="button" class="btn-pestana btn-filtro-alerta-mant active" data-filtro="TODAS" onclick="filtrarAlertasMantencionDash('TODAS', this)">Todas (<span id="contFiltroMantTodas">0</span>)</button>
+                            <button type="button" class="btn-pestana btn-filtro-alerta-mant" data-filtro="PROXIMAS" onclick="filtrarAlertasMantencionDash('PROXIMAS', this)">⚠️ Próximas (<span id="contFiltroMantProx">0</span>)</button>
+                            <button type="button" class="btn-pestana btn-filtro-alerta-mant" data-filtro="TALLER" onclick="filtrarAlertasMantencionDash('TALLER', this)">🛠️ En Taller (<span id="contFiltroMantTaller">0</span>)</button>
+                            <button type="button" class="btn-pestana btn-filtro-alerta-mant" data-filtro="VENCIDAS" onclick="filtrarAlertasMantencionDash('VENCIDAS', this)">🚨 Vencidas (<span id="contFiltroMantVenc">0</span>)</button>
+                            <button type="button" class="btn-pestana btn-filtro-alerta-mant" data-filtro="PROGRAMADAS" onclick="filtrarAlertasMantencionDash('PROGRAMADAS', this)">📅 Programadas (<span id="contFiltroMantProg">0</span>)</button>
                         </div>
                         <button type="button" class="btn-primario" onclick="navegarSeccion('registrarMantencion')" style="font-size:12px; padding:7px 14px; background:#ea580c; border-color:#ea580c; font-weight:700;">
                             ⚡ Emitir Orden de Trabajo
@@ -344,7 +345,7 @@
                     <div style="display:flex; align-items:center; gap:8px; flex:1; max-width:420px;">
                         <input type="text" id="inputBuscarAlertaMant" oninput="renderizarAlertasMantencionesDashboard()" placeholder="🔍 Buscar por código, marca, equipo o responsable..." style="width:100%; padding:7px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12px;">
                     </div>
-                    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
                         <div style="font-size:12px; color:#64748b; font-weight:600;" id="resumenAlertasMantTexto">
                             Cargando alertas preventivas...
                         </div>
@@ -355,6 +356,19 @@
                             <button type="button" id="btnVistaAlertasDetallada" class="btn-pestana" onclick="cambiarModoVistaAlertas('detallada')" style="padding:4px 10px; font-size:11.5px; border-radius:5px;" title="Vista extendida con detalles completos de insumos y notas">
                                 📋 Detallada
                             </button>
+                        </div>
+                        <!-- Selector / Botón directo de Estado solicitado por Daniel -->
+                        <div class="filtro-selector-estado-mant" style="display:inline-flex; align-items:center; gap:5px; background:#f0f9ff; border:1.5px solid #0284c7; border-radius:7px; padding:2px 8px; box-shadow:0 1px 3px rgba(2,132,199,0.12);">
+                            <span style="font-size:12px; color:#0369a1; font-weight:800; display:flex; align-items:center; gap:4px;">
+                                <span>🎯</span> <span style="font-size:11px;">Estado:</span>
+                            </span>
+                            <select id="selectFiltroEstadoMantDash" onchange="cambiarFiltroEstadoDesdeSelector(this.value)" style="border:none; background:transparent; font-size:11.5px; font-weight:700; color:#0f172a; cursor:pointer; outline:none; padding:3px 2px;">
+                                <option value="TODAS">⚡ Todas las Alertas</option>
+                                <option value="PROXIMAS">⚠️ Próximas a Vencer</option>
+                                <option value="TALLER">🛠️ En Taller / Reparación</option>
+                                <option value="VENCIDAS">🚨 Vencidas (Críticas)</option>
+                                <option value="PROGRAMADAS">📅 Programadas / Al Día</option>
+                            </select>
                         </div>
                     </div>
                 </div>
