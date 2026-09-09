@@ -378,8 +378,8 @@ export default {
       });
     }
 
-    // API Usuarios - PUT actualizar datos (Nombre y Rol - Solo Admin)
-    if (path.startsWith("/api/usuarios/") && request.method === "PUT") {
+    // API Usuarios - Actualizar datos (Nombre y Rol - PUT/POST/PATCH)
+    if (path.startsWith("/api/usuarios/") && !path.endsWith("/avatar") && !path.endsWith("/password") && (request.method === "PUT" || request.method === "POST" || request.method === "PATCH")) {
       const userToUpdate = decodeURIComponent(path.split("/")[3] || "").toLowerCase().trim();
       try {
         const body = await request.json().catch(() => ({}));
