@@ -5728,7 +5728,7 @@ function poblarSelectorEquiposMantencion() {
         if (items.length > 0) {
             html += `<optgroup label="${grupo}">`;
             items.forEach(eq => {
-                html += `<option value="${eq.cod}">${eq.icono} ${eq.cod} • ${eq.nombre}</option>`;
+                html += `<option value="${eq.cod}" data-cat="${eq.cat || ''}">${eq.icono} ${eq.cod} • ${eq.nombre}</option>`;
             });
             html += `</optgroup>`;
         }
@@ -5837,12 +5837,10 @@ function manejarCambioEquipoMantencion() {
     }
 
     if (inputProx) {
-        if (lecturaActual.includes("km")) {
+        if (lecturaActual.includes("km") || esUnidadPorKilometraje(cod)) {
             inputProx.value = `${(lecturaNum + 10000).toLocaleString('es-CL')} km`;
-        } else if (lecturaActual.includes("hrs") || lecturaActual.includes("horas")) {
-            inputProx.value = `${(lecturaNum + 250).toLocaleString('es-CL')} hrs`;
         } else {
-            inputProx.value = `${lecturaNum + 250} hrs`;
+            inputProx.value = `${(lecturaNum + 250).toLocaleString('es-CL')} hrs`;
         }
     }
 
@@ -5938,16 +5936,42 @@ function insertarPlantillaDescripcion(texto) {
     textarea.focus();
 }
 
+function esUnidadPorKilometraje(cod) {
+    if (!cod) return false;
+    const codUpper = cod.toUpperCase();
+    const veh = vehiculos.find(v => (v.codigo || '').toUpperCase() === codUpper || (v.patente || '').toUpperCase() === codUpper || (v.id || '').toUpperCase() === codUpper);
+    if (veh) return true;
+    const prog = corssenPrograma.find(p => (p.cod || '').toUpperCase() === codUpper);
+    if (prog) {
+        if (prog.cat === "MÓVILES" || (prog.frecuencia && prog.frecuencia.toLowerCase().includes("km")) || (prog.horometro && prog.horometro.toLowerCase().includes("km"))) {
+            return true;
+        }
+        if ((prog.equipo || '').toUpperCase().includes("CAMIONETA") || (prog.equipo || '').toUpperCase().includes("VEHICULO")) {
+            return true;
+        }
+    }
+    const select = document.getElementById("selectMantEquipo");
+    const opt = select?.selectedOptions?.[0];
+    if (opt && (opt.dataset.cat === "MÓVILES" || (opt.textContent || '').includes("🚚") || (opt.textContent || '').toUpperCase().includes("CAMIONETA"))) {
+        return true;
+    }
+    return false;
+}
+
 function sugerirProximoServicioAutomatico() {
     const inputHorometro = document.getElementById("inputMantHorometroKm");
     const inputProx = document.getElementById("inputMantProxServicio");
+    const selectEquipo = document.getElementById("selectMantEquipo");
     if (!inputHorometro || !inputProx) return;
 
     const val = inputHorometro.value.trim().toLowerCase();
-    const num = parseFloat(val.replace(/[^0-9.]/g, ""));
-    if (isNaN(num)) return;
+    const num = (typeof extraerNumeroHorometro === "function" ? extraerNumeroHorometro(val) : null) ?? parseFloat(val.replace(/[^0-9.]/g, ""));
+    if (num === null || isNaN(num)) return;
 
-    if (val.includes("km")) {
+    const codigoSel = selectEquipo?.value || "";
+    const esKm = val.includes("km") || (!val.includes("hrs") && !val.includes("hora") && esUnidadPorKilometraje(codigoSel));
+
+    if (esKm) {
         inputProx.value = `${Math.round(num + 10000).toLocaleString('es-CL')} km`;
     } else {
         inputProx.value = `${Math.round(num + 250).toLocaleString('es-CL')} hrs`;
@@ -6321,6 +6345,7 @@ function registrarNuevaMantencion(e) {
     const costoTotal = costoInsumos + costoManoObra;
 
     // Crear registro de mantención
+    const litrosAceiteTotal = litrosMotor + litrosHidraulico;
     const nuevaMantencion = {
         id: folio,
         folio,
@@ -6335,7 +6360,9 @@ function registrarNuevaMantencion(e) {
         taller,
         descripcion: descripcion || `${tipo} ejecutada en ${taller}`,
         insumosConsumidos,
-        litrosAceiteDescontados: litrosAceite,
+        litrosAceiteDescontados: litrosAceiteTotal,
+        litrosMotorDescontados: litrosMotor,
+        litrosHidraulicoDescontados: litrosHidraulico,
         costoInsumos,
         costoManoObra,
         costoTotal,
@@ -6469,6 +6496,10 @@ function navegarSeccion(idSeccion) {
     const panelDestino = document.getElementById(idSeccion);
     if (panelDestino) {
         panelDestino.classList.add("active");
+    }
+
+    if (idSeccion === "gestionMantenciones" && typeof renderizarMantenciones === "function") {
+        renderizarMantenciones();
     }
 
     if (idSeccion === "respaldosMantencion" && typeof window.renderizarModuloRespaldos === "function") {
