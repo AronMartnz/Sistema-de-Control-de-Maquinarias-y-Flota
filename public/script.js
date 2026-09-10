@@ -5844,6 +5844,17 @@ function manejarCambioEquipoMantencion() {
         }
     }
 
+    // Auto-seleccionar tipo de servicio coherente con la unidad (250 Horas para maquinaria / 10.000 Km para camioneta)
+    const selectTipo = document.getElementById("selectMantTipo");
+    if (selectTipo) {
+        const esMovil = lecturaActual.includes("km") || esUnidadPorKilometraje(cod);
+        if (esMovil) {
+            selectTipo.value = "Preventiva 10.000 Kilómetros";
+        } else {
+            selectTipo.value = "Preventiva 250 Horas";
+        }
+    }
+
     // Actualizar requerimiento de Aceite de Motor desde Ficha Técnica
     actualizarRequerimientoAceiteMantencion(ficha);
 
@@ -5922,6 +5933,30 @@ function seleccionarTipoRapido(tipo) {
     const select = document.getElementById("selectMantTipo");
     if (select) {
         select.value = tipo;
+        alCambiarTipoServicioMantencion();
+    }
+}
+
+function alCambiarTipoServicioMantencion() {
+    const select = document.getElementById("selectMantTipo");
+    const tipo = select?.value || "";
+    const lblProx = document.getElementById("lblInputMantProxServicio");
+    const inputHorometro = document.getElementById("inputMantHorometroKm");
+
+    if (lblProx) {
+        if (tipo.includes("10.000") || tipo.includes("Kilómetros") || tipo.includes("Km")) {
+            lblProx.textContent = "Próximo Servicio (+10.000 km):";
+        } else if (tipo.includes("500") || tipo.includes("1000")) {
+            lblProx.textContent = "Próximo Servicio (+500 / +1.000 hrs):";
+        } else if (tipo.includes("250") || tipo.includes("Horas")) {
+            lblProx.textContent = "Próximo Servicio (+250 hrs):";
+        } else {
+            lblProx.textContent = "Próximo Servicio Sugerido:";
+        }
+    }
+
+    if (inputHorometro && inputHorometro.value.trim()) {
+        sugerirProximoServicioAutomatico();
     }
 }
 
@@ -5937,6 +5972,16 @@ function insertarPlantillaDescripcion(texto) {
 }
 
 function esUnidadPorKilometraje(cod, textoIngresado = "") {
+    // Si el usuario seleccionó explícitamente la opción de 10.000 Kilómetros en el menú
+    const selectTipo = document.getElementById("selectMantTipo");
+    const tipoSeleccionado = selectTipo?.value || "";
+    if (tipoSeleccionado.includes("10.000") || tipoSeleccionado.includes("Kilómetros") || tipoSeleccionado.includes("Km")) {
+        return true;
+    }
+    if (tipoSeleccionado.includes("250") || tipoSeleccionado.includes("Horas") || tipoSeleccionado.includes("500")) {
+        return false;
+    }
+
     const valLow = (textoIngresado || "").toLowerCase().trim();
     if (valLow.includes("km") || valLow.includes("kilometro")) return true;
     if (valLow.includes("hr") || valLow.includes("hora")) return false;
@@ -6013,6 +6058,7 @@ function sugerirProximoServicioAutomatico() {
     const inputHorometro = document.getElementById("inputMantHorometroKm");
     const inputProx = document.getElementById("inputMantProxServicio");
     const selectEquipo = document.getElementById("selectMantEquipo");
+    const selectTipo = document.getElementById("selectMantTipo");
     if (!inputHorometro || !inputProx) return;
 
     const val = inputHorometro.value.trim();
@@ -6034,9 +6080,29 @@ function sugerirProximoServicioAutomatico() {
     const num = parseFloat(numStr);
     if (isNaN(num)) return;
 
+    const tipoSeleccionado = selectTipo?.value || "";
     const codigoSel = selectEquipo?.value || "";
-    const esKm = esUnidadPorKilometraje(codigoSel, val);
 
+    // 1. Si el tipo seleccionado es explícitamente Preventiva 10.000 Km
+    if (tipoSeleccionado.includes("10.000") || tipoSeleccionado.includes("Kilómetros") || tipoSeleccionado.includes("Km")) {
+        inputProx.value = `${Math.round(num + 10000).toLocaleString('es-CL')} km`;
+        return;
+    }
+
+    // 2. Si el tipo seleccionado es Preventiva Mayor (500 / 1000 hrs)
+    if (tipoSeleccionado.includes("500") || tipoSeleccionado.includes("1000")) {
+        inputProx.value = `${Math.round(num + 500).toLocaleString('es-CL')} hrs`;
+        return;
+    }
+
+    // 3. Si el tipo seleccionado es Preventiva 250 Horas
+    if (tipoSeleccionado.includes("250") || tipoSeleccionado.includes("Horas")) {
+        inputProx.value = `${Math.round(num + 250).toLocaleString('es-CL')} hrs`;
+        return;
+    }
+
+    // 4. Fallback por detección del tipo de unidad o texto
+    const esKm = esUnidadPorKilometraje(codigoSel, val);
     if (esKm) {
         inputProx.value = `${Math.round(num + 10000).toLocaleString('es-CL')} km`;
     } else {
