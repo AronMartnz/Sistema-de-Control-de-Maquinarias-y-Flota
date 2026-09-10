@@ -880,8 +880,9 @@
                         <!-- Tipo de Servicio -->
                         <div class="campo-form">
                             <label for="selectMantTipo">Tipo de Servicio (*):</label>
-                            <select id="selectMantTipo" required style="font-weight:600;">
-                                <option value="Preventiva 250 Hrs / 10.000 Km">Preventiva (250 Horas / 10.000 Km)</option>
+                            <select id="selectMantTipo" required style="font-weight:600;" onchange="alCambiarTipoServicioMantencion()">
+                                <option value="Preventiva 250 Horas">Preventiva (250 Horas) - Maquinarias y Grúas</option>
+                                <option value="Preventiva 10.000 Kilómetros">Preventiva (10.000 Kilómetros) - Camionetas y Móviles</option>
                                 <option value="Preventiva Mayor 500/1000 Hrs">Preventiva Mayor (500 / 1.000 Hrs)</option>
                                 <option value="Correctiva / Reparación">Correctiva / Reparación de Falla</option>
                                 <option value="Pauta Oficial Concesionario">Pauta Oficial de Concesionario</option>
@@ -898,7 +899,7 @@
 
                         <!-- Próximo Servicio Sugerido -->
                         <div class="campo-form">
-                            <label for="inputMantProxServicio">Próximo Servicio (+250 hrs / +10k km):</label>
+                            <label for="inputMantProxServicio" id="lblInputMantProxServicio">Próximo Servicio Sugerido:</label>
                             <input type="text" id="inputMantProxServicio" placeholder="Ej: 45.050 hrs ó 152.500 km">
                         </div>
 
@@ -929,7 +930,8 @@
                     <div style="margin-top:14px; padding-top:14px; border-top:1px solid #f1f5f9;">
                         <span style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase;">Selección Rápida de Pauta:</span>
                         <div class="chips-rapidos-grid">
-                            <button type="button" class="chip-rapido" onclick="seleccionarTipoRapido('Preventiva 250 Hrs / 10.000 Km')">🔧 Preventiva 250h / 10k km</button>
+                            <button type="button" class="chip-rapido" onclick="seleccionarTipoRapido('Preventiva 250 Horas')">🚜 Preventiva 250 Horas</button>
+                            <button type="button" class="chip-rapido" onclick="seleccionarTipoRapido('Preventiva 10.000 Kilómetros')">🚚 Preventiva 10.000 Km</button>
                             <button type="button" class="chip-rapido" onclick="seleccionarTipoRapido('Preventiva Mayor 500/1000 Hrs')">⚙️ Preventiva Mayor 500h/1000h</button>
                             <button type="button" class="chip-rapido" onclick="seleccionarTipoRapido('Correctiva / Reparación')">🚨 Correctiva / Reparación</button>
                             <button type="button" class="chip-rapido" onclick="seleccionarTipoRapido('Pauta Oficial Concesionario')">🛡️ Pauta Concesionario</button>
@@ -3662,6 +3664,6 @@
     </main>
 </div>
 
-<script src="/script.js?v=20260910_km_fix"></script>
+<script src="/script.js?v=20260910_tipo_servicio_separado"></script>
 </body>
 </html>
