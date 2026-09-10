@@ -5936,25 +5936,76 @@ function insertarPlantillaDescripcion(texto) {
     textarea.focus();
 }
 
-function esUnidadPorKilometraje(cod) {
-    if (!cod) return false;
-    const codUpper = cod.toUpperCase();
-    const veh = vehiculos.find(v => (v.codigo || '').toUpperCase() === codUpper || (v.patente || '').toUpperCase() === codUpper || (v.id || '').toUpperCase() === codUpper);
-    if (veh) return true;
-    const prog = corssenPrograma.find(p => (p.cod || '').toUpperCase() === codUpper);
-    if (prog) {
-        if (prog.cat === "MÓVILES" || (prog.frecuencia && prog.frecuencia.toLowerCase().includes("km")) || (prog.horometro && prog.horometro.toLowerCase().includes("km"))) {
-            return true;
-        }
-        if ((prog.equipo || '').toUpperCase().includes("CAMIONETA") || (prog.equipo || '').toUpperCase().includes("VEHICULO")) {
-            return true;
-        }
-    }
-    const select = document.getElementById("selectMantEquipo");
-    const opt = select?.selectedOptions?.[0];
-    if (opt && (opt.dataset.cat === "MÓVILES" || (opt.textContent || '').includes("🚚") || (opt.textContent || '').toUpperCase().includes("CAMIONETA"))) {
+function esUnidadPorKilometraje(cod, textoIngresado = "") {
+    const valLow = (textoIngresado || "").toLowerCase().trim();
+    if (valLow.includes("km") || valLow.includes("kilometro")) return true;
+    if (valLow.includes("hr") || valLow.includes("hora")) return false;
+
+    if (!cod && !valLow) return false;
+    const codUpper = (cod || "").toUpperCase().trim();
+
+    // 1. Si el código empieza con prefijos de camionetas / camiones
+    if (codUpper.startsWith("CAM") || codUpper.startsWith("CMN") || codUpper.startsWith("VH") || codUpper.startsWith("PICKUP")) {
         return true;
     }
+
+    // 2. Revisar si la opción seleccionada en el dropdown es móvil
+    const select = document.getElementById("selectMantEquipo");
+    const opt = select?.selectedOptions?.[0];
+    if (opt) {
+        const catOpt = (opt.dataset.cat || "").toUpperCase();
+        const textoOpt = (opt.textContent || "").toUpperCase();
+        if (catOpt === "MÓVILES" || catOpt === "MOVILES" || textoOpt.includes("🚚") || textoOpt.includes("CAMIONETA") || textoOpt.includes("CAMIÓN") || textoOpt.includes("CAMION")) {
+            return true;
+        }
+    }
+
+    // 3. Revisar en listado de vehículos
+    if (Array.isArray(vehiculos)) {
+        const veh = vehiculos.find(v => {
+            const vCod = (v.codigo || "").toUpperCase();
+            const vPat = (v.patente || "").toUpperCase();
+            const vId = (v.id || "").toUpperCase();
+            return vCod === codUpper || vPat === codUpper || vId === codUpper || (codUpper && vPat.includes(codUpper));
+        });
+        if (veh) return true;
+    }
+
+    // 4. Revisar en Programa Maestro
+    if (Array.isArray(corssenPrograma)) {
+        const prog = corssenPrograma.find(p => {
+            const pCod = (p.cod || "").toUpperCase();
+            return pCod === codUpper || (codUpper && (p.equipo || "").toUpperCase().includes(codUpper));
+        });
+        if (prog) {
+            const cat = (prog.cat || "").toUpperCase();
+            const eqNom = (prog.equipo || "").toUpperCase();
+            const freq = (prog.frecuencia || "").toLowerCase();
+            const horo = (prog.horometro || "").toLowerCase();
+            if (cat === "MÓVILES" || cat === "MOVILES" || freq.includes("km") || horo.includes("km") || eqNom.includes("CAMIONETA") || eqNom.includes("CAMIÓN") || eqNom.includes("CAMION")) {
+                return true;
+            }
+        }
+    }
+
+    // 5. Revisar en Fichas Técnicas
+    if (typeof corssenFichas !== "undefined" && corssenFichas && corssenFichas[codUpper]) {
+        const f = corssenFichas[codUpper];
+        const fNom = (f.nombre || "").toUpperCase();
+        const fCat = (f.categoria || "").toUpperCase();
+        if (fCat.includes("MOVIL") || fCat.includes("MÓVIL") || fNom.includes("CAMIONETA") || fNom.includes("CAMIÓN") || fNom.includes("CAMION")) {
+            return true;
+        }
+    }
+
+    // 6. Heurística numérica: Si el valor numérico supera 6.000 y no es grúa identificada (GPC/GHO/GTE), casi con certeza es kilometraje
+    if (valLow) {
+        const numLimpio = parseFloat(valLow.replace(/[^0-9]/g, ""));
+        if (numLimpio >= 8000 && !codUpper.startsWith("G") && !codUpper.startsWith("X") && !codUpper.startsWith("M")) {
+            return true;
+        }
+    }
+
     return false;
 }
 
@@ -5964,12 +6015,27 @@ function sugerirProximoServicioAutomatico() {
     const selectEquipo = document.getElementById("selectMantEquipo");
     if (!inputHorometro || !inputProx) return;
 
-    const val = inputHorometro.value.trim().toLowerCase();
-    const num = (typeof extraerNumeroHorometro === "function" ? extraerNumeroHorometro(val) : null) ?? parseFloat(val.replace(/[^0-9.]/g, ""));
-    if (num === null || isNaN(num)) return;
+    const val = inputHorometro.value.trim();
+    if (!val) return;
+
+    // Parseo robusto de kilometraje / horómetro tolerante a separadores de miles y unidades
+    let sLimpio = val.toLowerCase().replace(/km|kilometros|kilometro|hrs|horas|hora/g, '').trim();
+    const match = sLimpio.match(/[\d.,]+/);
+    if (!match) return;
+
+    let numStr = match[0];
+    if (numStr.includes('.') && numStr.includes(',')) {
+        numStr = numStr.replace(/\./g, '').replace(',', '.');
+    } else if (numStr.includes('.') && numStr.split('.').length > 1 && numStr.split('.')[1].length === 3) {
+        numStr = numStr.replace(/\./g, '');
+    } else if (numStr.includes(',')) {
+        numStr = numStr.replace(',', '.');
+    }
+    const num = parseFloat(numStr);
+    if (isNaN(num)) return;
 
     const codigoSel = selectEquipo?.value || "";
-    const esKm = val.includes("km") || (!val.includes("hrs") && !val.includes("hora") && esUnidadPorKilometraje(codigoSel));
+    const esKm = esUnidadPorKilometraje(codigoSel, val);
 
     if (esKm) {
         inputProx.value = `${Math.round(num + 10000).toLocaleString('es-CL')} km`;
