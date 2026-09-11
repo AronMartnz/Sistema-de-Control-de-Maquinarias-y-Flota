@@ -5198,6 +5198,10 @@ function renderizarMantenciones() {
                             <span>📄</span>
                             <span>OT</span>
                         </button>
+                        <button class="btn-mant-action-edit" onclick="abrirModalEditarOT('${m.folio || m.id}')" title="Editar Orden de Trabajo">
+                            <span>✏️</span>
+                            <span>Editar</span>
+                        </button>
                         <button class="btn-mant-action-delete" onclick="eliminarMantencion('${m.folio || m.id}')" title="Eliminar registro">
                             <span>🗑️</span>
                         </button>
@@ -5618,6 +5622,292 @@ function eliminarMantencion(folio) {
         poblarSelectorEquiposMantencion();
         alert("✓ Registro de mantención eliminado.");
     }
+}
+
+// =========================================================
+// GESTIÓN Y EDICIÓN DE ÓRDENES DE TRABAJO (OT)
+// =========================================================
+let ordenEnEdicionOT = null;
+
+function abrirModalEditarOT(folio) {
+    const orden = mantenciones.find(m => m.folio === folio || m.id === folio);
+    if (!orden) {
+        alert("Orden de trabajo no encontrada.");
+        return;
+    }
+    ordenEnEdicionOT = orden;
+
+    const lblFolio = document.getElementById("lblEditOTFolio");
+    if (lblFolio) lblFolio.textContent = orden.folio || orden.id;
+
+    const inputHidden = document.getElementById("inputEditOTFolioHidden");
+    if (inputHidden) inputHidden.value = orden.folio || orden.id;
+
+    const lblEquipo = document.getElementById("lblEditOTEquipoTexto");
+    if (lblEquipo) {
+        lblEquipo.textContent = `${orden.codigoEquipo || ''} • ${orden.equipoNombre || ''}`;
+    }
+
+    const badgePatente = document.getElementById("badgeEditOTPatente");
+    if (badgePatente) {
+        badgePatente.textContent = orden.patente ? `Patente: ${orden.patente}` : (orden.codigoEquipo || 'Equipo CORSSEN');
+    }
+
+    const inputFecha = document.getElementById("inputEditOTFecha");
+    if (inputFecha) inputFecha.value = orden.fecha || new Date().toISOString().split("T")[0];
+
+    const selectTipo = document.getElementById("selectEditOTTipo");
+    if (selectTipo) {
+        let encontrado = false;
+        for (let opt of selectTipo.options) {
+            if (opt.value.toLowerCase() === (orden.tipo || "").toLowerCase()) {
+                selectTipo.value = opt.value;
+                encontrado = true;
+                break;
+            }
+        }
+        if (!encontrado) {
+            const t = (orden.tipo || "").toLowerCase();
+            if (t.includes("10.000") || t.includes("km")) {
+                selectTipo.value = "Preventiva 10.000 Kilómetros";
+            } else if (t.includes("250")) {
+                selectTipo.value = "Preventiva 250 Horas";
+            } else if (t.includes("mayor") || t.includes("500") || t.includes("1000")) {
+                selectTipo.value = "Preventiva Mayor 500/1000 Hrs";
+            } else if (t.includes("correctiva") || t.includes("repara")) {
+                selectTipo.value = "Correctiva / Reparación";
+            } else if (t.includes("concesionario")) {
+                selectTipo.value = "Pauta Oficial Concesionario";
+            } else if (t.includes("engrase")) {
+                selectTipo.value = "Engrase y Revisión de Niveles";
+            } else if (t.includes("inspecci")) {
+                selectTipo.value = "Inspección General";
+            } else {
+                const opt = document.createElement("option");
+                opt.value = orden.tipo;
+                opt.textContent = orden.tipo;
+                selectTipo.appendChild(opt);
+                selectTipo.value = orden.tipo;
+            }
+        }
+    }
+
+    const inputHorometro = document.getElementById("inputEditOTHorometroKm");
+    if (inputHorometro) inputHorometro.value = orden.horometroKm || "";
+
+    const inputProx = document.getElementById("inputEditOTProxServicio");
+    if (inputProx) inputProx.value = orden.proximoServicio || "";
+
+    const selectEstado = document.getElementById("selectEditOTEstado");
+    if (selectEstado) {
+        let matched = false;
+        for (let opt of selectEstado.options) {
+            if (opt.value.toLowerCase().includes((orden.estado || "").toLowerCase())) {
+                selectEstado.value = opt.value;
+                matched = true;
+                break;
+            }
+        }
+        if (!matched) selectEstado.value = "Completada (Equipo Operativo)";
+    }
+
+    const inputTecnico = document.getElementById("inputEditOTTecnico");
+    if (inputTecnico) inputTecnico.value = orden.tecnico || "Alexis Santos";
+
+    const inputTaller = document.getElementById("inputEditOTTaller");
+    if (inputTaller) inputTaller.value = orden.taller || "Taller Central CORSSEN";
+
+    const inputManoObra = document.getElementById("inputEditOTCostoManoObra");
+    if (inputManoObra) inputManoObra.value = orden.costoManoObra || 0;
+
+    const inputInsumos = document.getElementById("inputEditOTCostoInsumos");
+    if (inputInsumos) inputInsumos.value = orden.costoInsumos || 0;
+
+    calcularCostoTotalEditOT();
+
+    const txtDescripcion = document.getElementById("textareaEditOTDescripcion");
+    if (txtDescripcion) txtDescripcion.value = orden.descripcion || "";
+
+    // Renderizar insumos registrados
+    const contInsumos = document.getElementById("contenedorEditOTInsumos");
+    if (contInsumos) {
+        if (orden.insumosConsumidos && orden.insumosConsumidos.length > 0) {
+            contInsumos.innerHTML = orden.insumosConsumidos.map(i => `
+                <div style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; padding:5px 10px; font-size:12px; display:inline-flex; align-items:center; gap:6px;">
+                    <span style="font-weight:800; color:#0f172a;">${i.cantidad} ${i.medida || 'UN'}</span>
+                    <span style="color:#475569;">${i.detalle}</span>
+                    <span style="color:#16a34a; font-weight:700;">($${((i.cantidad * i.costoUnitario) || 0).toLocaleString('es-CL')})</span>
+                </div>
+            `).join("");
+        } else {
+            contInsumos.innerHTML = `<span style="font-size:12px; color:#94a3b8; font-style:italic;">No se registraron insumos de bodega en esta OT (o servicio externo sin salida de almacén).</span>`;
+        }
+    }
+
+    // Actualizar etiquetas de Horómetro / KM según equipo y tipo
+    actualizarLabelsEditOT();
+
+    const modal = document.getElementById("modalEditarOT");
+    if (modal) modal.style.display = "flex";
+}
+
+function cerrarModalEditarOT() {
+    const modal = document.getElementById("modalEditarOT");
+    if (modal) modal.style.display = "none";
+    ordenEnEdicionOT = null;
+}
+
+function actualizarLabelsEditOT() {
+    const inputHorometro = document.getElementById("inputEditOTHorometroKm");
+    const selectTipo = document.getElementById("selectEditOTTipo");
+    const lblHorometro = document.getElementById("lblEditOTHorometroKm");
+    const lblProx = document.getElementById("lblEditOTProxServicio");
+
+    const valLectura = (inputHorometro?.value || "").trim().toLowerCase();
+    const tipo = (selectTipo?.value || "").toLowerCase();
+    const cod = (ordenEnEdicionOT?.codigoEquipo || "").toUpperCase();
+
+    const esVehiculo = cod.startsWith("CAM") || cod.startsWith("FUR") || cod.startsWith("AUTO") || cod.startsWith("CT");
+    const esKm = tipo.includes("10.000") || tipo.includes("kilómetro") || tipo.includes("km") || valLectura.includes("km") || esVehiculo;
+
+    if (lblHorometro) {
+        lblHorometro.textContent = esKm ? "Kilometraje Registrado (KM):" : "Horómetro Registrado (HRS):";
+    }
+    if (lblProx) {
+        lblProx.textContent = esKm ? "Próximo Servicio (+10.000 km):" : "Próximo Servicio (+250 hrs):";
+    }
+}
+
+function alCambiarTipoEditOT() {
+    actualizarLabelsEditOT();
+    sugerirProximoServicioEditOT();
+}
+
+function sugerirProximoServicioEditOT() {
+    const inputHorometro = document.getElementById("inputEditOTHorometroKm");
+    const inputProx = document.getElementById("inputEditOTProxServicio");
+    const selectTipo = document.getElementById("selectEditOTTipo");
+
+    if (!inputHorometro || !inputProx || !selectTipo) return;
+
+    actualizarLabelsEditOT();
+
+    const valLectura = inputHorometro.value.trim();
+    const tipo = (selectTipo.value || "").toLowerCase();
+    const cod = (ordenEnEdicionOT?.codigoEquipo || "").toUpperCase();
+
+    const esVehiculo = cod.startsWith("CAM") || cod.startsWith("FUR") || cod.startsWith("AUTO") || cod.startsWith("CT");
+    const esKm = tipo.includes("10.000") || tipo.includes("kilómetro") || tipo.includes("km") || valLectura.toLowerCase().includes("km") || esVehiculo;
+
+    const numLimpio = parseFloat(valLectura.replace(/\./g, "").replace(/,/g, ".").replace(/[^\d.]/g, ""));
+    if (!isNaN(numLimpio) && numLimpio > 0) {
+        if (esKm) {
+            const proxKm = Math.round(numLimpio + 10000);
+            inputProx.value = `${proxKm.toLocaleString('es-CL')} km`;
+        } else {
+            const proxHrs = Math.round(numLimpio + 250);
+            inputProx.value = `${proxHrs.toLocaleString('es-CL')} hrs`;
+        }
+    }
+}
+
+function calcularCostoTotalEditOT() {
+    const mo = parseFloat(document.getElementById("inputEditOTCostoManoObra")?.value) || 0;
+    const ins = parseFloat(document.getElementById("inputEditOTCostoInsumos")?.value) || 0;
+    const total = mo + ins;
+    const inputTotal = document.getElementById("inputEditOTCostoTotal");
+    if (inputTotal) {
+        inputTotal.value = `$${total.toLocaleString('es-CL')}`;
+    }
+}
+
+function guardarEdicionOT(e) {
+    if (e) e.preventDefault();
+    if (!ordenEnEdicionOT) return;
+
+    const folio = document.getElementById("inputEditOTFolioHidden")?.value || ordenEnEdicionOT.folio || ordenEnEdicionOT.id;
+    const orden = mantenciones.find(m => m.folio === folio || m.id === folio);
+    if (!orden) {
+        alert("Error: No se encontró la orden de trabajo para guardar.");
+        return;
+    }
+
+    const fecha = document.getElementById("inputEditOTFecha")?.value;
+    const tipo = document.getElementById("selectEditOTTipo")?.value;
+    const horometroKm = document.getElementById("inputEditOTHorometroKm")?.value.trim();
+    const proximoServicio = document.getElementById("inputEditOTProxServicio")?.value.trim();
+    const estado = document.getElementById("selectEditOTEstado")?.value;
+    const tecnico = document.getElementById("inputEditOTTecnico")?.value.trim();
+    const taller = document.getElementById("inputEditOTTaller")?.value.trim();
+    const costoManoObra = parseFloat(document.getElementById("inputEditOTCostoManoObra")?.value) || 0;
+    const costoInsumos = parseFloat(document.getElementById("inputEditOTCostoInsumos")?.value) || 0;
+    const costoTotal = costoManoObra + costoInsumos;
+    const descripcion = document.getElementById("textareaEditOTDescripcion")?.value.trim();
+
+    if (!fecha) return alert("Por favor indique la fecha de ejecución.");
+    if (!tecnico) return alert("Por favor indique el técnico responsable.");
+
+    // Actualizar datos de la OT
+    orden.fecha = fecha;
+    orden.tipo = tipo;
+    orden.horometroKm = horometroKm;
+    orden.proximoServicio = proximoServicio;
+    orden.estado = estado;
+    orden.tecnico = tecnico;
+    orden.taller = taller;
+    orden.costoManoObra = costoManoObra;
+    orden.costoInsumos = costoInsumos;
+    orden.costoTotal = costoTotal;
+    orden.descripcion = descripcion;
+    orden.fechaUltimaEdicion = new Date().toISOString();
+
+    // Sincronizar lectura con Ficha Técnica si existe
+    const cod = orden.codigoEquipo;
+    if (cod && corssenFichas[cod]) {
+        if (corssenFichas[cod].historial && corssenFichas[cod].historial.length > 0) {
+            const h = corssenFichas[cod].historial.find(item => item.fecha === fecha || (item.descripcion && item.descripcion.includes(folio)));
+            if (h) {
+                h.horometro = horometroKm;
+                h.prox = proximoServicio;
+                h.descripcion = `${tipo}: ${descripcion || 'Servicio ejecutado'}`;
+            }
+        }
+    }
+
+    // Sincronizar con el Programa Maestro (corssenPrograma) si esta OT es la más reciente del equipo
+    if (cod) {
+        const prog = corssenPrograma.find(p => p.cod === cod);
+        if (prog) {
+            const otsDelEquipo = mantenciones.filter(m => m.codigoEquipo === cod);
+            if (otsDelEquipo[0] && (otsDelEquipo[0].folio === folio || otsDelEquipo[0].id === folio)) {
+                if (horometroKm) prog.horometro = horometroKm;
+                if (proximoServicio) prog.prox = proximoServicio;
+                prog.estado = (estado.includes("Proceso") || estado.includes("Taller")) ? "En Taller" : "Operativo";
+                prog.responsable = tecnico;
+                prog.observaciones = `Mantención ${tipo} (${folio}) actualizada el ${fecha}`;
+            }
+        }
+
+        // Si es vehículo o maquinaria, actualizar también su kilometraje/horómetro en flota
+        const veh = vehiculos.find(v => v.codigo === cod || v.patente === cod || v.patente === orden.patente);
+        if (veh && horometroKm) {
+            veh.kilometraje = horometroKm;
+        }
+        const maq = maquinarias.find(m => m.codigoMaquinaria === cod);
+        if (maq && horometroKm) {
+            maq.horometro = horometroKm;
+        }
+    }
+
+    guardarTodo();
+    renderizarMantenciones();
+    renderizarProgramaMaestro();
+    renderizarDashboard();
+    renderizarAlertasMantencionesDashboard();
+    poblarSelectorEquiposMantencion();
+
+    cerrarModalEditarOT();
+    alert(`✓ Orden de Trabajo ${folio} actualizada con éxito.`);
 }
 
 // =========================================================
