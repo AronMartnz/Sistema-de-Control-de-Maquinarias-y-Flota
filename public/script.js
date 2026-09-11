@@ -3703,7 +3703,7 @@ function renderizarFlotaRegistrada() {
                                 ${tieneFicha ? `<button class="btn-secundario" style="padding:3px 6px; font-size:11px;" onclick="verFichaTecnica('${cod}')">🔍 Ficha</button>` : (esUsuarioAdministrador() ? `<button class="btn-secundario" style="padding:3px 6px; font-size:11px; color:#0284c7; border-color:#bae6fd; font-weight:700;" onclick="abrirModalNuevaFichaParaEquipo('${cod}')" title="Crear Ficha Técnica para este vehículo">➕ Ficha</button>` : '')}
                                 <button class="btn-primario" style="padding:3px 6px; font-size:11px;" onclick="iniciarMantencionParaEquipo('${cod}')" title="Crear OT y rebajar insumos">🔧 Mantención</button>
                                 <button class="btn-secundario" style="padding:3px 6px; font-size:11px; color:#0284c7;" onclick="irACargarCombustible('${v.patente || cod}')">⛽ Diésel</button>
-                                ${esUsuarioAdministrador() ? `<button class="btn-peligro" style="padding:3px 6px; font-size:11px;" onclick="eliminarVehiculo(${i})" title="Eliminar vehículo (Solo Admin)">🗑️</button>` : ''}
+                                ${esUsuarioAdministrador() ? `<button class="btn-peligro" style="padding:3px 6px; font-size:11px;" onclick="eliminarVehiculo('${cod}')" title="Eliminar vehículo (Solo Admin)">🗑️</button>` : ''}
                             </div>
                         </td>
                     </tr>
@@ -3753,7 +3753,7 @@ function renderizarFlotaRegistrada() {
                                 ${tieneFicha ? `<button class="btn-secundario" style="padding:3px 6px; font-size:11px;" onclick="verFichaTecnica('${cod}')">🔍 Ficha</button>` : (esUsuarioAdministrador() ? `<button class="btn-secundario" style="padding:3px 6px; font-size:11px; color:#0284c7; border-color:#bae6fd; font-weight:700;" onclick="abrirModalNuevaFichaParaEquipo('${cod}')" title="Crear Ficha Técnica para esta maquinaria">➕ Ficha</button>` : '')}
                                 <button class="btn-primario" style="padding:3px 6px; font-size:11px;" onclick="iniciarMantencionParaEquipo('${cod}')" title="Crear OT y rebajar insumos">🔧 Mantención</button>
                                 <button class="btn-secundario" style="padding:3px 6px; font-size:11px; color:#0284c7;" onclick="irACargarCombustible('${cod}')">⛽ Diésel</button>
-                                ${esUsuarioAdministrador() ? `<button class="btn-peligro" style="padding:3px 6px; font-size:11px;" onclick="eliminarMaquinaria(${i})" title="Eliminar maquinaria (Solo Admin)">🗑️</button>` : ''}
+                                ${esUsuarioAdministrador() ? `<button class="btn-peligro" style="padding:3px 6px; font-size:11px;" onclick="eliminarMaquinaria('${cod}')" title="Eliminar maquinaria (Solo Admin)">🗑️</button>` : ''}
                             </div>
                         </td>
                     </tr>
@@ -3775,24 +3775,29 @@ function renderizarFlotaRegistrada() {
                    (a.observaciones || "").toLowerCase().includes(query);
         });
 
-        tbodyAux.innerHTML = auxFiltrados.map(a => `
-            <tr>
-                <td><strong>${a.cod}</strong></td>
-                <td>${a.equipo}</td>
-                <td><strong>${a.marca}</strong></td>
-                <td><span class="badge badge-gris">${a.frecuencia || 'Mensual'}</span></td>
-                <td>${a.horometro || 'N/A'}</td>
-                <td><span class="badge ${obtenerClaseBadge(a.estado)}">${a.estado}</span></td>
-                <td>${a.responsable}</td>
-                <td style="max-width:260px; font-size:12px;">${a.observaciones || '-'}</td>
-                <td style="text-align:center;">
-                    <div style="display:flex; gap:4px; justify-content:center;">
-                        <button class="btn-primario" style="padding:3px 6px; font-size:11px;" onclick="iniciarMantencionParaEquipo('${a.cod}')">🔧 Mantención</button>
-                        <button class="btn-secundario" style="padding:3px 6px; font-size:11px;" onclick="navegarSeccion('programaMantencion')">📋 Programa</button>
-                    </div>
-                </td>
-            </tr>
-        `).join("");
+        if (auxFiltrados.length === 0) {
+            tbodyAux.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:20px; color:#64748b;">No se encontraron equipos auxiliares ni herramientas registrados.</td></tr>`;
+        } else {
+            tbodyAux.innerHTML = auxFiltrados.map(a => `
+                <tr>
+                    <td><strong>${a.cod}</strong></td>
+                    <td>${a.equipo}</td>
+                    <td><strong>${a.marca}</strong></td>
+                    <td><span class="badge badge-gris">${a.frecuencia || 'Mensual'}</span></td>
+                    <td>${a.horometro || 'N/A'}</td>
+                    <td><span class="badge ${obtenerClaseBadge(a.estado)}">${a.estado}</span></td>
+                    <td>${a.responsable}</td>
+                    <td style="max-width:260px; font-size:12px;">${a.observaciones || '-'}</td>
+                    <td style="text-align:center;">
+                        <div style="display:flex; gap:4px; justify-content:center; flex-wrap:wrap;">
+                            <button class="btn-primario" style="padding:3px 6px; font-size:11px;" onclick="iniciarMantencionParaEquipo('${a.cod}')" title="Crear OT y rebajar insumos">🔧 Mantención</button>
+                            <button class="btn-secundario" style="padding:3px 6px; font-size:11px;" onclick="navegarSeccion('programaMantencion')">📋 Programa</button>
+                            ${esUsuarioAdministrador() ? `<button class="btn-peligro" style="padding:3px 6px; font-size:11px;" onclick="eliminarEquipoPrograma('${a.cod}')" title="Eliminar auxiliar/herramienta (Solo Admin)">🗑️</button>` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `).join("");
+        }
     }
 
     // 4. MARÍTIMO (Mxx)
@@ -3807,23 +3812,28 @@ function renderizarFlotaRegistrada() {
                    (m.responsable || "").toLowerCase().includes(query);
         });
 
-        tbodyMar.innerHTML = marFiltrados.map(m => `
-            <tr>
-                <td><strong>${m.cod}</strong></td>
-                <td>${m.equipo}</td>
-                <td><strong>${m.marca}</strong></td>
-                <td><span class="badge badge-gris">${m.frecuencia || 'Anual'}</span></td>
-                <td><span class="badge ${obtenerClaseBadge(m.estado)}">${m.estado}</span></td>
-                <td>${m.responsable}</td>
-                <td style="max-width:260px; font-size:12px;">${m.observaciones || '-'}</td>
-                <td style="text-align:center;">
-                    <div style="display:flex; gap:4px; justify-content:center;">
-                        <button class="btn-primario" style="padding:3px 6px; font-size:11px;" onclick="iniciarMantencionParaEquipo('${m.cod}')">🔧 Mantención</button>
-                        <button class="btn-secundario" style="padding:3px 6px; font-size:11px;" onclick="navegarSeccion('programaMantencion')">📋 Programa</button>
-                    </div>
-                </td>
-            </tr>
-        `).join("");
+        if (marFiltrados.length === 0) {
+            tbodyMar.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:#64748b;">No se encontraron equipos marítimos registrados.</td></tr>`;
+        } else {
+            tbodyMar.innerHTML = marFiltrados.map(m => `
+                <tr>
+                    <td><strong>${m.cod}</strong></td>
+                    <td>${m.equipo}</td>
+                    <td><strong>${m.marca}</strong></td>
+                    <td><span class="badge badge-gris">${m.frecuencia || 'Anual'}</span></td>
+                    <td><span class="badge ${obtenerClaseBadge(m.estado)}">${m.estado}</span></td>
+                    <td>${m.responsable}</td>
+                    <td style="max-width:260px; font-size:12px;">${m.observaciones || '-'}</td>
+                    <td style="text-align:center;">
+                        <div style="display:flex; gap:4px; justify-content:center; flex-wrap:wrap;">
+                            <button class="btn-primario" style="padding:3px 6px; font-size:11px;" onclick="iniciarMantencionParaEquipo('${m.cod}')" title="Crear OT y rebajar insumos">🔧 Mantención</button>
+                            <button class="btn-secundario" style="padding:3px 6px; font-size:11px;" onclick="navegarSeccion('programaMantencion')">📋 Programa</button>
+                            ${esUsuarioAdministrador() ? `<button class="btn-peligro" style="padding:3px 6px; font-size:11px;" onclick="eliminarEquipoPrograma('${m.cod}')" title="Eliminar equipo marítimo (Solo Admin)">🗑️</button>` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `).join("");
+        }
     }
 
     // Actualizar contadores y badges
@@ -4648,10 +4658,16 @@ function registrarVehiculo(e) {
     navegarSeccion("vehiculos");
 }
 
-function eliminarVehiculo(idx) {
+function eliminarVehiculo(identificador) {
     if (!esUsuarioAdministrador()) {
         alert("⛔ Acceso Denegado: Únicamente los usuarios con rol de Administrador pueden eliminar vehículos de la flota.");
         return;
+    }
+    let idx = -1;
+    if (typeof identificador === "number") {
+        idx = identificador;
+    } else {
+        idx = vehiculos.findIndex(v => (v.codigo || v.id || v.patente) === identificador);
     }
     const v = vehiculos[idx];
     if (!v) return;
@@ -4661,6 +4677,12 @@ function eliminarVehiculo(idx) {
         const progIdx = corssenPrograma.findIndex(p => p.cod === cod || p.cod === v.patente);
         if (progIdx >= 0) {
             corssenPrograma.splice(progIdx, 1);
+        }
+        if (corssenFichas[cod]) {
+            delete corssenFichas[cod];
+        }
+        if (v.patente && corssenFichas[v.patente]) {
+            delete corssenFichas[v.patente];
         }
         guardarTodo();
         poblarSelectorEquiposMantencion();
@@ -5049,20 +5071,69 @@ function registrarAuxiliarHerramientaMaritimo(e) {
     }
 }
 
-function eliminarMaquinaria(idx) {
+function eliminarMaquinaria(identificador) {
     if (!esUsuarioAdministrador()) {
         alert("⛔ Acceso Denegado: Únicamente los usuarios con rol de Administrador pueden eliminar maquinarias del catálogo.");
         return;
     }
+    let idx = -1;
+    if (typeof identificador === "number") {
+        idx = identificador;
+    } else {
+        idx = maquinarias.findIndex(m => (m.numeroMaquinaria || m.id) === identificador);
+    }
     const m = maquinarias[idx];
     if (!m) return;
     const cod = m.numeroMaquinaria || m.id;
-    if (confirm(`¿Está seguro de eliminar la maquinaria ${cod} del catálogo?`)) {
+    if (confirm(`¿Está seguro de eliminar la maquinaria ${cod} (${m.tipoMaquinaria || 'Equipo'}) del catálogo de flota?`)) {
         maquinarias.splice(idx, 1);
         const progIdx = corssenPrograma.findIndex(p => p.cod === cod);
         if (progIdx >= 0) {
             corssenPrograma.splice(progIdx, 1);
         }
+        if (corssenFichas[cod]) {
+            delete corssenFichas[cod];
+        }
+        guardarTodo();
+        poblarSelectorEquiposMantencion();
+        poblarSelectorEquiposCompatiblesStock();
+        renderizarSelectorFichas();
+        renderizarTablasOriginales();
+        renderizarProgramaMaestro();
+        renderizarFlotaRegistrada();
+        renderizarDashboard();
+        renderizarAlertasMantencionesDashboard();
+    }
+}
+
+function eliminarEquipoPrograma(cod) {
+    if (!esUsuarioAdministrador()) {
+        alert("⛔ Acceso Denegado: Únicamente los usuarios con rol de Administrador pueden eliminar equipos del catálogo de flota.");
+        return;
+    }
+    if (!cod) return;
+    const item = corssenPrograma.find(p => p.cod === cod);
+    const nombreEquipo = item ? `${item.cod} - ${item.equipo}` : cod;
+    const tipoTexto = item && item.cat === "MARÍTIMO" ? "el equipo marítimo" : "el equipo auxiliar / herramienta";
+
+    if (confirm(`¿Está seguro de eliminar ${tipoTexto} "${nombreEquipo}" del catálogo de la flota?`)) {
+        const progIdx = corssenPrograma.findIndex(p => p.cod === cod);
+        if (progIdx >= 0) {
+            corssenPrograma.splice(progIdx, 1);
+        }
+        // Si además estuviera registrado en maquinarias o vehículos, limpiarlo también
+        const maqIdx = maquinarias.findIndex(m => (m.numeroMaquinaria || m.id) === cod);
+        if (maqIdx >= 0) {
+            maquinarias.splice(maqIdx, 1);
+        }
+        const vehIdx = vehiculos.findIndex(v => (v.codigo || v.id || v.patente) === cod);
+        if (vehIdx >= 0) {
+            vehiculos.splice(vehIdx, 1);
+        }
+        if (corssenFichas[cod]) {
+            delete corssenFichas[cod];
+        }
+
         guardarTodo();
         poblarSelectorEquiposMantencion();
         poblarSelectorEquiposCompatiblesStock();
