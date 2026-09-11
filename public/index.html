@@ -2992,6 +2992,9 @@
                         <span>⏳ Procesando documento...</span>
                     </div>
                     <div style="display:flex; gap:10px; margin-left:auto; flex-wrap:wrap;">
+                        <button type="button" class="btn-secundario" id="btnEditarOTDesdeModal" onclick="cerrarModalOT(); abrirModalEditarOT(ordenActivaOT?.folio || ordenActivaOT?.id);" style="font-weight:700; color:#1d4ed8; border-color:#bfdbfe; background:#eff6ff; display:inline-flex; align-items:center; gap:6px; cursor:pointer;" title="Modificar datos y parámetros de la OT">
+                            ✏️ Editar OT
+                        </button>
                         <button type="button" class="btn-secundario" id="btnImprimirOT" onclick="imprimirComprobanteOT()" style="font-weight:700; display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
                             🖨️ Imprimir
                         </button>
@@ -3003,6 +3006,136 @@
                         </button>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- =====================================================
+             MODAL: EDICIÓN DE ORDEN DE TRABAJO (OT)
+        ===================================================== -->
+        <div id="modalEditarOT" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.65); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(4px);">
+            <div class="modal-contenido" style="background:#ffffff; max-width:840px; width:95%; border-radius:16px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.35); overflow:hidden; border:1px solid #cbd5e1; max-height:92vh; display:flex; flex-direction:column;">
+                <!-- Header -->
+                <div style="background:linear-gradient(135deg, #0f172a, #1e3a8a); color:#ffffff; padding:16px 24px; display:flex; justify-content:space-between; align-items:center;">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <span style="font-size:24px;">✏️</span>
+                        <div>
+                            <div style="font-size:11px; text-transform:uppercase; letter-spacing:1px; color:#93c5fd; font-weight:700;">GESTIÓN OPERACIONAL DE TALLER</div>
+                            <h3 style="font-size:18px; margin:0; color:#ffffff; font-weight:800;">Editar Orden de Trabajo: <span id="lblEditOTFolio" style="color:#38bdf8;">-</span></h3>
+                        </div>
+                    </div>
+                    <button type="button" onclick="cerrarModalEditarOT()" style="background:transparent; border:none; color:#cbd5e1; font-size:22px; cursor:pointer; padding:4px 8px; border-radius:6px;" title="Cerrar modal">✕</button>
+                </div>
+
+                <!-- Form Body -->
+                <form id="formEditarOT" onsubmit="guardarEdicionOT(event)" style="padding:22px 24px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:18px; background:#f8fafc; margin:0;">
+                    <input type="hidden" id="inputEditOTFolioHidden">
+
+                    <!-- Resumen del Equipo -->
+                    <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:14px 18px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+                        <div>
+                            <span style="font-size:11px; text-transform:uppercase; font-weight:700; color:#64748b;">Unidad Asignada</span>
+                            <div id="lblEditOTEquipoTexto" style="font-size:15px; font-weight:800; color:#0f172a; margin-top:2px;">-</div>
+                        </div>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <span id="badgeEditOTPatente" class="badge badge-operativo" style="font-size:12px;">-</span>
+                        </div>
+                    </div>
+
+                    <!-- Parámetros Principales de la OT en Grid -->
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:14px; background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:18px;">
+                        
+                        <div class="campo-form">
+                            <label for="inputEditOTFecha" style="font-weight:700; font-size:12.5px; color:#334155;">Fecha de Ejecución (*):</label>
+                            <input type="date" id="inputEditOTFecha" required style="font-weight:600; padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px; width:100%;">
+                        </div>
+
+                        <div class="campo-form">
+                            <label for="selectEditOTTipo" style="font-weight:700; font-size:12.5px; color:#334155;">Tipo de Servicio (*):</label>
+                            <select id="selectEditOTTipo" required style="font-weight:600; padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px; width:100%;" onchange="alCambiarTipoEditOT()">
+                                <option value="Preventiva 250 Horas">🚜 Preventiva (250 Horas)</option>
+                                <option value="Preventiva 10.000 Kilómetros">🚚 Preventiva (10.000 Kilómetros)</option>
+                                <option value="Preventiva Mayor 500/1000 Hrs">⚙️ Preventiva Mayor (500 / 1.000 Hrs)</option>
+                                <option value="Correctiva / Reparación">🚨 Correctiva / Reparación de Falla</option>
+                                <option value="Pauta Oficial Concesionario">🛡️ Pauta Oficial de Concesionario</option>
+                                <option value="Engrase y Revisión de Niveles">🛢️ Engrase y Revisión de Niveles</option>
+                                <option value="Inspección General">📋 Inspección General y Diagnóstico</option>
+                            </select>
+                        </div>
+
+                        <div class="campo-form">
+                            <label for="inputEditOTHorometroKm" id="lblEditOTHorometroKm" style="font-weight:700; font-size:12.5px; color:#334155;">Lectura Registrada (Hrs / Km):</label>
+                            <input type="text" id="inputEditOTHorometroKm" placeholder="Ej: 142.500 km ó 44.800 hrs" required oninput="sugerirProximoServicioEditOT()" style="font-weight:600; padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px; width:100%;">
+                        </div>
+
+                        <div class="campo-form">
+                            <label for="inputEditOTProxServicio" id="lblEditOTProxServicio" style="font-weight:700; font-size:12.5px; color:#334155;">Próximo Servicio Sugerido:</label>
+                            <input type="text" id="inputEditOTProxServicio" placeholder="Ej: 152.500 km ó 45.050 hrs" style="font-weight:600; padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px; width:100%;">
+                        </div>
+
+                        <div class="campo-form">
+                            <label for="selectEditOTEstado" style="font-weight:700; font-size:12.5px; color:#334155;">Estado de la OT (*):</label>
+                            <select id="selectEditOTEstado" required style="font-weight:600; padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px; width:100%;">
+                                <option value="Completada (Equipo Operativo)">🟢 Completada (Equipo Operativo)</option>
+                                <option value="En Proceso / Taller">🟡 En Proceso / Taller</option>
+                                <option value="Pendiente Repuestos / Aprobación">🟠 Pendiente Repuestos / Aprobación</option>
+                                <option value="Observación Operativa">🔵 Observación Operativa</option>
+                            </select>
+                        </div>
+
+                        <div class="campo-form">
+                            <label for="inputEditOTTecnico" style="font-weight:700; font-size:12.5px; color:#334155;">Técnico Responsable (*):</label>
+                            <input type="text" id="inputEditOTTecnico" required style="font-weight:600; padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px; width:100%;">
+                        </div>
+
+                        <div class="campo-form">
+                            <label for="inputEditOTTaller" style="font-weight:700; font-size:12.5px; color:#334155;">Taller / Proveedor:</label>
+                            <input type="text" id="inputEditOTTaller" style="font-weight:600; padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px; width:100%;">
+                        </div>
+
+                        <div class="campo-form">
+                            <label for="inputEditOTCostoManoObra" style="font-weight:700; font-size:12.5px; color:#334155;">Costo Mano de Obra ($):</label>
+                            <input type="number" id="inputEditOTCostoManoObra" min="0" step="500" oninput="calcularCostoTotalEditOT()" style="font-weight:600; padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px; width:100%;">
+                        </div>
+
+                        <div class="campo-form">
+                            <label for="inputEditOTCostoInsumos" style="font-weight:700; font-size:12.5px; color:#334155;">Costo Insumos Bodega ($):</label>
+                            <input type="number" id="inputEditOTCostoInsumos" min="0" step="500" oninput="calcularCostoTotalEditOT()" style="font-weight:600; padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px; width:100%;">
+                        </div>
+
+                        <div class="campo-form">
+                            <label style="font-weight:700; font-size:12.5px; color:#334155;">Costo Total OT ($):</label>
+                            <input type="text" id="inputEditOTCostoTotal" readonly style="font-weight:800; color:#0f172a; background:#f1f5f9; padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px; width:100%;">
+                        </div>
+
+                    </div>
+
+                    <!-- Descripción de Trabajos Realizados -->
+                    <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:18px;">
+                        <label for="textareaEditOTDescripcion" style="display:block; font-weight:700; font-size:12.5px; color:#334155; margin-bottom:8px;">
+                            Descripción Detallada de Trabajos Realizados y Hallazgos (*):
+                        </label>
+                        <textarea id="textareaEditOTDescripcion" rows="4" style="width:100%; border-radius:8px; padding:10px 12px; border:1px solid #cbd5e1; font-size:13px; line-height:1.5; font-family:inherit; resize:vertical;" placeholder="Detalle de las intervenciones mecánicas, cambios de filtros, chequeos y reparaciones efectuadas..."></textarea>
+                    </div>
+
+                    <!-- Insumos Registrados -->
+                    <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:14px 18px;">
+                        <span style="font-size:11.5px; text-transform:uppercase; font-weight:700; color:#64748b; display:block; margin-bottom:6px;">Insumos y Repuestos Registrados en esta OT</span>
+                        <div id="contenedorEditOTInsumos" style="display:flex; flex-wrap:wrap; gap:6px;">
+                            <!-- Inyectado dinámicamente -->
+                        </div>
+                    </div>
+
+                    <!-- Botones de Acción Footer -->
+                    <div style="display:flex; justify-content:flex-end; gap:12px; padding-top:10px; border-top:1px solid #e2e8f0; margin-top:auto;">
+                        <button type="button" class="btn-secundario" onclick="cerrarModalEditarOT()" style="cursor:pointer; padding:10px 18px; font-weight:700; border-radius:8px;">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn-primario" style="background:#2563eb; border-color:#2563eb; color:#ffffff; cursor:pointer; padding:10px 22px; font-weight:800; border-radius:8px; box-shadow:0 4px 12px rgba(37,99,235,0.25); display:inline-flex; align-items:center; gap:8px;">
+                            <span>💾</span>
+                            <span>Guardar Cambios</span>
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
 
@@ -3664,6 +3797,6 @@
     </main>
 </div>
 
-<script src="/script.js?v=20260910_tipo_servicio_separado"></script>
+<script src="/script.js?v=20260911_editar_ot"></script>
 </body>
 </html>
