@@ -1688,6 +1688,9 @@ function renderizarProgramaMaestro() {
                     ${esUsuarioAdministrador() ? `
                     <button class="btn-secundario" style="padding:4px 8px; font-size:11px; background:#eff6ff; border-color:#93c5fd; color:#1d4ed8; font-weight:700;" onclick="abrirModalEditarEquipoPrograma('${item.cod}')" title="Modificar parámetros de mantención (Solo Rol Administración)">
                         ⚙️ Modificar
+                    </button>
+                    <button class="btn-peligro" style="padding:4px 8px; font-size:11px;" onclick="eliminarEquipoPrograma('${item.cod}')" title="Eliminar equipo (Solo Rol Administración)">
+                        🗑️ Eliminar
                     </button>` : ''}
                 </div>
             </td>
@@ -2475,7 +2478,7 @@ let equipoSeleccionadoFicha = "GPC-01";
 function esUsuarioAdministrador() {
     const rol = (sessionStorage.getItem("rolUsuario") || "").toLowerCase().trim();
     const usuario = (sessionStorage.getItem("usuarioLogueado") || "").toLowerCase().trim();
-    return rol === "admin" || rol === "administrador" || rol === "administrador general" || usuario === "admin";
+    return rol === "admin" || rol === "administrador" || rol === "administrador general" || usuario === "admin" || rol.includes("admin") || usuario.includes("admin");
 }
 
 function actualizarPermisosFichasTecnicas() {
@@ -3972,7 +3975,7 @@ function renderizarFlotaRegistrada() {
                         <div style="display:flex; gap:4px; justify-content:center; flex-wrap:wrap;">
                             <button class="btn-primario" style="padding:3px 6px; font-size:11px;" onclick="iniciarMantencionParaEquipo('${a.cod}')" title="Crear OT y rebajar insumos">🔧 Mantención</button>
                             <button class="btn-secundario" style="padding:3px 6px; font-size:11px;" onclick="navegarSeccion('programaMantencion')">📋 Programa</button>
-                            ${esUsuarioAdministrador() ? `<button class="btn-peligro" style="padding:3px 6px; font-size:11px;" onclick="eliminarEquipoPrograma('${a.cod}')" title="Eliminar auxiliar/herramienta (Solo Admin)">🗑️</button>` : ''}
+                            ${esUsuarioAdministrador() ? `<button class="btn-peligro" style="padding:3px 6px; font-size:11px;" onclick="eliminarEquipoPrograma('${a.cod}')" title="Eliminar auxiliar/herramienta (Solo Administrador)">🗑️ Eliminar</button>` : ''}
                         </div>
                     </td>
                 </tr>
@@ -4008,7 +4011,7 @@ function renderizarFlotaRegistrada() {
                         <div style="display:flex; gap:4px; justify-content:center; flex-wrap:wrap;">
                             <button class="btn-primario" style="padding:3px 6px; font-size:11px;" onclick="iniciarMantencionParaEquipo('${m.cod}')" title="Crear OT y rebajar insumos">🔧 Mantención</button>
                             <button class="btn-secundario" style="padding:3px 6px; font-size:11px;" onclick="navegarSeccion('programaMantencion')">📋 Programa</button>
-                            ${esUsuarioAdministrador() ? `<button class="btn-peligro" style="padding:3px 6px; font-size:11px;" onclick="eliminarEquipoPrograma('${m.cod}')" title="Eliminar equipo marítimo (Solo Admin)">🗑️</button>` : ''}
+                            ${esUsuarioAdministrador() ? `<button class="btn-peligro" style="padding:3px 6px; font-size:11px;" onclick="eliminarEquipoPrograma('${m.cod}')" title="Eliminar equipo marítimo (Solo Administrador)">🗑️ Eliminar</button>` : ''}
                         </div>
                     </td>
                 </tr>
@@ -4838,7 +4841,7 @@ function registrarVehiculo(e) {
     navegarSeccion("vehiculos");
 }
 
-function eliminarVehiculo(identificador) {
+async function eliminarVehiculo(identificador) {
     if (!esUsuarioAdministrador()) {
         alert("⛔ Acceso Denegado: Únicamente los usuarios con rol de Administrador pueden eliminar vehículos de la flota.");
         return;
@@ -4865,6 +4868,23 @@ function eliminarVehiculo(identificador) {
             delete corssenFichas[v.patente];
         }
         guardarTodo();
+        localStorage.setItem("corssen_ultima_modificacion_ts", String(Date.now()));
+
+        try {
+            const usuarioActual = sessionStorage.getItem("usuarioLogueado") || "admin";
+            fetch(`/api/programa/${encodeURIComponent(cod)}`, { method: "DELETE", headers: { "x-usuario": usuarioActual } }).catch(() => {});
+            if (v.patente && v.patente !== cod) {
+                fetch(`/api/programa/${encodeURIComponent(v.patente)}`, { method: "DELETE", headers: { "x-usuario": usuarioActual } }).catch(() => {});
+            }
+            fetch(`/api/fichas/${encodeURIComponent(cod)}`, { method: "DELETE", headers: { "x-usuario": usuarioActual } }).catch(() => {});
+        } catch (_) {}
+
+        try {
+            if (typeof window !== "undefined" && typeof window.ejecutarAutoBackupSistema === "function") {
+                await window.ejecutarAutoBackupSistema(`Eliminación de vehículo ${cod}`, "AUTOMATICO", true);
+            }
+        } catch (_) {}
+
         poblarSelectorEquiposMantencion();
         poblarSelectorEquiposCompatiblesStock();
         renderizarSelectorFichas();
@@ -5251,7 +5271,7 @@ function registrarAuxiliarHerramientaMaritimo(e) {
     }
 }
 
-function eliminarMaquinaria(identificador) {
+async function eliminarMaquinaria(identificador) {
     if (!esUsuarioAdministrador()) {
         alert("⛔ Acceso Denegado: Únicamente los usuarios con rol de Administrador pueden eliminar maquinarias del catálogo.");
         return;
@@ -5275,6 +5295,20 @@ function eliminarMaquinaria(identificador) {
             delete corssenFichas[cod];
         }
         guardarTodo();
+        localStorage.setItem("corssen_ultima_modificacion_ts", String(Date.now()));
+
+        try {
+            const usuarioActual = sessionStorage.getItem("usuarioLogueado") || "admin";
+            fetch(`/api/programa/${encodeURIComponent(cod)}`, { method: "DELETE", headers: { "x-usuario": usuarioActual } }).catch(() => {});
+            fetch(`/api/fichas/${encodeURIComponent(cod)}`, { method: "DELETE", headers: { "x-usuario": usuarioActual } }).catch(() => {});
+        } catch (_) {}
+
+        try {
+            if (typeof window !== "undefined" && typeof window.ejecutarAutoBackupSistema === "function") {
+                await window.ejecutarAutoBackupSistema(`Eliminación de maquinaria ${cod}`, "AUTOMATICO", true);
+            }
+        } catch (_) {}
+
         poblarSelectorEquiposMantencion();
         poblarSelectorEquiposCompatiblesStock();
         renderizarSelectorFichas();
@@ -5286,44 +5320,86 @@ function eliminarMaquinaria(identificador) {
     }
 }
 
-function eliminarEquipoPrograma(cod) {
+async function eliminarEquipoPrograma(cod) {
     if (!esUsuarioAdministrador()) {
         alert("⛔ Acceso Denegado: Únicamente los usuarios con rol de Administrador pueden eliminar equipos del catálogo de flota.");
         return;
     }
     if (!cod) return;
-    const item = corssenPrograma.find(p => p.cod === cod);
+    const codUpper = String(cod).trim().toUpperCase();
+    const item = corssenPrograma.find(p => String(p.cod).toUpperCase() === codUpper);
     const nombreEquipo = item ? `${item.cod} - ${item.equipo}` : cod;
-    const tipoTexto = item && item.cat === "MARÍTIMO" ? "el equipo marítimo" : "el equipo auxiliar / herramienta";
+    const tipoTexto = item && item.cat === "MARÍTIMO" ? "el equipo marítimo" : (item && item.cat === "AUXILIARES" ? "el equipo auxiliar / herramienta" : "el equipo");
 
-    if (confirm(`¿Está seguro de eliminar ${tipoTexto} "${nombreEquipo}" del catálogo de la flota?`)) {
-        const progIdx = corssenPrograma.findIndex(p => p.cod === cod);
-        if (progIdx >= 0) {
-            corssenPrograma.splice(progIdx, 1);
-        }
-        // Si además estuviera registrado en maquinarias o vehículos, limpiarlo también
-        const maqIdx = maquinarias.findIndex(m => (m.numeroMaquinaria || m.id) === cod);
-        if (maqIdx >= 0) {
-            maquinarias.splice(maqIdx, 1);
-        }
-        const vehIdx = vehiculos.findIndex(v => (v.codigo || v.id || v.patente) === cod);
-        if (vehIdx >= 0) {
-            vehiculos.splice(vehIdx, 1);
-        }
-        if (corssenFichas[cod]) {
-            delete corssenFichas[cod];
-        }
-
-        guardarTodo();
-        poblarSelectorEquiposMantencion();
-        poblarSelectorEquiposCompatiblesStock();
-        renderizarSelectorFichas();
-        renderizarTablasOriginales();
-        renderizarProgramaMaestro();
-        renderizarFlotaRegistrada();
-        renderizarDashboard();
-        renderizarAlertasMantencionesDashboard();
+    if (!confirm(`¿Está seguro de eliminar ${tipoTexto} "${nombreEquipo}" del catálogo y del programa de flota?\n\nEsta acción quitará el equipo del sistema y actualizará todos los módulos.`)) {
+        return;
     }
+
+    // 1. Quitar de corssenPrograma
+    const progIdx = corssenPrograma.findIndex(p => String(p.cod).toUpperCase() === codUpper);
+    if (progIdx >= 0) {
+        corssenPrograma.splice(progIdx, 1);
+    }
+    // 2. Si además estuviera registrado en maquinarias o vehículos, limpiarlo también
+    const maqIdx = maquinarias.findIndex(m => (m.numeroMaquinaria || m.id || "").toUpperCase() === codUpper);
+    if (maqIdx >= 0) {
+        maquinarias.splice(maqIdx, 1);
+    }
+    const vehIdx = vehiculos.findIndex(v => (v.codigo || v.id || v.patente || "").toUpperCase() === codUpper);
+    if (vehIdx >= 0) {
+        vehiculos.splice(vehIdx, 1);
+    }
+    if (corssenFichas[cod]) {
+        delete corssenFichas[cod];
+    }
+    if (corssenFichas[codUpper]) {
+        delete corssenFichas[codUpper];
+    }
+
+    // 3. Persistir en localStorage y actualizar marca de tiempo
+    guardarTodo();
+    localStorage.setItem("corssen_ultima_modificacion_ts", String(Date.now()));
+
+    // 4. Sincronizar eliminación en servidor Node / Cloudflare
+    try {
+        const usuarioActual = sessionStorage.getItem("usuarioLogueado") || "admin";
+        fetch(`/api/programa/${encodeURIComponent(cod)}`, {
+            method: "DELETE",
+            headers: {
+                "x-usuario": usuarioActual
+            }
+        }).catch(e => console.warn("Sync DELETE /api/programa:", e));
+
+        fetch(`/api/fichas/${encodeURIComponent(cod)}`, {
+            method: "DELETE",
+            headers: {
+                "x-usuario": usuarioActual
+            }
+        }).catch(e => console.warn("Sync DELETE /api/fichas:", e));
+    } catch (eSync) {
+        console.warn("Error en eliminación remota:", eSync);
+    }
+
+    // 5. Disparar auto-backup silencioso inmediato para actualizar snapshot
+    try {
+        if (typeof window !== "undefined" && typeof window.ejecutarAutoBackupSistema === "function") {
+            await window.ejecutarAutoBackupSistema(`Eliminación de ${cod} (${nombreEquipo})`, "AUTOMATICO", true);
+        }
+    } catch (eSnap) {
+        console.warn("Auto-backup tras eliminación diferido:", eSnap);
+    }
+
+    // 6. Actualizar interfaces
+    poblarSelectorEquiposMantencion();
+    poblarSelectorEquiposCompatiblesStock();
+    renderizarSelectorFichas();
+    renderizarTablasOriginales();
+    renderizarProgramaMaestro();
+    renderizarFlotaRegistrada();
+    renderizarDashboard();
+    renderizarAlertasMantencionesDashboard();
+
+    alert(`✓ ${tipoTexto} "${nombreEquipo}" ha sido eliminado exitosamente del catálogo y de la flota.`);
 }
 
 // =========================================================
@@ -10810,6 +10886,9 @@ document.addEventListener("DOMContentLoaded", () => {
     window.ejecutarRespaldoNubeInmediatoManual = ejecutarRespaldoNubeInmediatoManual;
     window.sincronizarConUltimoRespaldoNube = sincronizarConUltimoRespaldoNube;
     window.sincronizarProgramaDesdeServidor = sincronizarProgramaDesdeServidor;
+    window.eliminarEquipoPrograma = eliminarEquipoPrograma;
+    window.eliminarVehiculo = eliminarVehiculo;
+    window.eliminarMaquinaria = eliminarMaquinaria;
 
     // Inicializar estado visual de bloqueo / desbloqueo, módulo de aceite, módulo de combustible y auto-backup
     sincronizarEstadoVisualModuloRespaldos();
