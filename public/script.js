@@ -3183,6 +3183,40 @@ function guardarEdicionFicha(e) {
     // Persistir todo en almacenamiento local
     guardarTodo();
 
+    // Sincronizar en servidor Express
+    try {
+        const usuarioActual = sessionStorage.getItem("usuarioLogueado") || "admin";
+        fetch(`/api/fichas/${encodeURIComponent(nuevoCodigo)}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                "x-usuario": usuarioActual
+            },
+            body: JSON.stringify(fichaActualizada)
+        }).catch(e => console.warn("Sync ficha PUT:", e));
+
+        if (nuevoCodigo !== codigoOriginal) {
+            fetch(`/api/fichas/${encodeURIComponent(codigoOriginal)}`, {
+                method: "DELETE",
+                headers: { "x-usuario": usuarioActual }
+            }).catch(e => console.warn("Sync ficha DELETE:", e));
+        }
+
+        const progObj = corssenPrograma.find(p => (p.cod || "").toUpperCase() === nuevoCodigo.toUpperCase());
+        if (progObj) {
+            fetch(`/api/programa/${encodeURIComponent(nuevoCodigo)}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-usuario": usuarioActual
+                },
+                body: JSON.stringify(progObj)
+            }).catch(e => console.warn("Sync prog PUT:", e));
+        }
+    } catch (eServidor) {
+        console.warn("Error enviando cambios de ficha al servidor:", eServidor);
+    }
+
     // Actualizar selectores y vistas
     poblarSelectorEquiposMantencion();
     poblarSelectorEquiposCompatiblesStock();
@@ -3217,6 +3251,16 @@ function eliminarFichaTecnicaActual() {
     equipoSeleccionadoFicha = equipoSeleccionado;
 
     guardarTodo();
+
+    // Sincronizar eliminación en servidor
+    try {
+        const usuarioActual = sessionStorage.getItem("usuarioLogueado") || "admin";
+        fetch(`/api/fichas/${encodeURIComponent(cod)}`, {
+            method: "DELETE",
+            headers: { "x-usuario": usuarioActual }
+        }).catch(e => console.warn("Sync delete ficha:", e));
+    } catch (_) {}
+
     renderizarSelectorFichas();
     renderizarDetalleFichaTecnica();
     renderizarFlotaRegistrada();
@@ -3631,6 +3675,31 @@ function guardarNuevaFicha(e) {
 
     // Persistir
     guardarTodo();
+
+    // Sincronizar creación en servidor Express
+    try {
+        const usuarioActual = sessionStorage.getItem("usuarioLogueado") || "admin";
+        fetch(`/api/fichas/${encodeURIComponent(codigo)}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                "x-usuario": usuarioActual
+            },
+            body: JSON.stringify(corssenFichas[codigo])
+        }).catch(e => console.warn("Sync new ficha PUT:", e));
+
+        const progObj = corssenPrograma.find(p => (p.cod || "").toUpperCase() === codigo.toUpperCase());
+        if (progObj) {
+            fetch(`/api/programa/${encodeURIComponent(codigo)}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-usuario": usuarioActual
+                },
+                body: JSON.stringify(progObj)
+            }).catch(e => console.warn("Sync prog PUT:", e));
+        }
+    } catch (_) {}
 
     // Actualizar todas las interfaces
     poblarSelectorEquiposMantencion();
@@ -9206,6 +9275,13 @@ async function sincronizarConUltimoRespaldoNube(forzarRecarga = false) {
             renderizarModuloAceite();
             renderizarModuloCombustible();
             renderizarTablasOriginales();
+            poblarSelectorEquiposMantencion();
+            poblarSelectorEquiposCompatiblesStock();
+            renderizarSelectorFichas();
+            renderizarDetalleFichaTecnica();
+            renderizarFlotaRegistrada();
+            actualizarPermisosFichasTecnicas();
+            actualizarPermisosFlotaRegistrada();
             if (typeof renderizarModuloRespaldos === "function") renderizarModuloRespaldos();
 
             const elEstado = document.querySelector(".estado-sistema");
