@@ -2591,7 +2591,8 @@ async function guardarEdicionEquipoPrograma() {
         return;
     }
 
-    const index = corssenPrograma.findIndex(p => String(p.cod).toUpperCase() === String(cod).toUpperCase());
+    const codUpper = String(cod).toUpperCase();
+    const index = corssenPrograma.findIndex(p => String(p.cod).toUpperCase() === codUpper);
     const nuevoObj = {
         cod,
         equipo,
@@ -2613,14 +2614,50 @@ async function guardarEdicionEquipoPrograma() {
         corssenPrograma.push(nuevoObj);
     }
 
-    // Persistir localmente en navegador
-    try {
-        localStorage.setItem("corssen_programa_v2", JSON.stringify(corssenPrograma));
-    } catch (e) {
-        console.warn("Error guardando corssen_programa_v2 en localStorage:", e);
+    // 1. Sincronizar catálogo de Maquinarias Pesadas (Grúas, Horquillas, etc.)
+    if (Array.isArray(maquinarias)) {
+        const mIdx = maquinarias.findIndex(m => (m.numeroMaquinaria || m.id || "").toUpperCase() === codUpper);
+        if (mIdx !== -1) {
+            maquinarias[mIdx].estado = estado;
+            if (horometro) {
+                const hNum = parseFloat(String(horometro).replace(/[^0-9.]/g, '')) || maquinarias[mIdx].horometro;
+                maquinarias[mIdx].horometro = hNum;
+            }
+            if (responsable) maquinarias[mIdx].responsable = responsable;
+            if (marca) maquinarias[mIdx].marcaMaquinaria = marca;
+        }
     }
 
-    // Persistir en servidor Express y base de datos Cloudflare
+    // 2. Sincronizar catálogo de Vehículos (Camionetas, Camiones, etc.)
+    if (Array.isArray(vehiculos)) {
+        const vIdx = vehiculos.findIndex(v => (v.codigo || v.id || v.patente || "").toUpperCase() === codUpper || (v.patente && v.patente.toUpperCase() === codUpper));
+        if (vIdx !== -1) {
+            vehiculos[vIdx].estado = estado;
+            if (horometro) {
+                const kmNum = parseFloat(String(horometro).replace(/[^0-9.]/g, '')) || vehiculos[vIdx].kilometraje;
+                vehiculos[vIdx].kilometraje = kmNum;
+            }
+            if (responsable) vehiculos[vIdx].responsable = responsable;
+            if (marca) vehiculos[vIdx].marca = marca;
+        }
+    }
+
+    // 3. Sincronizar con ficha técnica si existe el equipo
+    if (corssenFichas && corssenFichas[cod]) {
+        corssenFichas[cod].nombre = equipo;
+        corssenFichas[cod].marca = marca;
+        corssenFichas[cod].estado = estado;
+        corssenFichas[cod].horometro = horometro;
+        corssenFichas[cod].prox = prox;
+        corssenFichas[cod].responsable = responsable;
+    }
+
+    // 4. Persistir todo en almacenamiento local y registrar timestamp inmediato
+    guardarTodo();
+    const ahoraTs = Date.now();
+    localStorage.setItem("corssen_ultima_modificacion_ts", String(ahoraTs));
+
+    // 5. Persistir en servidor Express y base de datos Cloudflare
     try {
         const usuarioActual = sessionStorage.getItem("usuarioLogueado") || "admin";
         await fetch(`/api/programa/${encodeURIComponent(cod)}`, {
@@ -2631,26 +2668,100 @@ async function guardarEdicionEquipoPrograma() {
             },
             body: JSON.stringify(nuevoObj)
         });
+
+        // Si existe ficha, persistir también actualización en endpoint de fichas
+        if (corssenFichas && corssenFichas[cod]) {
+            fetch(`/api/fichas/${encodeURIComponent(cod)}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-usuario": usuarioActual
+                },
+                body: JSON.stringify(corssenFichas[cod])
+            }).catch(e => console.warn("Sync ficha PUT diferido:", e));
+        }
     } catch (errApi) {
         console.warn("Sincronización remota programa diferida:", errApi);
     }
 
-    // Sincronizar con ficha técnica si existe el equipo
-    if (corssenFichas && corssenFichas[cod]) {
-        corssenFichas[cod].nombre = equipo;
-        corssenFichas[cod].marca = marca;
-        corssenFichas[cod].estado = estado;
-        corssenFichas[cod].horometro = horometro;
-        corssenFichas[cod].prox = prox;
-        corssenFichas[cod].responsable = responsable;
-        try {
-            localStorage.setItem("corssen_fichas_v2", JSON.stringify(corssenFichas));
-        } catch (_) {}
+    // 6. Generar auto-respaldo inmediato silencioso para actualizar snapshot en la nube/servidor
+    try {
+        if (typeof window !== "undefined" && typeof window.ejecutarAutoBackupSistema === "function") {
+            await window.ejecutarAutoBackupSistema(`Actualización de equipo ${cod} en Programa Mantención`, "AUTOMATICO", true);
+        }
+    } catch (eSnap) {
+        console.warn("Auto-backup tras actualizar equipo diferido:", eSnap);
     }
 
     alert(`✓ Datos de mantención actualizados con éxito para ${cod} (${equipo}).`);
     cerrarModalEditarEquipoPrograma();
     renderizarProgramaMaestro();
+    renderizarFlotaRegistrada();
+    renderizarDashboard();
+}
+
+async function sincronizarProgramaDesdeServidor() {
+    try {
+        const resp = await fetch("/api/programa?t=" + Date.now());
+        if (!resp.ok) return false;
+        const progRemoto = await resp.json();
+        if (Array.isArray(progRemoto) && progRemoto.length > 0) {
+            let huboCambios = false;
+            progRemoto.forEach(remoto => {
+                if (!remoto.cod) return;
+                const codUpper = String(remoto.cod).toUpperCase();
+                const idx = corssenPrograma.findIndex(p => String(p.cod).toUpperCase() === codUpper);
+                if (idx !== -1) {
+                    corssenPrograma[idx] = { ...corssenPrograma[idx], ...remoto };
+                    huboCambios = true;
+                } else {
+                    corssenPrograma.push(remoto);
+                    huboCambios = true;
+                }
+                // Sincronizar catálogo de Maquinarias
+                if (Array.isArray(maquinarias)) {
+                    const mIdx = maquinarias.findIndex(m => (m.numeroMaquinaria || m.id || "").toUpperCase() === codUpper);
+                    if (mIdx !== -1 && remoto.estado) {
+                        if (maquinarias[mIdx].estado !== remoto.estado) {
+                            maquinarias[mIdx].estado = remoto.estado;
+                            huboCambios = true;
+                        }
+                    }
+                }
+                // Sincronizar catálogo de Vehículos
+                if (Array.isArray(vehiculos)) {
+                    const vIdx = vehiculos.findIndex(v => (v.codigo || v.id || v.patente || "").toUpperCase() === codUpper || (v.patente && v.patente.toUpperCase() === codUpper));
+                    if (vIdx !== -1 && remoto.estado) {
+                        if (vehiculos[vIdx].estado !== remoto.estado) {
+                            vehiculos[vIdx].estado = remoto.estado;
+                            huboCambios = true;
+                        }
+                    }
+                }
+                // Sincronizar fichas técnicas
+                if (corssenFichas && corssenFichas[remoto.cod] && remoto.estado) {
+                    if (corssenFichas[remoto.cod].estado !== remoto.estado) {
+                        corssenFichas[remoto.cod].estado = remoto.estado;
+                        huboCambios = true;
+                    }
+                }
+            });
+
+            if (huboCambios) {
+                localStorage.setItem("corssen_programa_v2", JSON.stringify(corssenPrograma));
+                localStorage.setItem("flota_maquinarias_v3", JSON.stringify(maquinarias));
+                localStorage.setItem("flota_vehiculos_v3", JSON.stringify(vehiculos));
+                localStorage.setItem("corssen_fichas_v2", JSON.stringify(corssenFichas));
+                renderizarProgramaMaestro();
+                renderizarFlotaRegistrada();
+                renderizarDashboard();
+            }
+            return true;
+        }
+    } catch (e) {
+        console.warn("Sincronización remota programa diferida:", e);
+    }
+    return false;
 }
 
 function abrirModalNuevoEquipoPrograma() {
@@ -9288,6 +9399,9 @@ async function sincronizarConUltimoRespaldoNube(forzarRecarga = false) {
             if (elEstado) {
                 elEstado.innerHTML = `<span class="estado-punto" style="background:#10b981;"></span> Sincronizado con Nube`;
             }
+
+            // Reconciliar adicionalmente con el registro individual de programa para evitar sobreescritura de estados recién editados
+            sincronizarProgramaDesdeServidor();
             return true;
         } else if (localTs > 0 && localTs > serverTs) {
             // El dispositivo local tiene cambios más recientes pendientes de subir a la nube
@@ -9329,6 +9443,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     cargarTodo();
+    sincronizarProgramaDesdeServidor();
     renderizarDashboard();
     renderizarProgramaMaestro();
     poblarSelectorEquiposCompatiblesStock();
@@ -10694,6 +10809,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.cambiarConfiguracionAutoBackup = cambiarConfiguracionAutoBackup;
     window.ejecutarRespaldoNubeInmediatoManual = ejecutarRespaldoNubeInmediatoManual;
     window.sincronizarConUltimoRespaldoNube = sincronizarConUltimoRespaldoNube;
+    window.sincronizarProgramaDesdeServidor = sincronizarProgramaDesdeServidor;
 
     // Inicializar estado visual de bloqueo / desbloqueo, módulo de aceite, módulo de combustible y auto-backup
     sincronizarEstadoVisualModuloRespaldos();
