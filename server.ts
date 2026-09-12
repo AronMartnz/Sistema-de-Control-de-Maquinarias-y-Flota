@@ -864,17 +864,19 @@ app.use((req, res, next) => {
     next();
 });
 
-// Servir archivos estáticos tanto desde la raíz como desde public
-app.use(express.static(process.cwd(), {
+// Servir archivos estáticos tanto desde la raíz como desde public sin caché
+const staticOptions = {
     etag: false,
     lastModified: false,
-    maxAge: 0
-}));
-app.use(express.static(publicPath, {
-    etag: false,
-    lastModified: false,
-    maxAge: 0
-}));
+    maxAge: 0,
+    setHeaders: (res: express.Response) => {
+        res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+        res.setHeader("Pragma", "no-cache");
+        res.setHeader("Expires", "0");
+    }
+};
+app.use(express.static(process.cwd(), staticOptions));
+app.use(express.static(publicPath, staticOptions));
 
 // Rutas de páginas HTML
 app.get("/login", (req, res) => {
