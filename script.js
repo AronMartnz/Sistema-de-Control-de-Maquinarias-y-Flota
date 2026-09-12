@@ -1688,6 +1688,9 @@ function renderizarProgramaMaestro() {
                     ${esUsuarioAdministrador() ? `
                     <button class="btn-secundario" style="padding:4px 8px; font-size:11px; background:#eff6ff; border-color:#93c5fd; color:#1d4ed8; font-weight:700;" onclick="abrirModalEditarEquipoPrograma('${item.cod}')" title="Modificar parámetros de mantención (Solo Rol Administración)">
                         ⚙️ Modificar
+                    </button>
+                    <button class="btn-peligro" style="padding:4px 8px; font-size:11px;" onclick="eliminarEquipoPrograma('${item.cod}')" title="Eliminar equipo (Solo Rol Administración)">
+                        🗑️ Eliminar
                     </button>` : ''}
                 </div>
             </td>
@@ -2475,7 +2478,7 @@ let equipoSeleccionadoFicha = "GPC-01";
 function esUsuarioAdministrador() {
     const rol = (sessionStorage.getItem("rolUsuario") || "").toLowerCase().trim();
     const usuario = (sessionStorage.getItem("usuarioLogueado") || "").toLowerCase().trim();
-    return rol === "admin" || rol === "administrador" || rol === "administrador general" || usuario === "admin";
+    return rol === "admin" || rol === "administrador" || rol === "administrador general" || usuario === "admin" || rol.includes("admin") || usuario.includes("admin");
 }
 
 function actualizarPermisosFichasTecnicas() {
@@ -2591,7 +2594,8 @@ async function guardarEdicionEquipoPrograma() {
         return;
     }
 
-    const index = corssenPrograma.findIndex(p => String(p.cod).toUpperCase() === String(cod).toUpperCase());
+    const codUpper = String(cod).toUpperCase();
+    const index = corssenPrograma.findIndex(p => String(p.cod).toUpperCase() === codUpper);
     const nuevoObj = {
         cod,
         equipo,
@@ -2613,14 +2617,50 @@ async function guardarEdicionEquipoPrograma() {
         corssenPrograma.push(nuevoObj);
     }
 
-    // Persistir localmente en navegador
-    try {
-        localStorage.setItem("corssen_programa_v2", JSON.stringify(corssenPrograma));
-    } catch (e) {
-        console.warn("Error guardando corssen_programa_v2 en localStorage:", e);
+    // 1. Sincronizar catálogo de Maquinarias Pesadas (Grúas, Horquillas, etc.)
+    if (Array.isArray(maquinarias)) {
+        const mIdx = maquinarias.findIndex(m => (m.numeroMaquinaria || m.id || "").toUpperCase() === codUpper);
+        if (mIdx !== -1) {
+            maquinarias[mIdx].estado = estado;
+            if (horometro) {
+                const hNum = parseFloat(String(horometro).replace(/[^0-9.]/g, '')) || maquinarias[mIdx].horometro;
+                maquinarias[mIdx].horometro = hNum;
+            }
+            if (responsable) maquinarias[mIdx].responsable = responsable;
+            if (marca) maquinarias[mIdx].marcaMaquinaria = marca;
+        }
     }
 
-    // Persistir en servidor Express y base de datos Cloudflare
+    // 2. Sincronizar catálogo de Vehículos (Camionetas, Camiones, etc.)
+    if (Array.isArray(vehiculos)) {
+        const vIdx = vehiculos.findIndex(v => (v.codigo || v.id || v.patente || "").toUpperCase() === codUpper || (v.patente && v.patente.toUpperCase() === codUpper));
+        if (vIdx !== -1) {
+            vehiculos[vIdx].estado = estado;
+            if (horometro) {
+                const kmNum = parseFloat(String(horometro).replace(/[^0-9.]/g, '')) || vehiculos[vIdx].kilometraje;
+                vehiculos[vIdx].kilometraje = kmNum;
+            }
+            if (responsable) vehiculos[vIdx].responsable = responsable;
+            if (marca) vehiculos[vIdx].marca = marca;
+        }
+    }
+
+    // 3. Sincronizar con ficha técnica si existe el equipo
+    if (corssenFichas && corssenFichas[cod]) {
+        corssenFichas[cod].nombre = equipo;
+        corssenFichas[cod].marca = marca;
+        corssenFichas[cod].estado = estado;
+        corssenFichas[cod].horometro = horometro;
+        corssenFichas[cod].prox = prox;
+        corssenFichas[cod].responsable = responsable;
+    }
+
+    // 4. Persistir todo en almacenamiento local y registrar timestamp inmediato
+    guardarTodo();
+    const ahoraTs = Date.now();
+    localStorage.setItem("corssen_ultima_modificacion_ts", String(ahoraTs));
+
+    // 5. Persistir en servidor Express y base de datos Cloudflare
     try {
         const usuarioActual = sessionStorage.getItem("usuarioLogueado") || "admin";
         await fetch(`/api/programa/${encodeURIComponent(cod)}`, {
@@ -2631,26 +2671,100 @@ async function guardarEdicionEquipoPrograma() {
             },
             body: JSON.stringify(nuevoObj)
         });
+
+        // Si existe ficha, persistir también actualización en endpoint de fichas
+        if (corssenFichas && corssenFichas[cod]) {
+            fetch(`/api/fichas/${encodeURIComponent(cod)}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-usuario": usuarioActual
+                },
+                body: JSON.stringify(corssenFichas[cod])
+            }).catch(e => console.warn("Sync ficha PUT diferido:", e));
+        }
     } catch (errApi) {
         console.warn("Sincronización remota programa diferida:", errApi);
     }
 
-    // Sincronizar con ficha técnica si existe el equipo
-    if (corssenFichas && corssenFichas[cod]) {
-        corssenFichas[cod].nombre = equipo;
-        corssenFichas[cod].marca = marca;
-        corssenFichas[cod].estado = estado;
-        corssenFichas[cod].horometro = horometro;
-        corssenFichas[cod].prox = prox;
-        corssenFichas[cod].responsable = responsable;
-        try {
-            localStorage.setItem("corssen_fichas_v2", JSON.stringify(corssenFichas));
-        } catch (_) {}
+    // 6. Generar auto-respaldo inmediato silencioso para actualizar snapshot en la nube/servidor
+    try {
+        if (typeof window !== "undefined" && typeof window.ejecutarAutoBackupSistema === "function") {
+            await window.ejecutarAutoBackupSistema(`Actualización de equipo ${cod} en Programa Mantención`, "AUTOMATICO", true);
+        }
+    } catch (eSnap) {
+        console.warn("Auto-backup tras actualizar equipo diferido:", eSnap);
     }
 
     alert(`✓ Datos de mantención actualizados con éxito para ${cod} (${equipo}).`);
     cerrarModalEditarEquipoPrograma();
     renderizarProgramaMaestro();
+    renderizarFlotaRegistrada();
+    renderizarDashboard();
+}
+
+async function sincronizarProgramaDesdeServidor() {
+    try {
+        const resp = await fetch("/api/programa?t=" + Date.now());
+        if (!resp.ok) return false;
+        const progRemoto = await resp.json();
+        if (Array.isArray(progRemoto) && progRemoto.length > 0) {
+            let huboCambios = false;
+            progRemoto.forEach(remoto => {
+                if (!remoto.cod) return;
+                const codUpper = String(remoto.cod).toUpperCase();
+                const idx = corssenPrograma.findIndex(p => String(p.cod).toUpperCase() === codUpper);
+                if (idx !== -1) {
+                    corssenPrograma[idx] = { ...corssenPrograma[idx], ...remoto };
+                    huboCambios = true;
+                } else {
+                    corssenPrograma.push(remoto);
+                    huboCambios = true;
+                }
+                // Sincronizar catálogo de Maquinarias
+                if (Array.isArray(maquinarias)) {
+                    const mIdx = maquinarias.findIndex(m => (m.numeroMaquinaria || m.id || "").toUpperCase() === codUpper);
+                    if (mIdx !== -1 && remoto.estado) {
+                        if (maquinarias[mIdx].estado !== remoto.estado) {
+                            maquinarias[mIdx].estado = remoto.estado;
+                            huboCambios = true;
+                        }
+                    }
+                }
+                // Sincronizar catálogo de Vehículos
+                if (Array.isArray(vehiculos)) {
+                    const vIdx = vehiculos.findIndex(v => (v.codigo || v.id || v.patente || "").toUpperCase() === codUpper || (v.patente && v.patente.toUpperCase() === codUpper));
+                    if (vIdx !== -1 && remoto.estado) {
+                        if (vehiculos[vIdx].estado !== remoto.estado) {
+                            vehiculos[vIdx].estado = remoto.estado;
+                            huboCambios = true;
+                        }
+                    }
+                }
+                // Sincronizar fichas técnicas
+                if (corssenFichas && corssenFichas[remoto.cod] && remoto.estado) {
+                    if (corssenFichas[remoto.cod].estado !== remoto.estado) {
+                        corssenFichas[remoto.cod].estado = remoto.estado;
+                        huboCambios = true;
+                    }
+                }
+            });
+
+            if (huboCambios) {
+                localStorage.setItem("corssen_programa_v2", JSON.stringify(corssenPrograma));
+                localStorage.setItem("flota_maquinarias_v3", JSON.stringify(maquinarias));
+                localStorage.setItem("flota_vehiculos_v3", JSON.stringify(vehiculos));
+                localStorage.setItem("corssen_fichas_v2", JSON.stringify(corssenFichas));
+                renderizarProgramaMaestro();
+                renderizarFlotaRegistrada();
+                renderizarDashboard();
+            }
+            return true;
+        }
+    } catch (e) {
+        console.warn("Sincronización remota programa diferida:", e);
+    }
+    return false;
 }
 
 function abrirModalNuevoEquipoPrograma() {
@@ -3183,6 +3297,40 @@ function guardarEdicionFicha(e) {
     // Persistir todo en almacenamiento local
     guardarTodo();
 
+    // Sincronizar en servidor Express
+    try {
+        const usuarioActual = sessionStorage.getItem("usuarioLogueado") || "admin";
+        fetch(`/api/fichas/${encodeURIComponent(nuevoCodigo)}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                "x-usuario": usuarioActual
+            },
+            body: JSON.stringify(fichaActualizada)
+        }).catch(e => console.warn("Sync ficha PUT:", e));
+
+        if (nuevoCodigo !== codigoOriginal) {
+            fetch(`/api/fichas/${encodeURIComponent(codigoOriginal)}`, {
+                method: "DELETE",
+                headers: { "x-usuario": usuarioActual }
+            }).catch(e => console.warn("Sync ficha DELETE:", e));
+        }
+
+        const progObj = corssenPrograma.find(p => (p.cod || "").toUpperCase() === nuevoCodigo.toUpperCase());
+        if (progObj) {
+            fetch(`/api/programa/${encodeURIComponent(nuevoCodigo)}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-usuario": usuarioActual
+                },
+                body: JSON.stringify(progObj)
+            }).catch(e => console.warn("Sync prog PUT:", e));
+        }
+    } catch (eServidor) {
+        console.warn("Error enviando cambios de ficha al servidor:", eServidor);
+    }
+
     // Actualizar selectores y vistas
     poblarSelectorEquiposMantencion();
     poblarSelectorEquiposCompatiblesStock();
@@ -3217,6 +3365,16 @@ function eliminarFichaTecnicaActual() {
     equipoSeleccionadoFicha = equipoSeleccionado;
 
     guardarTodo();
+
+    // Sincronizar eliminación en servidor
+    try {
+        const usuarioActual = sessionStorage.getItem("usuarioLogueado") || "admin";
+        fetch(`/api/fichas/${encodeURIComponent(cod)}`, {
+            method: "DELETE",
+            headers: { "x-usuario": usuarioActual }
+        }).catch(e => console.warn("Sync delete ficha:", e));
+    } catch (_) {}
+
     renderizarSelectorFichas();
     renderizarDetalleFichaTecnica();
     renderizarFlotaRegistrada();
@@ -3632,6 +3790,31 @@ function guardarNuevaFicha(e) {
     // Persistir
     guardarTodo();
 
+    // Sincronizar creación en servidor Express
+    try {
+        const usuarioActual = sessionStorage.getItem("usuarioLogueado") || "admin";
+        fetch(`/api/fichas/${encodeURIComponent(codigo)}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                "x-usuario": usuarioActual
+            },
+            body: JSON.stringify(corssenFichas[codigo])
+        }).catch(e => console.warn("Sync new ficha PUT:", e));
+
+        const progObj = corssenPrograma.find(p => (p.cod || "").toUpperCase() === codigo.toUpperCase());
+        if (progObj) {
+            fetch(`/api/programa/${encodeURIComponent(codigo)}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-usuario": usuarioActual
+                },
+                body: JSON.stringify(progObj)
+            }).catch(e => console.warn("Sync prog PUT:", e));
+        }
+    } catch (_) {}
+
     // Actualizar todas las interfaces
     poblarSelectorEquiposMantencion();
     poblarSelectorEquiposCompatiblesStock();
@@ -3703,7 +3886,7 @@ function renderizarFlotaRegistrada() {
                                 ${tieneFicha ? `<button class="btn-secundario" style="padding:3px 6px; font-size:11px;" onclick="verFichaTecnica('${cod}')">🔍 Ficha</button>` : (esUsuarioAdministrador() ? `<button class="btn-secundario" style="padding:3px 6px; font-size:11px; color:#0284c7; border-color:#bae6fd; font-weight:700;" onclick="abrirModalNuevaFichaParaEquipo('${cod}')" title="Crear Ficha Técnica para este vehículo">➕ Ficha</button>` : '')}
                                 <button class="btn-primario" style="padding:3px 6px; font-size:11px;" onclick="iniciarMantencionParaEquipo('${cod}')" title="Crear OT y rebajar insumos">🔧 Mantención</button>
                                 <button class="btn-secundario" style="padding:3px 6px; font-size:11px; color:#0284c7;" onclick="irACargarCombustible('${v.patente || cod}')">⛽ Diésel</button>
-                                ${esUsuarioAdministrador() ? `<button class="btn-peligro" style="padding:3px 6px; font-size:11px;" onclick="eliminarVehiculo(${i})" title="Eliminar vehículo (Solo Admin)">🗑️</button>` : ''}
+                                ${esUsuarioAdministrador() ? `<button class="btn-peligro" style="padding:3px 6px; font-size:11px;" onclick="eliminarVehiculo('${cod}')" title="Eliminar vehículo (Solo Admin)">🗑️</button>` : ''}
                             </div>
                         </td>
                     </tr>
@@ -3753,7 +3936,7 @@ function renderizarFlotaRegistrada() {
                                 ${tieneFicha ? `<button class="btn-secundario" style="padding:3px 6px; font-size:11px;" onclick="verFichaTecnica('${cod}')">🔍 Ficha</button>` : (esUsuarioAdministrador() ? `<button class="btn-secundario" style="padding:3px 6px; font-size:11px; color:#0284c7; border-color:#bae6fd; font-weight:700;" onclick="abrirModalNuevaFichaParaEquipo('${cod}')" title="Crear Ficha Técnica para esta maquinaria">➕ Ficha</button>` : '')}
                                 <button class="btn-primario" style="padding:3px 6px; font-size:11px;" onclick="iniciarMantencionParaEquipo('${cod}')" title="Crear OT y rebajar insumos">🔧 Mantención</button>
                                 <button class="btn-secundario" style="padding:3px 6px; font-size:11px; color:#0284c7;" onclick="irACargarCombustible('${cod}')">⛽ Diésel</button>
-                                ${esUsuarioAdministrador() ? `<button class="btn-peligro" style="padding:3px 6px; font-size:11px;" onclick="eliminarMaquinaria(${i})" title="Eliminar maquinaria (Solo Admin)">🗑️</button>` : ''}
+                                ${esUsuarioAdministrador() ? `<button class="btn-peligro" style="padding:3px 6px; font-size:11px;" onclick="eliminarMaquinaria('${cod}')" title="Eliminar maquinaria (Solo Admin)">🗑️</button>` : ''}
                             </div>
                         </td>
                     </tr>
@@ -3775,24 +3958,29 @@ function renderizarFlotaRegistrada() {
                    (a.observaciones || "").toLowerCase().includes(query);
         });
 
-        tbodyAux.innerHTML = auxFiltrados.map(a => `
-            <tr>
-                <td><strong>${a.cod}</strong></td>
-                <td>${a.equipo}</td>
-                <td><strong>${a.marca}</strong></td>
-                <td><span class="badge badge-gris">${a.frecuencia || 'Mensual'}</span></td>
-                <td>${a.horometro || 'N/A'}</td>
-                <td><span class="badge ${obtenerClaseBadge(a.estado)}">${a.estado}</span></td>
-                <td>${a.responsable}</td>
-                <td style="max-width:260px; font-size:12px;">${a.observaciones || '-'}</td>
-                <td style="text-align:center;">
-                    <div style="display:flex; gap:4px; justify-content:center;">
-                        <button class="btn-primario" style="padding:3px 6px; font-size:11px;" onclick="iniciarMantencionParaEquipo('${a.cod}')">🔧 Mantención</button>
-                        <button class="btn-secundario" style="padding:3px 6px; font-size:11px;" onclick="navegarSeccion('programaMantencion')">📋 Programa</button>
-                    </div>
-                </td>
-            </tr>
-        `).join("");
+        if (auxFiltrados.length === 0) {
+            tbodyAux.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:20px; color:#64748b;">No se encontraron equipos auxiliares ni herramientas registrados.</td></tr>`;
+        } else {
+            tbodyAux.innerHTML = auxFiltrados.map(a => `
+                <tr>
+                    <td><strong>${a.cod}</strong></td>
+                    <td>${a.equipo}</td>
+                    <td><strong>${a.marca}</strong></td>
+                    <td><span class="badge badge-gris">${a.frecuencia || 'Mensual'}</span></td>
+                    <td>${a.horometro || 'N/A'}</td>
+                    <td><span class="badge ${obtenerClaseBadge(a.estado)}">${a.estado}</span></td>
+                    <td>${a.responsable}</td>
+                    <td style="max-width:260px; font-size:12px;">${a.observaciones || '-'}</td>
+                    <td style="text-align:center;">
+                        <div style="display:flex; gap:4px; justify-content:center; flex-wrap:wrap;">
+                            <button class="btn-primario" style="padding:3px 6px; font-size:11px;" onclick="iniciarMantencionParaEquipo('${a.cod}')" title="Crear OT y rebajar insumos">🔧 Mantención</button>
+                            <button class="btn-secundario" style="padding:3px 6px; font-size:11px;" onclick="navegarSeccion('programaMantencion')">📋 Programa</button>
+                            ${esUsuarioAdministrador() ? `<button class="btn-peligro" style="padding:3px 6px; font-size:11px;" onclick="eliminarEquipoPrograma('${a.cod}')" title="Eliminar auxiliar/herramienta (Solo Administrador)">🗑️ Eliminar</button>` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `).join("");
+        }
     }
 
     // 4. MARÍTIMO (Mxx)
@@ -3807,23 +3995,28 @@ function renderizarFlotaRegistrada() {
                    (m.responsable || "").toLowerCase().includes(query);
         });
 
-        tbodyMar.innerHTML = marFiltrados.map(m => `
-            <tr>
-                <td><strong>${m.cod}</strong></td>
-                <td>${m.equipo}</td>
-                <td><strong>${m.marca}</strong></td>
-                <td><span class="badge badge-gris">${m.frecuencia || 'Anual'}</span></td>
-                <td><span class="badge ${obtenerClaseBadge(m.estado)}">${m.estado}</span></td>
-                <td>${m.responsable}</td>
-                <td style="max-width:260px; font-size:12px;">${m.observaciones || '-'}</td>
-                <td style="text-align:center;">
-                    <div style="display:flex; gap:4px; justify-content:center;">
-                        <button class="btn-primario" style="padding:3px 6px; font-size:11px;" onclick="iniciarMantencionParaEquipo('${m.cod}')">🔧 Mantención</button>
-                        <button class="btn-secundario" style="padding:3px 6px; font-size:11px;" onclick="navegarSeccion('programaMantencion')">📋 Programa</button>
-                    </div>
-                </td>
-            </tr>
-        `).join("");
+        if (marFiltrados.length === 0) {
+            tbodyMar.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:#64748b;">No se encontraron equipos marítimos registrados.</td></tr>`;
+        } else {
+            tbodyMar.innerHTML = marFiltrados.map(m => `
+                <tr>
+                    <td><strong>${m.cod}</strong></td>
+                    <td>${m.equipo}</td>
+                    <td><strong>${m.marca}</strong></td>
+                    <td><span class="badge badge-gris">${m.frecuencia || 'Anual'}</span></td>
+                    <td><span class="badge ${obtenerClaseBadge(m.estado)}">${m.estado}</span></td>
+                    <td>${m.responsable}</td>
+                    <td style="max-width:260px; font-size:12px;">${m.observaciones || '-'}</td>
+                    <td style="text-align:center;">
+                        <div style="display:flex; gap:4px; justify-content:center; flex-wrap:wrap;">
+                            <button class="btn-primario" style="padding:3px 6px; font-size:11px;" onclick="iniciarMantencionParaEquipo('${m.cod}')" title="Crear OT y rebajar insumos">🔧 Mantención</button>
+                            <button class="btn-secundario" style="padding:3px 6px; font-size:11px;" onclick="navegarSeccion('programaMantencion')">📋 Programa</button>
+                            ${esUsuarioAdministrador() ? `<button class="btn-peligro" style="padding:3px 6px; font-size:11px;" onclick="eliminarEquipoPrograma('${m.cod}')" title="Eliminar equipo marítimo (Solo Administrador)">🗑️ Eliminar</button>` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `).join("");
+        }
     }
 
     // Actualizar contadores y badges
@@ -4648,10 +4841,16 @@ function registrarVehiculo(e) {
     navegarSeccion("vehiculos");
 }
 
-function eliminarVehiculo(idx) {
+async function eliminarVehiculo(identificador) {
     if (!esUsuarioAdministrador()) {
         alert("⛔ Acceso Denegado: Únicamente los usuarios con rol de Administrador pueden eliminar vehículos de la flota.");
         return;
+    }
+    let idx = -1;
+    if (typeof identificador === "number") {
+        idx = identificador;
+    } else {
+        idx = vehiculos.findIndex(v => (v.codigo || v.id || v.patente) === identificador);
     }
     const v = vehiculos[idx];
     if (!v) return;
@@ -4662,7 +4861,30 @@ function eliminarVehiculo(idx) {
         if (progIdx >= 0) {
             corssenPrograma.splice(progIdx, 1);
         }
+        if (corssenFichas[cod]) {
+            delete corssenFichas[cod];
+        }
+        if (v.patente && corssenFichas[v.patente]) {
+            delete corssenFichas[v.patente];
+        }
         guardarTodo();
+        localStorage.setItem("corssen_ultima_modificacion_ts", String(Date.now()));
+
+        try {
+            const usuarioActual = sessionStorage.getItem("usuarioLogueado") || "admin";
+            fetch(`/api/programa/${encodeURIComponent(cod)}`, { method: "DELETE", headers: { "x-usuario": usuarioActual } }).catch(() => {});
+            if (v.patente && v.patente !== cod) {
+                fetch(`/api/programa/${encodeURIComponent(v.patente)}`, { method: "DELETE", headers: { "x-usuario": usuarioActual } }).catch(() => {});
+            }
+            fetch(`/api/fichas/${encodeURIComponent(cod)}`, { method: "DELETE", headers: { "x-usuario": usuarioActual } }).catch(() => {});
+        } catch (_) {}
+
+        try {
+            if (typeof window !== "undefined" && typeof window.ejecutarAutoBackupSistema === "function") {
+                await window.ejecutarAutoBackupSistema(`Eliminación de vehículo ${cod}`, "AUTOMATICO", true);
+            }
+        } catch (_) {}
+
         poblarSelectorEquiposMantencion();
         poblarSelectorEquiposCompatiblesStock();
         renderizarSelectorFichas();
@@ -5049,21 +5271,44 @@ function registrarAuxiliarHerramientaMaritimo(e) {
     }
 }
 
-function eliminarMaquinaria(idx) {
+async function eliminarMaquinaria(identificador) {
     if (!esUsuarioAdministrador()) {
         alert("⛔ Acceso Denegado: Únicamente los usuarios con rol de Administrador pueden eliminar maquinarias del catálogo.");
         return;
     }
+    let idx = -1;
+    if (typeof identificador === "number") {
+        idx = identificador;
+    } else {
+        idx = maquinarias.findIndex(m => (m.numeroMaquinaria || m.id) === identificador);
+    }
     const m = maquinarias[idx];
     if (!m) return;
     const cod = m.numeroMaquinaria || m.id;
-    if (confirm(`¿Está seguro de eliminar la maquinaria ${cod} del catálogo?`)) {
+    if (confirm(`¿Está seguro de eliminar la maquinaria ${cod} (${m.tipoMaquinaria || 'Equipo'}) del catálogo de flota?`)) {
         maquinarias.splice(idx, 1);
         const progIdx = corssenPrograma.findIndex(p => p.cod === cod);
         if (progIdx >= 0) {
             corssenPrograma.splice(progIdx, 1);
         }
+        if (corssenFichas[cod]) {
+            delete corssenFichas[cod];
+        }
         guardarTodo();
+        localStorage.setItem("corssen_ultima_modificacion_ts", String(Date.now()));
+
+        try {
+            const usuarioActual = sessionStorage.getItem("usuarioLogueado") || "admin";
+            fetch(`/api/programa/${encodeURIComponent(cod)}`, { method: "DELETE", headers: { "x-usuario": usuarioActual } }).catch(() => {});
+            fetch(`/api/fichas/${encodeURIComponent(cod)}`, { method: "DELETE", headers: { "x-usuario": usuarioActual } }).catch(() => {});
+        } catch (_) {}
+
+        try {
+            if (typeof window !== "undefined" && typeof window.ejecutarAutoBackupSistema === "function") {
+                await window.ejecutarAutoBackupSistema(`Eliminación de maquinaria ${cod}`, "AUTOMATICO", true);
+            }
+        } catch (_) {}
+
         poblarSelectorEquiposMantencion();
         poblarSelectorEquiposCompatiblesStock();
         renderizarSelectorFichas();
@@ -5073,6 +5318,88 @@ function eliminarMaquinaria(idx) {
         renderizarDashboard();
         renderizarAlertasMantencionesDashboard();
     }
+}
+
+async function eliminarEquipoPrograma(cod) {
+    if (!esUsuarioAdministrador()) {
+        alert("⛔ Acceso Denegado: Únicamente los usuarios con rol de Administrador pueden eliminar equipos del catálogo de flota.");
+        return;
+    }
+    if (!cod) return;
+    const codUpper = String(cod).trim().toUpperCase();
+    const item = corssenPrograma.find(p => String(p.cod).toUpperCase() === codUpper);
+    const nombreEquipo = item ? `${item.cod} - ${item.equipo}` : cod;
+    const tipoTexto = item && item.cat === "MARÍTIMO" ? "el equipo marítimo" : (item && item.cat === "AUXILIARES" ? "el equipo auxiliar / herramienta" : "el equipo");
+
+    if (!confirm(`¿Está seguro de eliminar ${tipoTexto} "${nombreEquipo}" del catálogo y del programa de flota?\n\nEsta acción quitará el equipo del sistema y actualizará todos los módulos.`)) {
+        return;
+    }
+
+    // 1. Quitar de corssenPrograma
+    const progIdx = corssenPrograma.findIndex(p => String(p.cod).toUpperCase() === codUpper);
+    if (progIdx >= 0) {
+        corssenPrograma.splice(progIdx, 1);
+    }
+    // 2. Si además estuviera registrado en maquinarias o vehículos, limpiarlo también
+    const maqIdx = maquinarias.findIndex(m => (m.numeroMaquinaria || m.id || "").toUpperCase() === codUpper);
+    if (maqIdx >= 0) {
+        maquinarias.splice(maqIdx, 1);
+    }
+    const vehIdx = vehiculos.findIndex(v => (v.codigo || v.id || v.patente || "").toUpperCase() === codUpper);
+    if (vehIdx >= 0) {
+        vehiculos.splice(vehIdx, 1);
+    }
+    if (corssenFichas[cod]) {
+        delete corssenFichas[cod];
+    }
+    if (corssenFichas[codUpper]) {
+        delete corssenFichas[codUpper];
+    }
+
+    // 3. Persistir en localStorage y actualizar marca de tiempo
+    guardarTodo();
+    localStorage.setItem("corssen_ultima_modificacion_ts", String(Date.now()));
+
+    // 4. Sincronizar eliminación en servidor Node / Cloudflare
+    try {
+        const usuarioActual = sessionStorage.getItem("usuarioLogueado") || "admin";
+        fetch(`/api/programa/${encodeURIComponent(cod)}`, {
+            method: "DELETE",
+            headers: {
+                "x-usuario": usuarioActual
+            }
+        }).catch(e => console.warn("Sync DELETE /api/programa:", e));
+
+        fetch(`/api/fichas/${encodeURIComponent(cod)}`, {
+            method: "DELETE",
+            headers: {
+                "x-usuario": usuarioActual
+            }
+        }).catch(e => console.warn("Sync DELETE /api/fichas:", e));
+    } catch (eSync) {
+        console.warn("Error en eliminación remota:", eSync);
+    }
+
+    // 5. Disparar auto-backup silencioso inmediato para actualizar snapshot
+    try {
+        if (typeof window !== "undefined" && typeof window.ejecutarAutoBackupSistema === "function") {
+            await window.ejecutarAutoBackupSistema(`Eliminación de ${cod} (${nombreEquipo})`, "AUTOMATICO", true);
+        }
+    } catch (eSnap) {
+        console.warn("Auto-backup tras eliminación diferido:", eSnap);
+    }
+
+    // 6. Actualizar interfaces
+    poblarSelectorEquiposMantencion();
+    poblarSelectorEquiposCompatiblesStock();
+    renderizarSelectorFichas();
+    renderizarTablasOriginales();
+    renderizarProgramaMaestro();
+    renderizarFlotaRegistrada();
+    renderizarDashboard();
+    renderizarAlertasMantencionesDashboard();
+
+    alert(`✓ ${tipoTexto} "${nombreEquipo}" ha sido eliminado exitosamente del catálogo y de la flota.`);
 }
 
 // =========================================================
@@ -5197,6 +5524,10 @@ function renderizarMantenciones() {
                         <button class="btn-mant-action-view" onclick="verDetalleOT('${m.folio || m.id}')" title="Ver Comprobante Oficial de OT y PDF">
                             <span>📄</span>
                             <span>OT</span>
+                        </button>
+                        <button class="btn-mant-action-edit" onclick="abrirModalEditarOT('${m.folio || m.id}')" title="Editar Orden de Trabajo">
+                            <span>✏️</span>
+                            <span>Editar</span>
                         </button>
                         <button class="btn-mant-action-delete" onclick="eliminarMantencion('${m.folio || m.id}')" title="Eliminar registro">
                             <span>🗑️</span>
@@ -5621,6 +5952,292 @@ function eliminarMantencion(folio) {
 }
 
 // =========================================================
+// GESTIÓN Y EDICIÓN DE ÓRDENES DE TRABAJO (OT)
+// =========================================================
+let ordenEnEdicionOT = null;
+
+function abrirModalEditarOT(folio) {
+    const orden = mantenciones.find(m => m.folio === folio || m.id === folio);
+    if (!orden) {
+        alert("Orden de trabajo no encontrada.");
+        return;
+    }
+    ordenEnEdicionOT = orden;
+
+    const lblFolio = document.getElementById("lblEditOTFolio");
+    if (lblFolio) lblFolio.textContent = orden.folio || orden.id;
+
+    const inputHidden = document.getElementById("inputEditOTFolioHidden");
+    if (inputHidden) inputHidden.value = orden.folio || orden.id;
+
+    const lblEquipo = document.getElementById("lblEditOTEquipoTexto");
+    if (lblEquipo) {
+        lblEquipo.textContent = `${orden.codigoEquipo || ''} • ${orden.equipoNombre || ''}`;
+    }
+
+    const badgePatente = document.getElementById("badgeEditOTPatente");
+    if (badgePatente) {
+        badgePatente.textContent = orden.patente ? `Patente: ${orden.patente}` : (orden.codigoEquipo || 'Equipo CORSSEN');
+    }
+
+    const inputFecha = document.getElementById("inputEditOTFecha");
+    if (inputFecha) inputFecha.value = orden.fecha || new Date().toISOString().split("T")[0];
+
+    const selectTipo = document.getElementById("selectEditOTTipo");
+    if (selectTipo) {
+        let encontrado = false;
+        for (let opt of selectTipo.options) {
+            if (opt.value.toLowerCase() === (orden.tipo || "").toLowerCase()) {
+                selectTipo.value = opt.value;
+                encontrado = true;
+                break;
+            }
+        }
+        if (!encontrado) {
+            const t = (orden.tipo || "").toLowerCase();
+            if (t.includes("10.000") || t.includes("km")) {
+                selectTipo.value = "Preventiva 10.000 Kilómetros";
+            } else if (t.includes("250")) {
+                selectTipo.value = "Preventiva 250 Horas";
+            } else if (t.includes("mayor") || t.includes("500") || t.includes("1000")) {
+                selectTipo.value = "Preventiva Mayor 500/1000 Hrs";
+            } else if (t.includes("correctiva") || t.includes("repara")) {
+                selectTipo.value = "Correctiva / Reparación";
+            } else if (t.includes("concesionario")) {
+                selectTipo.value = "Pauta Oficial Concesionario";
+            } else if (t.includes("engrase")) {
+                selectTipo.value = "Engrase y Revisión de Niveles";
+            } else if (t.includes("inspecci")) {
+                selectTipo.value = "Inspección General";
+            } else {
+                const opt = document.createElement("option");
+                opt.value = orden.tipo;
+                opt.textContent = orden.tipo;
+                selectTipo.appendChild(opt);
+                selectTipo.value = orden.tipo;
+            }
+        }
+    }
+
+    const inputHorometro = document.getElementById("inputEditOTHorometroKm");
+    if (inputHorometro) inputHorometro.value = orden.horometroKm || "";
+
+    const inputProx = document.getElementById("inputEditOTProxServicio");
+    if (inputProx) inputProx.value = orden.proximoServicio || "";
+
+    const selectEstado = document.getElementById("selectEditOTEstado");
+    if (selectEstado) {
+        let matched = false;
+        for (let opt of selectEstado.options) {
+            if (opt.value.toLowerCase().includes((orden.estado || "").toLowerCase())) {
+                selectEstado.value = opt.value;
+                matched = true;
+                break;
+            }
+        }
+        if (!matched) selectEstado.value = "Completada (Equipo Operativo)";
+    }
+
+    const inputTecnico = document.getElementById("inputEditOTTecnico");
+    if (inputTecnico) inputTecnico.value = orden.tecnico || "Alexis Santos";
+
+    const inputTaller = document.getElementById("inputEditOTTaller");
+    if (inputTaller) inputTaller.value = orden.taller || "Taller Central CORSSEN";
+
+    const inputManoObra = document.getElementById("inputEditOTCostoManoObra");
+    if (inputManoObra) inputManoObra.value = orden.costoManoObra || 0;
+
+    const inputInsumos = document.getElementById("inputEditOTCostoInsumos");
+    if (inputInsumos) inputInsumos.value = orden.costoInsumos || 0;
+
+    calcularCostoTotalEditOT();
+
+    const txtDescripcion = document.getElementById("textareaEditOTDescripcion");
+    if (txtDescripcion) txtDescripcion.value = orden.descripcion || "";
+
+    // Renderizar insumos registrados
+    const contInsumos = document.getElementById("contenedorEditOTInsumos");
+    if (contInsumos) {
+        if (orden.insumosConsumidos && orden.insumosConsumidos.length > 0) {
+            contInsumos.innerHTML = orden.insumosConsumidos.map(i => `
+                <div style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; padding:5px 10px; font-size:12px; display:inline-flex; align-items:center; gap:6px;">
+                    <span style="font-weight:800; color:#0f172a;">${i.cantidad} ${i.medida || 'UN'}</span>
+                    <span style="color:#475569;">${i.detalle}</span>
+                    <span style="color:#16a34a; font-weight:700;">($${((i.cantidad * i.costoUnitario) || 0).toLocaleString('es-CL')})</span>
+                </div>
+            `).join("");
+        } else {
+            contInsumos.innerHTML = `<span style="font-size:12px; color:#94a3b8; font-style:italic;">No se registraron insumos de bodega en esta OT (o servicio externo sin salida de almacén).</span>`;
+        }
+    }
+
+    // Actualizar etiquetas de Horómetro / KM según equipo y tipo
+    actualizarLabelsEditOT();
+
+    const modal = document.getElementById("modalEditarOT");
+    if (modal) modal.style.display = "flex";
+}
+
+function cerrarModalEditarOT() {
+    const modal = document.getElementById("modalEditarOT");
+    if (modal) modal.style.display = "none";
+    ordenEnEdicionOT = null;
+}
+
+function actualizarLabelsEditOT() {
+    const inputHorometro = document.getElementById("inputEditOTHorometroKm");
+    const selectTipo = document.getElementById("selectEditOTTipo");
+    const lblHorometro = document.getElementById("lblEditOTHorometroKm");
+    const lblProx = document.getElementById("lblEditOTProxServicio");
+
+    const valLectura = (inputHorometro?.value || "").trim().toLowerCase();
+    const tipo = (selectTipo?.value || "").toLowerCase();
+    const cod = (ordenEnEdicionOT?.codigoEquipo || "").toUpperCase();
+
+    const esVehiculo = cod.startsWith("CAM") || cod.startsWith("FUR") || cod.startsWith("AUTO") || cod.startsWith("CT");
+    const esKm = tipo.includes("10.000") || tipo.includes("kilómetro") || tipo.includes("km") || valLectura.includes("km") || esVehiculo;
+
+    if (lblHorometro) {
+        lblHorometro.textContent = esKm ? "Kilometraje Registrado (KM):" : "Horómetro Registrado (HRS):";
+    }
+    if (lblProx) {
+        lblProx.textContent = esKm ? "Próximo Servicio (+10.000 km):" : "Próximo Servicio (+250 hrs):";
+    }
+}
+
+function alCambiarTipoEditOT() {
+    actualizarLabelsEditOT();
+    sugerirProximoServicioEditOT();
+}
+
+function sugerirProximoServicioEditOT() {
+    const inputHorometro = document.getElementById("inputEditOTHorometroKm");
+    const inputProx = document.getElementById("inputEditOTProxServicio");
+    const selectTipo = document.getElementById("selectEditOTTipo");
+
+    if (!inputHorometro || !inputProx || !selectTipo) return;
+
+    actualizarLabelsEditOT();
+
+    const valLectura = inputHorometro.value.trim();
+    const tipo = (selectTipo.value || "").toLowerCase();
+    const cod = (ordenEnEdicionOT?.codigoEquipo || "").toUpperCase();
+
+    const esVehiculo = cod.startsWith("CAM") || cod.startsWith("FUR") || cod.startsWith("AUTO") || cod.startsWith("CT");
+    const esKm = tipo.includes("10.000") || tipo.includes("kilómetro") || tipo.includes("km") || valLectura.toLowerCase().includes("km") || esVehiculo;
+
+    const numLimpio = parseFloat(valLectura.replace(/\./g, "").replace(/,/g, ".").replace(/[^\d.]/g, ""));
+    if (!isNaN(numLimpio) && numLimpio > 0) {
+        if (esKm) {
+            const proxKm = Math.round(numLimpio + 10000);
+            inputProx.value = `${proxKm.toLocaleString('es-CL')} km`;
+        } else {
+            const proxHrs = Math.round(numLimpio + 250);
+            inputProx.value = `${proxHrs.toLocaleString('es-CL')} hrs`;
+        }
+    }
+}
+
+function calcularCostoTotalEditOT() {
+    const mo = parseFloat(document.getElementById("inputEditOTCostoManoObra")?.value) || 0;
+    const ins = parseFloat(document.getElementById("inputEditOTCostoInsumos")?.value) || 0;
+    const total = mo + ins;
+    const inputTotal = document.getElementById("inputEditOTCostoTotal");
+    if (inputTotal) {
+        inputTotal.value = `$${total.toLocaleString('es-CL')}`;
+    }
+}
+
+function guardarEdicionOT(e) {
+    if (e) e.preventDefault();
+    if (!ordenEnEdicionOT) return;
+
+    const folio = document.getElementById("inputEditOTFolioHidden")?.value || ordenEnEdicionOT.folio || ordenEnEdicionOT.id;
+    const orden = mantenciones.find(m => m.folio === folio || m.id === folio);
+    if (!orden) {
+        alert("Error: No se encontró la orden de trabajo para guardar.");
+        return;
+    }
+
+    const fecha = document.getElementById("inputEditOTFecha")?.value;
+    const tipo = document.getElementById("selectEditOTTipo")?.value;
+    const horometroKm = document.getElementById("inputEditOTHorometroKm")?.value.trim();
+    const proximoServicio = document.getElementById("inputEditOTProxServicio")?.value.trim();
+    const estado = document.getElementById("selectEditOTEstado")?.value;
+    const tecnico = document.getElementById("inputEditOTTecnico")?.value.trim();
+    const taller = document.getElementById("inputEditOTTaller")?.value.trim();
+    const costoManoObra = parseFloat(document.getElementById("inputEditOTCostoManoObra")?.value) || 0;
+    const costoInsumos = parseFloat(document.getElementById("inputEditOTCostoInsumos")?.value) || 0;
+    const costoTotal = costoManoObra + costoInsumos;
+    const descripcion = document.getElementById("textareaEditOTDescripcion")?.value.trim();
+
+    if (!fecha) return alert("Por favor indique la fecha de ejecución.");
+    if (!tecnico) return alert("Por favor indique el técnico responsable.");
+
+    // Actualizar datos de la OT
+    orden.fecha = fecha;
+    orden.tipo = tipo;
+    orden.horometroKm = horometroKm;
+    orden.proximoServicio = proximoServicio;
+    orden.estado = estado;
+    orden.tecnico = tecnico;
+    orden.taller = taller;
+    orden.costoManoObra = costoManoObra;
+    orden.costoInsumos = costoInsumos;
+    orden.costoTotal = costoTotal;
+    orden.descripcion = descripcion;
+    orden.fechaUltimaEdicion = new Date().toISOString();
+
+    // Sincronizar lectura con Ficha Técnica si existe
+    const cod = orden.codigoEquipo;
+    if (cod && corssenFichas[cod]) {
+        if (corssenFichas[cod].historial && corssenFichas[cod].historial.length > 0) {
+            const h = corssenFichas[cod].historial.find(item => item.fecha === fecha || (item.descripcion && item.descripcion.includes(folio)));
+            if (h) {
+                h.horometro = horometroKm;
+                h.prox = proximoServicio;
+                h.descripcion = `${tipo}: ${descripcion || 'Servicio ejecutado'}`;
+            }
+        }
+    }
+
+    // Sincronizar con el Programa Maestro (corssenPrograma) si esta OT es la más reciente del equipo
+    if (cod) {
+        const prog = corssenPrograma.find(p => p.cod === cod);
+        if (prog) {
+            const otsDelEquipo = mantenciones.filter(m => m.codigoEquipo === cod);
+            if (otsDelEquipo[0] && (otsDelEquipo[0].folio === folio || otsDelEquipo[0].id === folio)) {
+                if (horometroKm) prog.horometro = horometroKm;
+                if (proximoServicio) prog.prox = proximoServicio;
+                prog.estado = (estado.includes("Proceso") || estado.includes("Taller")) ? "En Taller" : "Operativo";
+                prog.responsable = tecnico;
+                prog.observaciones = `Mantención ${tipo} (${folio}) actualizada el ${fecha}`;
+            }
+        }
+
+        // Si es vehículo o maquinaria, actualizar también su kilometraje/horómetro en flota
+        const veh = vehiculos.find(v => v.codigo === cod || v.patente === cod || v.patente === orden.patente);
+        if (veh && horometroKm) {
+            veh.kilometraje = horometroKm;
+        }
+        const maq = maquinarias.find(m => m.codigoMaquinaria === cod);
+        if (maq && horometroKm) {
+            maq.horometro = horometroKm;
+        }
+    }
+
+    guardarTodo();
+    renderizarMantenciones();
+    renderizarProgramaMaestro();
+    renderizarDashboard();
+    renderizarAlertasMantencionesDashboard();
+    poblarSelectorEquiposMantencion();
+
+    cerrarModalEditarOT();
+    alert(`✓ Orden de Trabajo ${folio} actualizada con éxito.`);
+}
+
+// =========================================================
 // 9. FORMULARIO REGISTRAR NUEVA MANTENCIÓN / OT CON DEDUCCIÓN PRO
 // =========================================================
 function actualizarFolioEstimadoBadge() {
@@ -5728,7 +6345,7 @@ function poblarSelectorEquiposMantencion() {
         if (items.length > 0) {
             html += `<optgroup label="${grupo}">`;
             items.forEach(eq => {
-                html += `<option value="${eq.cod}">${eq.icono} ${eq.cod} • ${eq.nombre}</option>`;
+                html += `<option value="${eq.cod}" data-cat="${eq.cat || ''}">${eq.icono} ${eq.cod} • ${eq.nombre}</option>`;
             });
             html += `</optgroup>`;
         }
@@ -5837,12 +6454,21 @@ function manejarCambioEquipoMantencion() {
     }
 
     if (inputProx) {
-        if (lecturaActual.includes("km")) {
+        if (lecturaActual.includes("km") || esUnidadPorKilometraje(cod)) {
             inputProx.value = `${(lecturaNum + 10000).toLocaleString('es-CL')} km`;
-        } else if (lecturaActual.includes("hrs") || lecturaActual.includes("horas")) {
-            inputProx.value = `${(lecturaNum + 250).toLocaleString('es-CL')} hrs`;
         } else {
-            inputProx.value = `${lecturaNum + 250} hrs`;
+            inputProx.value = `${(lecturaNum + 250).toLocaleString('es-CL')} hrs`;
+        }
+    }
+
+    // Auto-seleccionar tipo de servicio coherente con la unidad (250 Horas para maquinaria / 10.000 Km para camioneta)
+    const selectTipo = document.getElementById("selectMantTipo");
+    if (selectTipo) {
+        const esMovil = lecturaActual.includes("km") || esUnidadPorKilometraje(cod);
+        if (esMovil) {
+            selectTipo.value = "Preventiva 10.000 Kilómetros";
+        } else {
+            selectTipo.value = "Preventiva 250 Horas";
         }
     }
 
@@ -5924,6 +6550,30 @@ function seleccionarTipoRapido(tipo) {
     const select = document.getElementById("selectMantTipo");
     if (select) {
         select.value = tipo;
+        alCambiarTipoServicioMantencion();
+    }
+}
+
+function alCambiarTipoServicioMantencion() {
+    const select = document.getElementById("selectMantTipo");
+    const tipo = select?.value || "";
+    const lblProx = document.getElementById("lblInputMantProxServicio");
+    const inputHorometro = document.getElementById("inputMantHorometroKm");
+
+    if (lblProx) {
+        if (tipo.includes("10.000") || tipo.includes("Kilómetros") || tipo.includes("Km")) {
+            lblProx.textContent = "Próximo Servicio (+10.000 km):";
+        } else if (tipo.includes("500") || tipo.includes("1000")) {
+            lblProx.textContent = "Próximo Servicio (+500 / +1.000 hrs):";
+        } else if (tipo.includes("250") || tipo.includes("Horas")) {
+            lblProx.textContent = "Próximo Servicio (+250 hrs):";
+        } else {
+            lblProx.textContent = "Próximo Servicio Sugerido:";
+        }
+    }
+
+    if (inputHorometro && inputHorometro.value.trim()) {
+        sugerirProximoServicioAutomatico();
     }
 }
 
@@ -5938,16 +6588,139 @@ function insertarPlantillaDescripcion(texto) {
     textarea.focus();
 }
 
+function esUnidadPorKilometraje(cod, textoIngresado = "") {
+    // Si el usuario seleccionó explícitamente la opción de 10.000 Kilómetros en el menú
+    const selectTipo = document.getElementById("selectMantTipo");
+    const tipoSeleccionado = selectTipo?.value || "";
+    if (tipoSeleccionado.includes("10.000") || tipoSeleccionado.includes("Kilómetros") || tipoSeleccionado.includes("Km")) {
+        return true;
+    }
+    if (tipoSeleccionado.includes("250") || tipoSeleccionado.includes("Horas") || tipoSeleccionado.includes("500")) {
+        return false;
+    }
+
+    const valLow = (textoIngresado || "").toLowerCase().trim();
+    if (valLow.includes("km") || valLow.includes("kilometro")) return true;
+    if (valLow.includes("hr") || valLow.includes("hora")) return false;
+
+    if (!cod && !valLow) return false;
+    const codUpper = (cod || "").toUpperCase().trim();
+
+    // 1. Si el código empieza con prefijos de camionetas / camiones
+    if (codUpper.startsWith("CAM") || codUpper.startsWith("CMN") || codUpper.startsWith("VH") || codUpper.startsWith("PICKUP")) {
+        return true;
+    }
+
+    // 2. Revisar si la opción seleccionada en el dropdown es móvil
+    const select = document.getElementById("selectMantEquipo");
+    const opt = select?.selectedOptions?.[0];
+    if (opt) {
+        const catOpt = (opt.dataset.cat || "").toUpperCase();
+        const textoOpt = (opt.textContent || "").toUpperCase();
+        if (catOpt === "MÓVILES" || catOpt === "MOVILES" || textoOpt.includes("🚚") || textoOpt.includes("CAMIONETA") || textoOpt.includes("CAMIÓN") || textoOpt.includes("CAMION")) {
+            return true;
+        }
+    }
+
+    // 3. Revisar en listado de vehículos
+    if (Array.isArray(vehiculos)) {
+        const veh = vehiculos.find(v => {
+            const vCod = (v.codigo || "").toUpperCase();
+            const vPat = (v.patente || "").toUpperCase();
+            const vId = (v.id || "").toUpperCase();
+            return vCod === codUpper || vPat === codUpper || vId === codUpper || (codUpper && vPat.includes(codUpper));
+        });
+        if (veh) return true;
+    }
+
+    // 4. Revisar en Programa Maestro
+    if (Array.isArray(corssenPrograma)) {
+        const prog = corssenPrograma.find(p => {
+            const pCod = (p.cod || "").toUpperCase();
+            return pCod === codUpper || (codUpper && (p.equipo || "").toUpperCase().includes(codUpper));
+        });
+        if (prog) {
+            const cat = (prog.cat || "").toUpperCase();
+            const eqNom = (prog.equipo || "").toUpperCase();
+            const freq = (prog.frecuencia || "").toLowerCase();
+            const horo = (prog.horometro || "").toLowerCase();
+            if (cat === "MÓVILES" || cat === "MOVILES" || freq.includes("km") || horo.includes("km") || eqNom.includes("CAMIONETA") || eqNom.includes("CAMIÓN") || eqNom.includes("CAMION")) {
+                return true;
+            }
+        }
+    }
+
+    // 5. Revisar en Fichas Técnicas
+    if (typeof corssenFichas !== "undefined" && corssenFichas && corssenFichas[codUpper]) {
+        const f = corssenFichas[codUpper];
+        const fNom = (f.nombre || "").toUpperCase();
+        const fCat = (f.categoria || "").toUpperCase();
+        if (fCat.includes("MOVIL") || fCat.includes("MÓVIL") || fNom.includes("CAMIONETA") || fNom.includes("CAMIÓN") || fNom.includes("CAMION")) {
+            return true;
+        }
+    }
+
+    // 6. Heurística numérica: Si el valor numérico supera 6.000 y no es grúa identificada (GPC/GHO/GTE), casi con certeza es kilometraje
+    if (valLow) {
+        const numLimpio = parseFloat(valLow.replace(/[^0-9]/g, ""));
+        if (numLimpio >= 8000 && !codUpper.startsWith("G") && !codUpper.startsWith("X") && !codUpper.startsWith("M")) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 function sugerirProximoServicioAutomatico() {
     const inputHorometro = document.getElementById("inputMantHorometroKm");
     const inputProx = document.getElementById("inputMantProxServicio");
+    const selectEquipo = document.getElementById("selectMantEquipo");
+    const selectTipo = document.getElementById("selectMantTipo");
     if (!inputHorometro || !inputProx) return;
 
-    const val = inputHorometro.value.trim().toLowerCase();
-    const num = parseFloat(val.replace(/[^0-9.]/g, ""));
+    const val = inputHorometro.value.trim();
+    if (!val) return;
+
+    // Parseo robusto de kilometraje / horómetro tolerante a separadores de miles y unidades
+    let sLimpio = val.toLowerCase().replace(/km|kilometros|kilometro|hrs|horas|hora/g, '').trim();
+    const match = sLimpio.match(/[\d.,]+/);
+    if (!match) return;
+
+    let numStr = match[0];
+    if (numStr.includes('.') && numStr.includes(',')) {
+        numStr = numStr.replace(/\./g, '').replace(',', '.');
+    } else if (numStr.includes('.') && numStr.split('.').length > 1 && numStr.split('.')[1].length === 3) {
+        numStr = numStr.replace(/\./g, '');
+    } else if (numStr.includes(',')) {
+        numStr = numStr.replace(',', '.');
+    }
+    const num = parseFloat(numStr);
     if (isNaN(num)) return;
 
-    if (val.includes("km")) {
+    const tipoSeleccionado = selectTipo?.value || "";
+    const codigoSel = selectEquipo?.value || "";
+
+    // 1. Si el tipo seleccionado es explícitamente Preventiva 10.000 Km
+    if (tipoSeleccionado.includes("10.000") || tipoSeleccionado.includes("Kilómetros") || tipoSeleccionado.includes("Km")) {
+        inputProx.value = `${Math.round(num + 10000).toLocaleString('es-CL')} km`;
+        return;
+    }
+
+    // 2. Si el tipo seleccionado es Preventiva Mayor (500 / 1000 hrs)
+    if (tipoSeleccionado.includes("500") || tipoSeleccionado.includes("1000")) {
+        inputProx.value = `${Math.round(num + 500).toLocaleString('es-CL')} hrs`;
+        return;
+    }
+
+    // 3. Si el tipo seleccionado es Preventiva 250 Horas
+    if (tipoSeleccionado.includes("250") || tipoSeleccionado.includes("Horas")) {
+        inputProx.value = `${Math.round(num + 250).toLocaleString('es-CL')} hrs`;
+        return;
+    }
+
+    // 4. Fallback por detección del tipo de unidad o texto
+    const esKm = esUnidadPorKilometraje(codigoSel, val);
+    if (esKm) {
         inputProx.value = `${Math.round(num + 10000).toLocaleString('es-CL')} km`;
     } else {
         inputProx.value = `${Math.round(num + 250).toLocaleString('es-CL')} hrs`;
@@ -6321,6 +7094,7 @@ function registrarNuevaMantencion(e) {
     const costoTotal = costoInsumos + costoManoObra;
 
     // Crear registro de mantención
+    const litrosAceiteTotal = litrosMotor + litrosHidraulico;
     const nuevaMantencion = {
         id: folio,
         folio,
@@ -6335,7 +7109,9 @@ function registrarNuevaMantencion(e) {
         taller,
         descripcion: descripcion || `${tipo} ejecutada en ${taller}`,
         insumosConsumidos,
-        litrosAceiteDescontados: litrosAceite,
+        litrosAceiteDescontados: litrosAceiteTotal,
+        litrosMotorDescontados: litrosMotor,
+        litrosHidraulicoDescontados: litrosHidraulico,
         costoInsumos,
         costoManoObra,
         costoTotal,
@@ -6469,6 +7245,10 @@ function navegarSeccion(idSeccion) {
     const panelDestino = document.getElementById(idSeccion);
     if (panelDestino) {
         panelDestino.classList.add("active");
+    }
+
+    if (idSeccion === "gestionMantenciones" && typeof renderizarMantenciones === "function") {
+        renderizarMantenciones();
     }
 
     if (idSeccion === "respaldosMantencion" && typeof window.renderizarModuloRespaldos === "function") {
@@ -8682,12 +9462,22 @@ async function sincronizarConUltimoRespaldoNube(forzarRecarga = false) {
             renderizarModuloAceite();
             renderizarModuloCombustible();
             renderizarTablasOriginales();
+            poblarSelectorEquiposMantencion();
+            poblarSelectorEquiposCompatiblesStock();
+            renderizarSelectorFichas();
+            renderizarDetalleFichaTecnica();
+            renderizarFlotaRegistrada();
+            actualizarPermisosFichasTecnicas();
+            actualizarPermisosFlotaRegistrada();
             if (typeof renderizarModuloRespaldos === "function") renderizarModuloRespaldos();
 
             const elEstado = document.querySelector(".estado-sistema");
             if (elEstado) {
                 elEstado.innerHTML = `<span class="estado-punto" style="background:#10b981;"></span> Sincronizado con Nube`;
             }
+
+            // Reconciliar adicionalmente con el registro individual de programa para evitar sobreescritura de estados recién editados
+            sincronizarProgramaDesdeServidor();
             return true;
         } else if (localTs > 0 && localTs > serverTs) {
             // El dispositivo local tiene cambios más recientes pendientes de subir a la nube
@@ -8729,6 +9519,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     cargarTodo();
+    sincronizarProgramaDesdeServidor();
     renderizarDashboard();
     renderizarProgramaMaestro();
     poblarSelectorEquiposCompatiblesStock();
@@ -10094,6 +10885,10 @@ document.addEventListener("DOMContentLoaded", () => {
     window.cambiarConfiguracionAutoBackup = cambiarConfiguracionAutoBackup;
     window.ejecutarRespaldoNubeInmediatoManual = ejecutarRespaldoNubeInmediatoManual;
     window.sincronizarConUltimoRespaldoNube = sincronizarConUltimoRespaldoNube;
+    window.sincronizarProgramaDesdeServidor = sincronizarProgramaDesdeServidor;
+    window.eliminarEquipoPrograma = eliminarEquipoPrograma;
+    window.eliminarVehiculo = eliminarVehiculo;
+    window.eliminarMaquinaria = eliminarMaquinaria;
 
     // Inicializar estado visual de bloqueo / desbloqueo, módulo de aceite, módulo de combustible y auto-backup
     sincronizarEstadoVisualModuloRespaldos();
