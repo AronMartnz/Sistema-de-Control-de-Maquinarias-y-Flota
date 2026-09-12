@@ -44,11 +44,15 @@ function leerUsuarios(): any[] | null {
 
         const contenido = fs.readFileSync(archivoUsuarios, "utf8");
         const parsed = JSON.parse(contenido);
-        // Garantizar que todos tengan avatar
+        // Garantizar que todos tengan avatar y corregir posibles erratas en nombres
         let modificado = false;
         parsed.forEach((u: any) => {
             if (!u.avatar) {
                 u.avatar = (u.rol === "admin") ? "avatar-admin" : "avatar-mecanico";
+                modificado = true;
+            }
+            if (u.nombre && u.nombre.includes("Corsser")) {
+                u.nombre = u.nombre.replace(/Corsser/gi, "Corssen");
                 modificado = true;
             }
         });
@@ -398,6 +402,194 @@ app.delete("/api/usuarios/:usuario", verificarAdmin, (req, res) => {
     }
 });
 
+// Actualizar datos de un usuario (Nombre y Rol - PUT/POST/PATCH - Solo Admin)
+const handlerActualizarUsuario = (req: express.Request, res: express.Response) => {
+    try {
+        const usuarioObjetivo = decodeURIComponent(req.params.usuario).trim();
+        let { nombre, rol } = req.body;
+
+        if (!nombre || typeof nombre !== "string" || nombre.trim().length === 0) {
+            return res.status(400).json({ mensaje: "El nombre es obligatorio." });
+        }
+
+        nombre = nombre.trim();
+        if (nombre.includes("Corsser")) {
+            nombre = nombre.replace(/Corsser/gi, "Corssen");
+        }
+
+        const usuarios = leerUsuarios();
+        if (!usuarios) {
+            return res.status(500).json({ mensaje: "Error leyendo base de datos de usuarios." });
+        }
+
+        const usuarioIndex = usuarios.findIndex(
+            u => String(u.usuario).toLowerCase() === usuarioObjetivo.toLowerCase()
+        );
+
+        if (usuarioIndex === -1) {
+            return res.status(404).json({ mensaje: "Usuario no encontrado." });
+        }
+
+        usuarios[usuarioIndex].nombre = nombre;
+        if (rol && (rol === "admin" || rol === "operador")) {
+            if (usuarioObjetivo.toLowerCase() !== "admin") {
+                usuarios[usuarioIndex].rol = rol;
+            }
+        }
+
+        guardarUsuarios(usuarios);
+        res.json({ mensaje: "Datos de usuario actualizados correctamente.", usuario: usuarios[usuarioIndex] });
+    } catch (error) {
+        console.error("Error actualizando usuario:", error);
+        res.status(500).json({ mensaje: "Error interno al actualizar usuario." });
+    }
+};
+
+app.put("/api/usuarios/:usuario", verificarAdmin, handlerActualizarUsuario);
+app.post("/api/usuarios/:usuario", verificarAdmin, handlerActualizarUsuario);
+app.patch("/api/usuarios/:usuario", verificarAdmin, handlerActualizarUsuario);
+
+// ========================================================
+// ENDPOINTS: PROGRAMA MAESTRO DE MANTENCIÓN Y EQUIPOS
+// ========================================================
+const archivoPrograma = path.join(process.cwd(), "programa.json");
+
+function leerPrograma(): any[] {
+    try {
+        if (!fs.existsSync(archivoPrograma)) {
+            return [];
+        }
+        const data = fs.readFileSync(archivoPrograma, "utf8");
+        return JSON.parse(data);
+    } catch (e) {
+        console.error("Error leyendo programa.json:", e);
+        return [];
+    }
+}
+
+function guardarPrograma(prog: any[]): boolean {
+    try {
+        fs.writeFileSync(archivoPrograma, JSON.stringify(prog, null, 4), "utf8");
+        return true;
+    } catch (e) {
+        console.error("Error guardando programa.json:", e);
+        return false;
+    }
+}
+
+app.get("/api/programa", (req, res) => {
+    res.json(leerPrograma());
+});
+
+app.put("/api/programa/:cod", verificarAdmin, (req, res) => {
+    try {
+        const cod = decodeURIComponent(req.params.cod).trim();
+        const datosEquipo = req.body || {};
+        let programa = leerPrograma();
+
+        const index = programa.findIndex(p => String(p.cod).toLowerCase() === cod.toLowerCase());
+        if (index !== -1) {
+            programa[index] = { ...programa[index], ...datosEquipo, cod: programa[index].cod, actualizado_en: new Date().toISOString() };
+        } else {
+            programa.push({ ...datosEquipo, cod: cod, actualizado_en: new Date().toISOString() });
+        }
+
+        guardarPrograma(programa);
+        res.json({ mensaje: "Mantención de equipo actualizada con éxito", equipo: datosEquipo });
+    } catch (error) {
+        console.error("Error actualizando programa:", error);
+        res.status(500).json({ mensaje: "Error interno al actualizar mantención del equipo." });
+    }
+});
+
+// ==========================================
+// ENDPOINTS DE FICHAS TÉCNICAS (MAQUINARIAS Y VEHÍCULOS)
+// ==========================================
+const archivoFichas = path.join(process.cwd(), "fichas.json");
+
+function leerFichas(): Record<string, any> {
+    try {
+        if (fs.existsSync(archivoFichas)) {
+            const data = fs.readFileSync(archivoFichas, "utf8");
+            return JSON.parse(data);
+        }
+        // Fallback: seed desde el último backup si existe
+        const indexPath = path.join(backupsDir, "historial_backups.json");
+        if (fs.existsSync(indexPath)) {
+            const historial = JSON.parse(fs.readFileSync(indexPath, "utf8"));
+            if (Array.isArray(historial) && historial.length > 0 && historial[0].id) {
+                const bPath = path.join(backupsDir, `${historial[0].id}.json`);
+                if (fs.existsSync(bPath)) {
+                    const bData = JSON.parse(fs.readFileSync(bPath, "utf8"));
+                    if (bData?.data?.corssen_fichas_v2) {
+                        guardarFichas(bData.data.corssen_fichas_v2);
+                        return bData.data.corssen_fichas_v2;
+                    }
+                }
+            }
+        }
+        return {};
+    } catch (e) {
+        console.error("Error leyendo fichas.json:", e);
+        return {};
+    }
+}
+
+function guardarFichas(fichas: Record<string, any>): boolean {
+    try {
+        fs.writeFileSync(archivoFichas, JSON.stringify(fichas, null, 4), "utf8");
+        return true;
+    } catch (e) {
+        console.error("Error guardando fichas.json:", e);
+        return false;
+    }
+}
+
+app.get("/api/fichas", (req, res) => {
+    res.json(leerFichas());
+});
+
+app.get("/api/fichas/:cod", (req, res) => {
+    const cod = decodeURIComponent(req.params.cod).trim().toUpperCase();
+    const fichas = leerFichas();
+    if (fichas[cod]) {
+        res.json(fichas[cod]);
+    } else {
+        res.status(404).json({ error: `Ficha técnica no encontrada para ${cod}` });
+    }
+});
+
+app.put("/api/fichas/:cod", verificarAdmin, (req, res) => {
+    try {
+        const cod = decodeURIComponent(req.params.cod).trim().toUpperCase();
+        const datosFicha = req.body || {};
+        let fichas = leerFichas();
+        fichas[cod] = { ...datosFicha, codigo: cod, actualizado_en: new Date().toISOString() };
+        guardarFichas(fichas);
+        res.json({ mensaje: `Ficha técnica de ${cod} guardada con éxito en el servidor`, ficha: fichas[cod] });
+    } catch (error) {
+        console.error("Error guardando ficha técnica:", error);
+        res.status(500).json({ mensaje: "Error interno al guardar ficha técnica." });
+    }
+});
+
+app.delete("/api/fichas/:cod", verificarAdmin, (req, res) => {
+    try {
+        const cod = decodeURIComponent(req.params.cod).trim().toUpperCase();
+        let fichas = leerFichas();
+        if (fichas[cod]) {
+            delete fichas[cod];
+            guardarFichas(fichas);
+            res.json({ mensaje: `Ficha técnica de ${cod} eliminada del servidor` });
+        } else {
+            res.status(404).json({ error: "Ficha no encontrada" });
+        }
+    } catch (error) {
+        console.error("Error eliminando ficha técnica:", error);
+        res.status(500).json({ mensaje: "Error interno al eliminar ficha técnica." });
+    }
+});
+
 // ==========================================
 // ENDPOINTS DE COPIAS DE SEGURIDAD Y BACKUPS
 // ==========================================
@@ -428,6 +620,19 @@ app.post("/api/backup/guardar", (req, res) => {
 
         const archivoPath = path.join(backupsDir, `${backupId}.json`);
         fs.writeFileSync(archivoPath, JSON.stringify({ ...snapshotMeta, data: body.data }, null, 2), "utf8");
+
+        // Sincronizar fichas.json y programa.json con el estado recibido si están presentes
+        if (body.data?.corssen_fichas_v2 && typeof body.data.corssen_fichas_v2 === "object") {
+            try {
+                const fActuales = leerFichas();
+                guardarFichas({ ...fActuales, ...body.data.corssen_fichas_v2 });
+            } catch (_) {}
+        }
+        if (body.data?.corssen_programa_v2 && Array.isArray(body.data.corssen_programa_v2)) {
+            try {
+                guardarPrograma(body.data.corssen_programa_v2);
+            } catch (_) {}
+        }
 
         // Guardar index de historial
         const indexPath = path.join(backupsDir, "historial_backups.json");
@@ -552,18 +757,42 @@ app.get(["/descargar-servidor", "/api/descargar-servidor"], (req, res) => {
     return res.status(404).send("server.ts no encontrado");
 });
 
-app.use(express.static(publicPath));
+// Middleware para deshabilitar caché en desarrollo y asegurar que siempre se carguen los cambios más recientes
+app.use((req, res, next) => {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+    next();
+});
+
+// Servir archivos estáticos tanto desde la raíz como desde public
+app.use(express.static(process.cwd(), {
+    etag: false,
+    lastModified: false,
+    maxAge: 0
+}));
+app.use(express.static(publicPath, {
+    etag: false,
+    lastModified: false,
+    maxAge: 0
+}));
 
 // Rutas de páginas HTML
 app.get("/login", (req, res) => {
+    const rootLogin = path.join(process.cwd(), "login.html");
+    if (fs.existsSync(rootLogin)) return res.sendFile(rootLogin);
     res.sendFile(path.join(publicPath, "login.html"));
 });
 
 app.get("/usuarios", (req, res) => {
+    const rootUsuarios = path.join(process.cwd(), "usuarios.html");
+    if (fs.existsSync(rootUsuarios)) return res.sendFile(rootUsuarios);
     res.sendFile(path.join(publicPath, "usuarios.html"));
 });
 
 app.get("*", (req, res) => {
+    const rootIndex = path.join(process.cwd(), "index.html");
+    if (fs.existsSync(rootIndex)) return res.sendFile(rootIndex);
     res.sendFile(path.join(publicPath, "index.html"));
 });
 
