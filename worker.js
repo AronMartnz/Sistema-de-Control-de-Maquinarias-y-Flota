@@ -856,7 +856,10 @@ export default {
     // Si es un archivo de la app web, intentar servir directamente desde GitHub para actualizar de inmediato
     if (targetFile.startsWith("/public/")) {
       try {
-        const ghResp = await fetch(GITHUB_REPO_RAW + targetFile);
+        const ghResp = await fetch(GITHUB_REPO_RAW + targetFile + "?_t=" + Date.now(), {
+          headers: { "Cache-Control": "no-cache", "Pragma": "no-cache" },
+          cf: { cacheTtl: 0, cacheEverything: false }
+        });
         if (ghResp.ok) {
           let contentType = "text/plain; charset=utf-8";
           if (targetFile.endsWith(".html")) contentType = "text/html; charset=utf-8";
