@@ -495,6 +495,39 @@ app.put("/api/programa/:cod", verificarAdmin, (req, res) => {
         }
 
         guardarPrograma(programa);
+
+        // Sincronizar de inmediato el último backup en disco para que /api/backup/obtener/ultimo tenga el estado actualizado
+        try {
+            const indexPath = path.join(backupsDir, "historial_backups.json");
+            if (fs.existsSync(indexPath)) {
+                const historial = JSON.parse(fs.readFileSync(indexPath, "utf8"));
+                if (Array.isArray(historial) && historial.length > 0 && historial[0].id) {
+                    const bPath = path.join(backupsDir, `${historial[0].id}.json`);
+                    if (fs.existsSync(bPath)) {
+                        const bData = JSON.parse(fs.readFileSync(bPath, "utf8"));
+                        if (bData && bData.data && Array.isArray(bData.data.corssen_programa_v2)) {
+                            const bIdx = bData.data.corssen_programa_v2.findIndex((p: any) => String(p.cod).toLowerCase() === cod.toLowerCase());
+                            if (bIdx !== -1) {
+                                bData.data.corssen_programa_v2[bIdx] = { ...bData.data.corssen_programa_v2[bIdx], ...datosEquipo, cod: bData.data.corssen_programa_v2[bIdx].cod };
+                            } else {
+                                bData.data.corssen_programa_v2.push({ ...datosEquipo, cod });
+                            }
+                            if (Array.isArray(bData.data.flota_maquinarias_v3) && datosEquipo.estado) {
+                                const mIdx = bData.data.flota_maquinarias_v3.findIndex((m: any) => (m.numeroMaquinaria || m.id || "").toLowerCase() === cod.toLowerCase());
+                                if (mIdx !== -1) {
+                                    bData.data.flota_maquinarias_v3[mIdx].estado = datosEquipo.estado;
+                                }
+                            }
+                            bData.timestamp = Date.now();
+                            fs.writeFileSync(bPath, JSON.stringify(bData, null, 2), "utf8");
+                        }
+                    }
+                }
+            }
+        } catch (eSyncBkp) {
+            console.warn("Advertencia sincronizando último backup con programa:", eSyncBkp);
+        }
+
         res.json({ mensaje: "Mantención de equipo actualizada con éxito", equipo: datosEquipo });
     } catch (error) {
         console.error("Error actualizando programa:", error);
@@ -667,7 +700,8 @@ app.get("/api/backup/historial", (req, res) => {
 app.get("/api/backup/obtener/:id", (req, res) => {
     try {
         let bId = req.params.id;
-        if (bId === "ultimo") {
+        const esUltimo = (bId === "ultimo");
+        if (esUltimo) {
             const indexPath = path.join(backupsDir, "historial_backups.json");
             if (fs.existsSync(indexPath)) {
                 const historial = JSON.parse(fs.readFileSync(indexPath, "utf8"));
@@ -679,6 +713,28 @@ app.get("/api/backup/obtener/:id", (req, res) => {
         const archivoPath = path.join(backupsDir, `${bId}.json`);
         if (fs.existsSync(archivoPath)) {
             const data = JSON.parse(fs.readFileSync(archivoPath, "utf8"));
+            // Si se solicita el último backup, reconciliar con programa.json para garantizar consistencia total
+            if (esUltimo && data && data.data) {
+                const programaActual = leerPrograma();
+                if (Array.isArray(programaActual) && programaActual.length > 0) {
+                    if (!Array.isArray(data.data.corssen_programa_v2)) data.data.corssen_programa_v2 = [];
+                    programaActual.forEach((progItem: any) => {
+                        if (!progItem.cod) return;
+                        const pIdx = data.data.corssen_programa_v2.findIndex((p: any) => String(p.cod).toLowerCase() === String(progItem.cod).toLowerCase());
+                        if (pIdx !== -1) {
+                            data.data.corssen_programa_v2[pIdx] = { ...data.data.corssen_programa_v2[pIdx], ...progItem };
+                        } else {
+                            data.data.corssen_programa_v2.push(progItem);
+                        }
+                        if (Array.isArray(data.data.flota_maquinarias_v3) && progItem.estado) {
+                            const mIdx = data.data.flota_maquinarias_v3.findIndex((m: any) => (m.numeroMaquinaria || m.id || "").toLowerCase() === String(progItem.cod).toLowerCase());
+                            if (mIdx !== -1) {
+                                data.data.flota_maquinarias_v3[mIdx].estado = progItem.estado;
+                            }
+                        }
+                    });
+                }
+            }
             return res.json(data);
         }
         res.status(404).json({ error: "Respaldo no encontrado" });
