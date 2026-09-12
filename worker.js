@@ -482,6 +482,63 @@ export default {
               console.warn("Error guardando en D1 corssen_programa:", eD1);
             }
           }
+
+          // Sincronizar de inmediato el último backup en KV si existe
+          if (kv && cod) {
+            try {
+              const ultimo = await kv.get("corssen_backup_ultimo", "json");
+              if (ultimo && ultimo.data && Array.isArray(ultimo.data.corssen_programa_v2)) {
+                const bIdx = ultimo.data.corssen_programa_v2.findIndex(p => String(p.cod).toLowerCase() === cod.toLowerCase());
+                if (bIdx !== -1) {
+                  ultimo.data.corssen_programa_v2[bIdx] = { ...ultimo.data.corssen_programa_v2[bIdx], ...body, cod: ultimo.data.corssen_programa_v2[bIdx].cod };
+                } else {
+                  ultimo.data.corssen_programa_v2.push({ ...body, cod });
+                }
+                if (Array.isArray(ultimo.data.flota_maquinarias_v3) && body.estado) {
+                  const mIdx = ultimo.data.flota_maquinarias_v3.findIndex(m => (m.numeroMaquinaria || m.id || "").toLowerCase() === cod.toLowerCase());
+                  if (mIdx !== -1) {
+                    ultimo.data.flota_maquinarias_v3[mIdx].estado = body.estado;
+                  }
+                }
+                ultimo.timestamp = Date.now();
+                await kv.put("corssen_backup_ultimo", JSON.stringify(ultimo));
+              }
+            } catch (eKV) {
+              console.warn("Error actualizando KV corssen_backup_ultimo:", eKV);
+            }
+          }
+
+          // Sincronizar de inmediato el último backup en D1 si existe
+          if (env && env.DB && cod) {
+            try {
+              const rowBkp = await env.DB.prepare("SELECT id, data_json FROM corssen_backups ORDER BY timestamp DESC LIMIT 1").first();
+              if (rowBkp && rowBkp.id && rowBkp.data_json) {
+                const bData = typeof rowBkp.data_json === "string" ? JSON.parse(rowBkp.data_json) : rowBkp.data_json;
+                if (bData && Array.isArray(bData.corssen_programa_v2)) {
+                  const bIdx = bData.corssen_programa_v2.findIndex(p => String(p.cod).toLowerCase() === cod.toLowerCase());
+                  if (bIdx !== -1) {
+                    bData.corssen_programa_v2[bIdx] = { ...bData.corssen_programa_v2[bIdx], ...body, cod: bData.corssen_programa_v2[bIdx].cod };
+                  } else {
+                    bData.corssen_programa_v2.push({ ...body, cod });
+                  }
+                  if (Array.isArray(bData.flota_maquinarias_v3) && body.estado) {
+                    const mIdx = bData.flota_maquinarias_v3.findIndex(m => (m.numeroMaquinaria || m.id || "").toLowerCase() === cod.toLowerCase());
+                    if (mIdx !== -1) {
+                      bData.flota_maquinarias_v3[mIdx].estado = body.estado;
+                    }
+                  }
+                  await env.DB.prepare("UPDATE corssen_backups SET data_json = ?, timestamp = ? WHERE id = ?").bind(
+                    JSON.stringify(bData),
+                    Date.now(),
+                    rowBkp.id
+                  ).run();
+                }
+              }
+            } catch (eD1Bkp) {
+              console.warn("Error actualizando backup D1 con programa:", eD1Bkp);
+            }
+          }
+
           return new Response(JSON.stringify({ mensaje: "Mantención de equipo actualizada con éxito" }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" }
           });
@@ -676,13 +733,78 @@ export default {
         });
       }
 
+      // Reconciliar con la tabla corssen_programa si es el último respaldo para asegurar datos 100% actualizados
+      if (bId === "ultimo" && backupData && backupData.data && env && env.DB) {
+        try {
+          const { results } = await env.DB.prepare("SELECT * FROM corssen_programa").all();
+          if (Array.isArray(results) && results.length > 0) {
+            if (!Array.isArray(backupData.data.corssen_programa_v2)) backupData.data.corssen_programa_v2 = [];
+            results.forEach(progItem => {
+              if (!progItem.cod) return;
+              const pIdx = backupData.data.corssen_programa_v2.findIndex(p => String(p.cod).toLowerCase() === String(progItem.cod).toLowerCase());
+              if (pIdx !== -1) {
+                backupData.data.corssen_programa_v2[pIdx] = { ...backupData.data.corssen_programa_v2[pIdx], ...progItem };
+              } else {
+                backupData.data.corssen_programa_v2.push(progItem);
+              }
+              if (Array.isArray(backupData.data.flota_maquinarias_v3) && progItem.estado) {
+                const mIdx = backupData.data.flota_maquinarias_v3.findIndex(m => (m.numeroMaquinaria || m.id || "").toLowerCase() === String(progItem.cod).toLowerCase());
+                if (mIdx !== -1) {
+                  backupData.data.flota_maquinarias_v3[mIdx].estado = progItem.estado;
+                }
+              }
+            });
+          }
+        } catch (_) {}
+      }
+
       return new Response(JSON.stringify(backupData), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" }
       });
     }
 
-    // Servir assets estáticos a través del binding de Cloudflare
+    // Servir assets estáticos (con sincronización directa a GitHub para reflejar cambios instantáneos)
+    const GITHUB_REPO_RAW = "https://raw.githubusercontent.com/AronMartnz/Sistema-de-Control-de-Maquinarias-y-Flota/main";
+
+    let targetFile = path;
+    if (targetFile === "/" || targetFile === "") targetFile = "/public/index.html";
+    else if (targetFile === "/usuarios") targetFile = "/public/usuarios.html";
+    else if (targetFile === "/login") targetFile = "/public/login.html";
+    else if (!targetFile.startsWith("/public/") && (targetFile.endsWith(".html") || targetFile.endsWith(".js") || targetFile.endsWith(".css") || targetFile.endsWith(".svg") || targetFile.endsWith(".ico") || targetFile.endsWith(".json"))) {
+      targetFile = "/public" + targetFile;
+    }
+
+    // Si es un archivo de la app web, intentar servir directamente desde GitHub para actualizar de inmediato
+    if (targetFile.startsWith("/public/")) {
+      try {
+        const ghResp = await fetch(GITHUB_REPO_RAW + targetFile);
+        if (ghResp.ok) {
+          let contentType = "text/plain; charset=utf-8";
+          if (targetFile.endsWith(".html")) contentType = "text/html; charset=utf-8";
+          else if (targetFile.endsWith(".js")) contentType = "application/javascript; charset=utf-8";
+          else if (targetFile.endsWith(".css")) contentType = "text/css; charset=utf-8";
+          else if (targetFile.endsWith(".svg")) contentType = "image/svg+xml";
+          else if (targetFile.endsWith(".json")) contentType = "application/json; charset=utf-8";
+          else if (targetFile.endsWith(".ico")) contentType = "image/x-icon";
+
+          const headers = new Headers(corsHeaders);
+          headers.set("Content-Type", contentType);
+          headers.set("Cache-Control", "no-cache, no-store, must-revalidate");
+          headers.set("Pragma", "no-cache");
+          headers.set("Expires", "0");
+
+          return new Response(ghResp.body, {
+            status: 200,
+            headers
+          });
+        }
+      } catch (errGh) {
+        console.warn("Error consultando assets de GitHub:", errGh);
+      }
+    }
+
+    // Fallback: Servir assets estáticos a través del binding de Cloudflare
     if (env && env.ASSETS) {
       let res = await env.ASSETS.fetch(request);
       if (res.status === 404 && !path.includes(".")) {
