@@ -535,6 +535,49 @@ app.put("/api/programa/:cod", verificarAdmin, (req, res) => {
     }
 });
 
+app.delete("/api/programa/:cod", verificarAdmin, (req, res) => {
+    try {
+        const cod = decodeURIComponent(req.params.cod).trim().toLowerCase();
+        let programa = leerPrograma();
+        programa = programa.filter(p => String(p.cod).toLowerCase() !== cod);
+        guardarPrograma(programa);
+
+        // Limpiar también del último backup en disco si existe
+        try {
+            const indexPath = path.join(backupsDir, "historial_backups.json");
+            if (fs.existsSync(indexPath)) {
+                const historial = JSON.parse(fs.readFileSync(indexPath, "utf8"));
+                if (Array.isArray(historial) && historial.length > 0 && historial[0].id) {
+                    const bPath = path.join(backupsDir, `${historial[0].id}.json`);
+                    if (fs.existsSync(bPath)) {
+                        const bData = JSON.parse(fs.readFileSync(bPath, "utf8"));
+                        if (bData && bData.data) {
+                            if (Array.isArray(bData.data.corssen_programa_v2)) {
+                                bData.data.corssen_programa_v2 = bData.data.corssen_programa_v2.filter((p: any) => String(p.cod).toLowerCase() !== cod);
+                            }
+                            if (Array.isArray(bData.data.flota_maquinarias_v3)) {
+                                bData.data.flota_maquinarias_v3 = bData.data.flota_maquinarias_v3.filter((m: any) => (m.numeroMaquinaria || m.id || "").toLowerCase() !== cod);
+                            }
+                            if (Array.isArray(bData.data.flota_vehiculos_v3)) {
+                                bData.data.flota_vehiculos_v3 = bData.data.flota_vehiculos_v3.filter((v: any) => (v.codigo || v.id || v.patente || "").toLowerCase() !== cod);
+                            }
+                            bData.timestamp = Date.now();
+                            fs.writeFileSync(bPath, JSON.stringify(bData, null, 2), "utf8");
+                        }
+                    }
+                }
+            }
+        } catch (eSyncBkp) {
+            console.warn("Advertencia limpiando backup tras delete programa:", eSyncBkp);
+        }
+
+        res.json({ mensaje: "Equipo eliminado del programa con éxito" });
+    } catch (error) {
+        console.error("Error eliminando equipo del programa:", error);
+        res.status(500).json({ mensaje: "Error interno al eliminar equipo del programa." });
+    }
+});
+
 // ==========================================
 // ENDPOINTS DE FICHAS TÉCNICAS (MAQUINARIAS Y VEHÍCULOS)
 // ==========================================
