@@ -549,6 +549,84 @@ export default {
           });
         }
       }
+
+      if (request.method === "DELETE") {
+        const cod = decodeURIComponent(path.split("/")[3] || "").trim();
+        if (!cod) {
+          return new Response(JSON.stringify({ error: "Código de equipo no especificado" }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
+        }
+        try {
+          if (env && env.DB) {
+            try {
+              await env.DB.prepare("DELETE FROM corssen_programa WHERE LOWER(cod) = LOWER(?)").bind(cod).run();
+            } catch (eD1) {
+              console.warn("Error eliminando de D1 corssen_programa:", eD1);
+            }
+          }
+
+          // Limpiar de KV corssen_backup_ultimo si existe
+          if (kv) {
+            try {
+              const ultimo = await kv.get("corssen_backup_ultimo", "json");
+              if (ultimo && ultimo.data) {
+                if (Array.isArray(ultimo.data.corssen_programa_v2)) {
+                  ultimo.data.corssen_programa_v2 = ultimo.data.corssen_programa_v2.filter(p => String(p.cod).toLowerCase() !== cod.toLowerCase());
+                }
+                if (Array.isArray(ultimo.data.flota_maquinarias_v3)) {
+                  ultimo.data.flota_maquinarias_v3 = ultimo.data.flota_maquinarias_v3.filter(m => (m.numeroMaquinaria || m.id || "").toLowerCase() !== cod.toLowerCase());
+                }
+                if (Array.isArray(ultimo.data.flota_vehiculos_v3)) {
+                  ultimo.data.flota_vehiculos_v3 = ultimo.data.flota_vehiculos_v3.filter(v => (v.codigo || v.id || v.patente || "").toLowerCase() !== cod.toLowerCase());
+                }
+                ultimo.timestamp = Date.now();
+                await kv.put("corssen_backup_ultimo", JSON.stringify(ultimo));
+              }
+            } catch (eKV) {
+              console.warn("Error limpiando KV tras delete:", eKV);
+            }
+          }
+
+          // Limpiar también del último backup en D1 si existe
+          if (env && env.DB) {
+            try {
+              const rowBkp = await env.DB.prepare("SELECT id, data_json FROM corssen_backups ORDER BY timestamp DESC LIMIT 1").first();
+              if (rowBkp && rowBkp.id && rowBkp.data_json) {
+                const bData = typeof rowBkp.data_json === "string" ? JSON.parse(rowBkp.data_json) : rowBkp.data_json;
+                if (bData) {
+                  if (Array.isArray(bData.corssen_programa_v2)) {
+                    bData.corssen_programa_v2 = bData.corssen_programa_v2.filter(p => String(p.cod).toLowerCase() !== cod.toLowerCase());
+                  }
+                  if (Array.isArray(bData.flota_maquinarias_v3)) {
+                    bData.flota_maquinarias_v3 = bData.flota_maquinarias_v3.filter(m => (m.numeroMaquinaria || m.id || "").toLowerCase() !== cod.toLowerCase());
+                  }
+                  if (Array.isArray(bData.flota_vehiculos_v3)) {
+                    bData.flota_vehiculos_v3 = bData.flota_vehiculos_v3.filter(v => (v.codigo || v.id || v.patente || "").toLowerCase() !== cod.toLowerCase());
+                  }
+                  await env.DB.prepare("UPDATE corssen_backups SET data_json = ?, timestamp = ? WHERE id = ?").bind(
+                    JSON.stringify(bData),
+                    Date.now(),
+                    rowBkp.id
+                  ).run();
+                }
+              }
+            } catch (eD1Bkp) {
+              console.warn("Error limpiando backup D1 tras delete:", eD1Bkp);
+            }
+          }
+
+          return new Response(JSON.stringify({ mensaje: "Equipo eliminado con éxito" }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
+        } catch (errDel) {
+          return new Response(JSON.stringify({ mensaje: "Error al eliminar equipo", error: String(errDel) }), {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
+        }
+      }
     }
 
     // API Backup - Guardar Respaldo en la Nube KV y D1 (/api/backup/guardar)
