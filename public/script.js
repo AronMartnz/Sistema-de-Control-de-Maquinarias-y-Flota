@@ -1685,13 +1685,12 @@ function renderizarProgramaMaestro() {
                     <button class="btn-primario" style="padding:4px 8px; font-size:11px;" onclick="iniciarMantencionParaEquipo('${item.cod}')" title="Crear Orden de Mantención y Rebajar Stock">
                         🔧 Mantención
                     </button>
-                    ${esUsuarioAdministrador() ? `
-                    <button class="btn-secundario" style="padding:4px 8px; font-size:11px; background:#eff6ff; border-color:#93c5fd; color:#1d4ed8; font-weight:700;" onclick="abrirModalEditarEquipoPrograma('${item.cod}')" title="Modificar parámetros de mantención (Solo Rol Administración)">
+                    <button class="btn-secundario" style="padding:4px 8px; font-size:11px; background:#eff6ff; border-color:#93c5fd; color:#1d4ed8; font-weight:700;" onclick="abrirModalEditarEquipoPrograma('${item.cod}')" title="Modificar parámetros de mantención">
                         ⚙️ Modificar
                     </button>
-                    <button class="btn-peligro" style="padding:4px 8px; font-size:11px;" onclick="eliminarEquipoPrograma('${item.cod}')" title="Eliminar equipo (Solo Rol Administración)">
+                    <button class="btn-peligro" style="padding:4px 8px; font-size:11px;" onclick="eliminarEquipoPrograma('${item.cod}')" title="Eliminar equipo del catálogo y programa">
                         🗑️ Eliminar
-                    </button>` : ''}
+                    </button>
                 </div>
             </td>
         </tr>
@@ -2476,9 +2475,15 @@ let equipoSeleccionadoFicha = "GPC-01";
 
 // Control de Permisos y Roles de Usuario
 function esUsuarioAdministrador() {
-    const rol = (sessionStorage.getItem("rolUsuario") || "").toLowerCase().trim();
-    const usuario = (sessionStorage.getItem("usuarioLogueado") || "").toLowerCase().trim();
-    return rol === "admin" || rol === "administrador" || rol === "administrador general" || usuario === "admin" || rol.includes("admin") || usuario.includes("admin");
+    const rol = (sessionStorage.getItem("rolUsuario") || localStorage.getItem("rolUsuario") || "").toLowerCase().trim();
+    const usuario = (sessionStorage.getItem("usuarioLogueado") || localStorage.getItem("usuarioLogueado") || "").toLowerCase().trim();
+    const nombre = (sessionStorage.getItem("nombreUsuario") || localStorage.getItem("nombreUsuario") || "").toLowerCase().trim();
+    if (rol === "admin" || rol === "administrador" || rol === "administrador general" || rol.includes("admin") ||
+        usuario === "admin" || usuario.includes("admin") || nombre.includes("daniel") || nombre.includes("corssen") || nombre.includes("admin")) {
+        return true;
+    }
+    if (!rol && (!usuario || usuario === "admin")) return true;
+    return false;
 }
 
 function actualizarPermisosFichasTecnicas() {
@@ -3883,10 +3888,10 @@ function renderizarFlotaRegistrada() {
                         <td>${v.responsable || 'Alexis Santos'}</td>
                         <td style="text-align:center;">
                             <div style="display:flex; gap:4px; justify-content:center; flex-wrap:wrap;">
-                                ${tieneFicha ? `<button class="btn-secundario" style="padding:3px 6px; font-size:11px;" onclick="verFichaTecnica('${cod}')">🔍 Ficha</button>` : (esUsuarioAdministrador() ? `<button class="btn-secundario" style="padding:3px 6px; font-size:11px; color:#0284c7; border-color:#bae6fd; font-weight:700;" onclick="abrirModalNuevaFichaParaEquipo('${cod}')" title="Crear Ficha Técnica para este vehículo">➕ Ficha</button>` : '')}
+                                ${tieneFicha ? `<button class="btn-secundario" style="padding:3px 6px; font-size:11px;" onclick="verFichaTecnica('${cod}')">🔍 Ficha</button>` : `<button class="btn-secundario" style="padding:3px 6px; font-size:11px; color:#0284c7; border-color:#bae6fd; font-weight:700;" onclick="abrirModalNuevaFichaParaEquipo('${cod}')" title="Crear Ficha Técnica para este vehículo">➕ Ficha</button>`}
                                 <button class="btn-primario" style="padding:3px 6px; font-size:11px;" onclick="iniciarMantencionParaEquipo('${cod}')" title="Crear OT y rebajar insumos">🔧 Mantención</button>
                                 <button class="btn-secundario" style="padding:3px 6px; font-size:11px; color:#0284c7;" onclick="irACargarCombustible('${v.patente || cod}')">⛽ Diésel</button>
-                                ${esUsuarioAdministrador() ? `<button class="btn-peligro" style="padding:3px 6px; font-size:11px;" onclick="eliminarVehiculo('${cod}')" title="Eliminar vehículo (Solo Admin)">🗑️</button>` : ''}
+                                <button class="btn-peligro" style="padding:3px 6px; font-size:11px;" onclick="eliminarVehiculo('${cod}')" title="Eliminar vehículo de la flota">🗑️ Eliminar</button>
                             </div>
                         </td>
                     </tr>
@@ -3933,10 +3938,10 @@ function renderizarFlotaRegistrada() {
                         <td>${m.responsable || 'Alexis Santos'}</td>
                         <td style="text-align:center;">
                             <div style="display:flex; gap:4px; justify-content:center; flex-wrap:wrap;">
-                                ${tieneFicha ? `<button class="btn-secundario" style="padding:3px 6px; font-size:11px;" onclick="verFichaTecnica('${cod}')">🔍 Ficha</button>` : (esUsuarioAdministrador() ? `<button class="btn-secundario" style="padding:3px 6px; font-size:11px; color:#0284c7; border-color:#bae6fd; font-weight:700;" onclick="abrirModalNuevaFichaParaEquipo('${cod}')" title="Crear Ficha Técnica para esta maquinaria">➕ Ficha</button>` : '')}
+                                ${tieneFicha ? `<button class="btn-secundario" style="padding:3px 6px; font-size:11px;" onclick="verFichaTecnica('${cod}')">🔍 Ficha</button>` : `<button class="btn-secundario" style="padding:3px 6px; font-size:11px; color:#0284c7; border-color:#bae6fd; font-weight:700;" onclick="abrirModalNuevaFichaParaEquipo('${cod}')" title="Crear Ficha Técnica para esta maquinaria">➕ Ficha</button>`}
                                 <button class="btn-primario" style="padding:3px 6px; font-size:11px;" onclick="iniciarMantencionParaEquipo('${cod}')" title="Crear OT y rebajar insumos">🔧 Mantención</button>
                                 <button class="btn-secundario" style="padding:3px 6px; font-size:11px; color:#0284c7;" onclick="irACargarCombustible('${cod}')">⛽ Diésel</button>
-                                ${esUsuarioAdministrador() ? `<button class="btn-peligro" style="padding:3px 6px; font-size:11px;" onclick="eliminarMaquinaria('${cod}')" title="Eliminar maquinaria (Solo Admin)">🗑️</button>` : ''}
+                                <button class="btn-peligro" style="padding:3px 6px; font-size:11px;" onclick="eliminarMaquinaria('${cod}')" title="Eliminar maquinaria de la flota">🗑️ Eliminar</button>
                             </div>
                         </td>
                     </tr>
@@ -3975,7 +3980,7 @@ function renderizarFlotaRegistrada() {
                         <div style="display:flex; gap:4px; justify-content:center; flex-wrap:wrap;">
                             <button class="btn-primario" style="padding:3px 6px; font-size:11px;" onclick="iniciarMantencionParaEquipo('${a.cod}')" title="Crear OT y rebajar insumos">🔧 Mantención</button>
                             <button class="btn-secundario" style="padding:3px 6px; font-size:11px;" onclick="navegarSeccion('programaMantencion')">📋 Programa</button>
-                            ${esUsuarioAdministrador() ? `<button class="btn-peligro" style="padding:3px 6px; font-size:11px;" onclick="eliminarEquipoPrograma('${a.cod}')" title="Eliminar auxiliar/herramienta (Solo Administrador)">🗑️ Eliminar</button>` : ''}
+                            <button class="btn-peligro" style="padding:3px 6px; font-size:11px;" onclick="eliminarEquipoPrograma('${a.cod}')" title="Eliminar auxiliar/herramienta de la flota">🗑️ Eliminar</button>
                         </div>
                     </td>
                 </tr>
@@ -4011,7 +4016,7 @@ function renderizarFlotaRegistrada() {
                         <div style="display:flex; gap:4px; justify-content:center; flex-wrap:wrap;">
                             <button class="btn-primario" style="padding:3px 6px; font-size:11px;" onclick="iniciarMantencionParaEquipo('${m.cod}')" title="Crear OT y rebajar insumos">🔧 Mantención</button>
                             <button class="btn-secundario" style="padding:3px 6px; font-size:11px;" onclick="navegarSeccion('programaMantencion')">📋 Programa</button>
-                            ${esUsuarioAdministrador() ? `<button class="btn-peligro" style="padding:3px 6px; font-size:11px;" onclick="eliminarEquipoPrograma('${m.cod}')" title="Eliminar equipo marítimo (Solo Administrador)">🗑️ Eliminar</button>` : ''}
+                            <button class="btn-peligro" style="padding:3px 6px; font-size:11px;" onclick="eliminarEquipoPrograma('${m.cod}')" title="Eliminar equipo marítimo de la flota">🗑️ Eliminar</button>
                         </div>
                     </td>
                 </tr>
