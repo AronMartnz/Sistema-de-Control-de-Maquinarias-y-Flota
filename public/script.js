@@ -9521,8 +9521,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (rolUsuario && (rolUsuario.toLowerCase() === "administrador" || rolUsuario.toLowerCase() === "admin")) {
         const btnAdmin = document.getElementById("btnAdministrarUsuarios");
         if (btnAdmin) btnAdmin.style.display = "flex";
-    } else {
-        // Para clientes y operadores: verificar si el servicio está suspendido por cuota pendiente
+    }
+
+    // Para clientes y operadores (cualquiera que NO sea el Administrador General 'admin', incluyendo a Daniel):
+    // verificar si el servicio general fue suspendido por cuota pendiente
+    if (usuarioLogueado && usuarioLogueado.toLowerCase().trim() !== "admin") {
         (async () => {
             try {
                 const resServ = await fetch("/api/servicio/estado");
