@@ -114,7 +114,7 @@
 
         .estadisticas {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 18px;
             margin-bottom: 25px;
         }
@@ -556,6 +556,184 @@
             background: #e0f2fe;
         }
 
+        /* BADGES Y CONTROLES DE CUOTA MENSUAL */
+        .badge-servicio-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .badge-servicio-pill.activo {
+            background: #dcfce7;
+            color: #15803d;
+            border: 1px solid #bbf7d0;
+        }
+        .badge-servicio-pill.suspendido {
+            background: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+            animation: pulseBlink 2s infinite ease-in-out;
+        }
+        @keyframes pulseBlink {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.85; transform: scale(1.02); }
+        }
+
+        .caja-estado-servicio {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 18px;
+            padding: 18px 22px;
+            border-radius: 14px;
+            transition: all 0.3s ease;
+        }
+        .caja-estado-servicio.activo {
+            background: #f0fdf4;
+            border: 1.5px solid #86efac;
+        }
+        .caja-estado-servicio.suspendido {
+            background: #fef2f2;
+            border: 1.5px solid #fca5a5;
+        }
+
+        .icono-estado-grande {
+            width: 48px;
+            height: 48px;
+            min-width: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: 900;
+        }
+        .icono-estado-grande.activo {
+            background: #dcfce7;
+            color: #16a34a;
+            border: 2px solid #86efac;
+        }
+        .icono-estado-grande.suspendido {
+            background: #fee2e2;
+            color: #dc2626;
+            border: 2px solid #fca5a5;
+        }
+
+        .btn-control-cuota {
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 13.5px;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-suspender-general {
+            background: #dc2626;
+            color: #ffffff;
+            box-shadow: 0 4px 14px rgba(220, 38, 38, 0.3);
+        }
+        .btn-suspender-general:hover {
+            background: #b91c1c;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(220, 38, 38, 0.4);
+        }
+        .btn-reactivar-general {
+            background: #16a34a;
+            color: #ffffff;
+            box-shadow: 0 4px 14px rgba(22, 163, 74, 0.3);
+        }
+        .btn-reactivar-general:hover {
+            background: #15803d;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(22, 163, 74, 0.4);
+        }
+
+        .btn-preview-aviso {
+            padding: 8px 14px;
+            background: #f1f5f9;
+            color: #334155;
+            border: 1px solid #cbd5e1;
+            border-radius: 9px;
+            font-size: 12.5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-preview-aviso:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+
+        .badge-estado-usuario {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .badge-estado-usuario.activo {
+            background: #dcfce7;
+            color: #15803d;
+        }
+        .badge-estado-usuario.suspendido {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+        .badge-estado-usuario.bloqueado-global {
+            background: #fff7ed;
+            color: #c2410c;
+        }
+        .badge-estado-usuario.admin {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+
+        .btn-toggle-suspension {
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-toggle-suspender {
+            background: #fff1f2;
+            color: #e11d48;
+            border: 1px solid #fecdd3;
+        }
+        .btn-toggle-suspender:hover {
+            background: #ffe4e6;
+            color: #be123c;
+            border-color: #fda4af;
+        }
+        .btn-toggle-reactivar {
+            background: #f0fdf4;
+            color: #16a34a;
+            border: 1px solid #bbf7d0;
+        }
+        .btn-toggle-reactivar:hover {
+            background: #dcfce7;
+            color: #15803d;
+            border-color: #86efac;
+        }
+
         @media (max-width: 800px) {
             .header {
                 flex-direction: column;
@@ -666,6 +844,73 @@
                 <div class="texto">Operadores</div>
             </div>
         </div>
+
+        <div class="estadistica">
+            <div class="icono" id="iconoStatServicio" style="background:#eff6ff;">💳</div>
+            <div>
+                <div class="numero" id="totalEstadoServicio" style="font-size:16px; font-weight:800; color:#15803d;">Habilitado</div>
+                <div class="texto">Cuota Respaldos & Mantención</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECCIÓN: CONTROL DE ACCESO POR CUOTA MENSUAL (RESPALDOS Y MANTENIMIENTOS) -->
+    <section class="card" id="seccionControlCuota" style="border: 2px solid #e2e8f0; border-radius: 16px; padding: 22px; margin-bottom: 25px; background: #ffffff; box-shadow: 0 4px 16px rgba(0,0,0,0.04);">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px; margin-bottom:18px;">
+            <div>
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px; flex-wrap:wrap;">
+                    <span style="font-size:22px;">💳</span>
+                    <h2 style="font-size:18px; font-weight:800; color:#0f172a; margin:0;">Control de Acceso por Cuota Mensual</h2>
+                    <span id="badgeEstadoServicioPill" class="badge-servicio-pill activo">🟢 Clientes Habilitados</span>
+                </div>
+                <p style="font-size:13px; color:#64748b; margin:0; max-width:760px;">
+                    Gestiona la suspensión inmediata del inicio de sesión para cuentas de clientes u operadores cuando exista una cuota mensual pendiente por concepto de <strong>respaldos en la nube y mantenimiento preventivo/correctivo</strong>.
+                </p>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <button type="button" class="btn-preview-aviso" onclick="abrirModalPreviewAvisoCliente()" title="Ver la ventana de aviso exacta que verán los clientes">
+                    👁️ Ver Aviso del Cliente
+                </button>
+            </div>
+        </div>
+
+        <!-- Banner dinámico de estado del servicio -->
+        <div id="cajaEstadoServicioDinamica" class="caja-estado-servicio activo">
+            <div style="display:flex; align-items:center; gap:16px; flex:1; min-width:280px;">
+                <div id="iconoEstadoServicioGrande" class="icono-estado-grande activo">
+                    ✓
+                </div>
+                <div>
+                    <h3 id="tituloEstadoServicioTexto" style="font-size:15px; font-weight:800; color:#15803d; margin-bottom:3px;">
+                        ACCESO TOTAL HABILITADO — CLIENTES AL DÍA
+                    </h3>
+                    <p id="descEstadoServicioTexto" style="font-size:12.5px; color:#334155; margin:0;">
+                        Los clientes y operadores pueden iniciar sesión, consultar flotas y operar el sistema con total normalidad.
+                    </p>
+                    <div id="infoUltimaModificacionServicio" style="font-size:11px; color:#64748b; margin-top:4px;">
+                        Estado: Sistema al día con cuotas de mantenimiento y respaldos
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones de Acción Rápida -->
+            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                <button type="button" id="btnSuspenderServicioGeneral" class="btn-control-cuota btn-suspender-general" onclick="abrirModalSuspensionGeneral('suspender')">
+                    ⛔ Suspender Inicio de Sesión de Clientes (Bloquear por No Pago)
+                </button>
+                <button type="button" id="btnReactivarServicioGeneral" class="btn-control-cuota btn-reactivar-general" style="display:none;" onclick="abrirModalSuspensionGeneral('reactivar')">
+                    ✅ Reactivar Acceso a Clientes (Habilitar Login - Cuota Pagada)
+                </button>
+            </div>
+        </div>
+
+        <!-- Nota informativa de protección y seguridad -->
+        <div style="display:flex; align-items:center; gap:10px; margin-top:14px; padding:10px 14px; background:#f8fafc; border-radius:10px; border:1px solid #e2e8f0; font-size:12px; color:#475569;">
+            <span>🛡️</span>
+            <span>
+                <strong>Garantía para el Administrador:</strong> Su usuario Administrador General <strong>nunca</strong> pierde el acceso ni puede ser bloqueado, lo que le garantiza ingresar en cualquier momento para respaldar o reactivar el sistema.
+            </span>
+        </div>
     </section>
 
     <!-- FORMULARIO CREAR USUARIO -->
@@ -771,6 +1016,7 @@
                         <th>Usuario</th>
                         <th>Nombre Completo</th>
                         <th>Rol</th>
+                        <th style="text-align:center;">Estado de Acceso</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -889,6 +1135,83 @@
     </div>
 </div>
 
+<!-- =====================================================
+     MODAL: CONFIRMAR SUSPENSIÓN / REACTIVACIÓN GENERAL
+===================================================== -->
+<div id="modalConfirmarSuspensionGeneral" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.7); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(4px);">
+    <div class="modal-card" style="max-width:520px; width:92%; background:#ffffff; border-radius:16px; box-shadow:0 24px 50px rgba(0,0,0,0.3); overflow:hidden;">
+        <div class="modal-header" style="background:#0f172a; color:#ffffff; padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span id="modalSuspensionIcono" style="font-size:22px;">⛔</span>
+                <div>
+                    <h3 id="modalSuspensionTitulo" style="margin:0; color:#ffffff; font-size:16px; font-weight:800;">Suspender Inicio de Sesión de Clientes</h3>
+                    <span id="modalSuspensionSubtitulo" style="font-size:12px; color:#94a3b8;">Control de Cuota Mensual de Respaldos & Mantenimientos</span>
+                </div>
+            </div>
+            <button type="button" class="btn-cerrar-modal" onclick="cerrarModalSuspensionGeneral()" style="background:transparent; border:none; color:#ffffff; font-size:20px; cursor:pointer;">✕</button>
+        </div>
+        <div class="modal-body" style="padding:22px; display:flex; flex-direction:column; gap:14px;">
+            <div id="modalSuspensionAlertaBox" style="padding:14px; border-radius:12px; font-size:13.5px; line-height:1.5;">
+                <!-- Dinámico -->
+            </div>
+
+            <div class="campo" id="campoMotivoSuspension" style="margin:0;">
+                <label for="inputMotivoSuspension" style="display:block; font-size:12.5px; font-weight:700; color:#334155; margin-bottom:6px;">
+                    Motivo que verá el cliente al intentar entrar (*):
+                </label>
+                <input type="text" id="inputMotivoSuspension" value="Cuota mensual de respaldos y mantenimientos pendiente de pago" style="width:100%; padding:10px 14px; border:1.5px solid #cbd5e1; border-radius:9px; font-size:13px; box-sizing:border-box;">
+                <span style="font-size:11.5px; color:#64748b; margin-top:4px; display:block;">
+                    Este aviso explica al cliente por qué no puede acceder y le orienta a regularizar su cuota con la administración.
+                </span>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:10px; padding-top:14px; border-top:1px solid #e2e8f0;">
+                <button type="button" class="btn-volver" style="margin:0;" onclick="cerrarModalSuspensionGeneral()">Cancelar</button>
+                <button type="button" id="btnConfirmarSuspensionModal" class="btn-crear" style="margin:0; background:#dc2626;" onclick="ejecutarCambioEstadoServicio()">Confirmar Acción</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- =====================================================
+     MODAL: PREVIEW DEL AVISO AL CLIENTE (VISTA PREVIA)
+===================================================== -->
+<div id="modalPreviewAvisoCliente" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.7); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(4px);">
+    <div class="modal-card" style="max-width:480px; width:92%; background:#ffffff; border-radius:16px; box-shadow:0 24px 50px rgba(0,0,0,0.3); overflow:hidden; border:2px solid #ef4444;">
+        <div class="modal-header" style="background:#0f172a; color:#ffffff; padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span style="font-size:22px;">👁️</span>
+                <div>
+                    <h3 style="margin:0; color:#ffffff; font-size:15px; font-weight:800;">Vista Previa del Aviso al Cliente</h3>
+                    <span style="font-size:12px; color:#94a3b8;">Así se muestra en login.html al intentar ingresar</span>
+                </div>
+            </div>
+            <button type="button" class="btn-cerrar-modal" onclick="cerrarModalPreviewAvisoCliente()" style="background:transparent; border:none; color:#ffffff; font-size:20px; cursor:pointer;">✕</button>
+        </div>
+        <div class="modal-body" style="padding:22px; text-align:center;">
+            <div style="width:68px; height:68px; border-radius:50%; background:#fee2e2; border:2.5px solid #ef4444; color:#dc2626; display:flex; align-items:center; justify-content:center; font-size:30px; margin:0 auto 14px auto; box-shadow:0 6px 18px rgba(239,68,68,0.25);">
+                🔒
+            </div>
+            <h4 style="font-size:17px; font-weight:800; color:#0f172a; margin-bottom:8px;">ACCESO TEMPORALMENTE SUSPENDIDO</h4>
+            <p style="font-size:13px; color:#475569; line-height:1.5; margin-bottom:14px;">
+                Estimado Cliente: El inicio de sesión a su cuenta se encuentra temporalmente restringido por concepto de <strong>cuota mensual de respaldos y mantenimientos pendiente de regularización</strong>.
+            </p>
+            <div style="background:#fff1f2; border:1px solid #fecdd3; border-radius:12px; padding:12px 14px; text-align:left; margin-bottom:16px; font-size:12px; color:#9f1239;">
+                <div style="font-weight:700; margin-bottom:3px;">📌 Estado de la Cuenta:</div>
+                <div>• Cuota mensual de respaldos de datos pendiente</div>
+                <div>• Mantenciones y soporte técnico pausados</div>
+                <div style="margin-top:5px; font-size:11px; color:#be123c;">Para reactivar de inmediato su acceso a la plataforma de flota, coordine con la Administración General.</div>
+            </div>
+            <div style="padding:10px; background:#f8fafc; border-radius:9px; border:1px solid #e2e8f0; font-size:12px; color:#334155; margin-bottom:16px;">
+                <strong>Contacto de Administración:</strong> aeliasmartinez24@gmail.com
+            </div>
+            <button type="button" class="btn-volver" style="width:100%; justify-content:center; background:#0f172a; color:white; border:none; padding:11px; font-weight:700; font-size:13px;" onclick="cerrarModalPreviewAvisoCliente()">
+                Cerrar Vista Previa
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
     // =====================================================
     // 1. CATÁLOGO DE AVATARES OPCIONALES DEL SISTEMA
@@ -916,6 +1239,9 @@
     let avatarSeleccionadoModal = "avatar-mecanico";
     let avatarSeleccionadoCrear = "avatar-mecanico";
     let listaUsuariosGlobal = [];
+    let estadoServicioGlobal = "activo";
+    let motivoServicioGlobal = "Cuota mensual de respaldos y mantenimientos al día";
+    let accionPendienteModal = "suspender";
 
     // Verificar sesión y rol
     const usuarioLogueado = sessionStorage.getItem("usuarioLogueado");
@@ -1198,10 +1524,225 @@
     }
 
     // =====================================================
-    // 3. CARGA Y ADMINISTRACIÓN DE USUARIOS
+    // 3. CONTROL DE CUOTA MENSUAL Y SUSPENSIÓN DE CLIENTES
+    // =====================================================
+    async function cargarEstadoServicio() {
+        try {
+            const res = await fetch("/api/servicio/estado");
+            if (res.ok) {
+                const data = await res.json();
+                estadoServicioGlobal = data.estadoServicio || "activo";
+                motivoServicioGlobal = data.motivo || "Cuota mensual de respaldos y mantenimientos al día";
+                actualizarUIEstadoServicio(data.fechaModificacion);
+            } else {
+                actualizarUIEstadoServicio();
+            }
+        } catch (e) {
+            console.warn("No se pudo cargar estado del servicio desde API, evaluando local:", e);
+            estadoServicioGlobal = localStorage.getItem("corssen_servicio_suspendido") === "true" ? "suspendido" : "activo";
+            actualizarUIEstadoServicio();
+        }
+    }
+
+    function actualizarUIEstadoServicio(fechaMod) {
+        const esActivo = estadoServicioGlobal === "activo";
+        localStorage.setItem("corssen_servicio_suspendido", esActivo ? "false" : "true");
+
+        // Stat card en la grilla superior
+        const elStatNumero = document.getElementById("totalEstadoServicio");
+        const elIconoStat = document.getElementById("iconoStatServicio");
+        if (elStatNumero) {
+            elStatNumero.textContent = esActivo ? "Al Día (Habilitado)" : "Suspendido (No Pago)";
+            elStatNumero.style.color = esActivo ? "#15803d" : "#dc2626";
+        }
+        if (elIconoStat) {
+            elIconoStat.textContent = esActivo ? "💳" : "⛔";
+            elIconoStat.style.background = esActivo ? "#eff6ff" : "#fee2e2";
+        }
+
+        // Pill badge en el encabezado de la tarjeta
+        const elPill = document.getElementById("badgeEstadoServicioPill");
+        if (elPill) {
+            elPill.className = "badge-servicio-pill " + (esActivo ? "activo" : "suspendido");
+            elPill.textContent = esActivo ? "🟢 Clientes Habilitados" : "🔴 Clientes Suspendidos";
+        }
+
+        // Caja dinámica de estado
+        const caja = document.getElementById("cajaEstadoServicioDinamica");
+        const icono = document.getElementById("iconoEstadoServicioGrande");
+        const titulo = document.getElementById("tituloEstadoServicioTexto");
+        const desc = document.getElementById("descEstadoServicioTexto");
+        const infoMod = document.getElementById("infoUltimaModificacionServicio");
+        const btnSuspender = document.getElementById("btnSuspenderServicioGeneral");
+        const btnReactivar = document.getElementById("btnReactivarServicioGeneral");
+
+        if (caja) {
+            caja.className = "caja-estado-servicio " + (esActivo ? "activo" : "suspendido");
+        }
+        if (icono) {
+            icono.className = "icono-estado-grande " + (esActivo ? "activo" : "suspendido");
+            icono.textContent = esActivo ? "✓" : "⛔";
+        }
+        if (titulo) {
+            titulo.textContent = esActivo ? "ACCESO TOTAL HABILITADO — CLIENTES AL DÍA" : "ACCESO SUSPENDIDO PREVENTIVAMENTE (CUOTA PENDIENTE)";
+            titulo.style.color = esActivo ? "#15803d" : "#b91c1c";
+        }
+        if (desc) {
+            desc.textContent = esActivo
+                ? "Los clientes y operadores pueden iniciar sesión, consultar flotas y operar el sistema con total normalidad."
+                : `El inicio de sesión de clientes y operadores está bloqueado. Motivo activo: "${motivoServicioGlobal || 'Cuota mensual de respaldos y mantenimientos pendiente'}".`;
+        }
+        if (infoMod && fechaMod) {
+            try {
+                const f = new Date(fechaMod);
+                infoMod.textContent = `Última modificación: ${f.toLocaleDateString("es-CL")} ${f.toLocaleTimeString("es-CL")}`;
+            } catch (_) {
+                infoMod.textContent = `Última modificación registrada: ${fechaMod}`;
+            }
+        }
+        if (btnSuspender) btnSuspender.style.display = esActivo ? "inline-flex" : "none";
+        if (btnReactivar) btnReactivar.style.display = esActivo ? "none" : "inline-flex";
+    }
+
+    function abrirModalSuspensionGeneral(tipo) {
+        accionPendienteModal = tipo;
+        const modal = document.getElementById("modalConfirmarSuspensionGeneral");
+        const titulo = document.getElementById("modalSuspensionTitulo");
+        const icono = document.getElementById("modalSuspensionIcono");
+        const alerta = document.getElementById("modalSuspensionAlertaBox");
+        const btnConfirmar = document.getElementById("btnConfirmarSuspensionModal");
+        const campoMotivo = document.getElementById("campoMotivoSuspension");
+        const inputMotivo = document.getElementById("inputMotivoSuspension");
+
+        if (tipo === "suspender") {
+            titulo.textContent = "Suspender Inicio de Sesión de Clientes";
+            icono.textContent = "⛔";
+            alerta.style.background = "#fef2f2";
+            alerta.style.border = "1.5px solid #fecaca";
+            alerta.style.color = "#991b1b";
+            alerta.innerHTML = `
+                <div style="font-weight:800; margin-bottom:6px;">¿Está seguro de suspender el acceso de clientes por falta de pago?</div>
+                <div>• Ningún cliente u operador podrá iniciar sesión en la plataforma.</div>
+                <div>• Verán la notificación de suspensión por cuota mensual de respaldos y mantenimiento pendiente.</div>
+                <div>• Su usuario Administrador General <strong>seguirá teniendo acceso completo</strong> para administrar y respaldar.</div>
+            `;
+            btnConfirmar.textContent = "⛔ Confirmar y Bloquear Acceso";
+            btnConfirmar.style.background = "#dc2626";
+            campoMotivo.style.display = "block";
+            inputMotivo.value = "Cuota mensual de respaldos y mantenimientos pendiente de pago";
+        } else {
+            titulo.textContent = "Reactivar Inicio de Sesión de Clientes";
+            icono.textContent = "✅";
+            alerta.style.background = "#f0fdf4";
+            alerta.style.border = "1.5px solid #bbf7d0";
+            alerta.style.color = "#166534";
+            alerta.innerHTML = `
+                <div style="font-weight:800; margin-bottom:6px;">¿Desea restaurar el acceso normal para los clientes?</div>
+                <div>• Todos los clientes y operadores con cuota al día podrán volver a iniciar sesión de inmediato.</div>
+                <div>• Se restablece la operatividad completa de las cuentas.</div>
+            `;
+            btnConfirmar.textContent = "✅ Confirmar y Reactivar Acceso";
+            btnConfirmar.style.background = "#16a34a";
+            campoMotivo.style.display = "none";
+        }
+
+        modal.style.display = "flex";
+    }
+
+    function cerrarModalSuspensionGeneral() {
+        document.getElementById("modalConfirmarSuspensionGeneral").style.display = "none";
+    }
+
+    async function ejecutarCambioEstadoServicio() {
+        const nuevoEstado = (accionPendienteModal === "suspender") ? "suspendido" : "activo";
+        const motivo = document.getElementById("inputMotivoSuspension").value.trim() || 
+            (nuevoEstado === "suspendido" ? "Cuota mensual de respaldos y mantenimientos pendiente de pago" : "Cuota mensual de respaldos y mantenimientos al día");
+
+        const btn = document.getElementById("btnConfirmarSuspensionModal");
+        btn.disabled = true;
+        btn.textContent = "Procesando...";
+
+        try {
+            const res = await fetch("/api/servicio/estado", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-usuario": usuarioLogueado || "admin"
+                },
+                body: JSON.stringify({ estadoServicio: nuevoEstado, motivo })
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                estadoServicioGlobal = nuevoEstado;
+                motivoServicioGlobal = motivo;
+                actualizarUIEstadoServicio(data.config?.fechaModificacion);
+                cerrarModalSuspensionGeneral();
+                await cargarUsuarios();
+                alert("✓ " + (data.mensaje || "Estado de servicio actualizado con éxito."));
+            } else {
+                alert(data.mensaje || "Error al actualizar estado del servicio.");
+            }
+        } catch (e) {
+            console.error(e);
+            estadoServicioGlobal = nuevoEstado;
+            motivoServicioGlobal = motivo;
+            actualizarUIEstadoServicio(new Date().toISOString());
+            cerrarModalSuspensionGeneral();
+            cargarUsuarios();
+            alert("✓ Estado de servicio actualizado localmente.");
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "Confirmar Acción";
+        }
+    }
+
+    async function alternarSuspensionUsuario(usuario, nuevoEstado) {
+        const accionTxt = nuevoEstado === "suspendido" ? "suspender el inicio de sesión" : "reactivar el inicio de sesión";
+        const confirmMsg = nuevoEstado === "suspendido"
+            ? `¿Confirma que desea suspender al usuario '${usuario}' por cuota de respaldo/mantenimiento? No podrá ingresar hasta que se reactive.`
+            : `¿Desea reactivar el acceso para el usuario '${usuario}'?`;
+
+        if (!confirm(confirmMsg)) return;
+
+        try {
+            const res = await fetch(`/api/usuarios/${encodeURIComponent(usuario)}/estado`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-usuario": usuarioLogueado || "admin"
+                },
+                body: JSON.stringify({ estado: nuevoEstado })
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                alert("✓ " + (data.mensaje || "Estado de usuario actualizado correctamente."));
+                await cargarUsuarios();
+            } else {
+                alert(data.mensaje || "Error actualizando estado del usuario.");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Error de conexión al actualizar estado del usuario.");
+        }
+    }
+
+    function abrirModalPreviewAvisoCliente() {
+        document.getElementById("modalPreviewAvisoCliente").style.display = "flex";
+    }
+
+    function cerrarModalPreviewAvisoCliente() {
+        document.getElementById("modalPreviewAvisoCliente").style.display = "none";
+    }
+
+    // =====================================================
+    // 4. CARGA Y ADMINISTRACIÓN DE USUARIOS
     // =====================================================
     async function cargarUsuarios() {
         try {
+            await cargarEstadoServicio();
+
             const res = await fetch("/api/usuarios", {
                 headers: { "x-usuario": usuarioLogueado }
             });
@@ -1228,7 +1769,7 @@
 
             const lista = document.getElementById("listaUsuarios");
             if (usuarios.length === 0) {
-                lista.innerHTML = `<tr><td colspan="5" class="sin-usuarios">No hay usuarios registrados.</td></tr>`;
+                lista.innerHTML = `<tr><td colspan="6" class="sin-usuarios">No hay usuarios registrados.</td></tr>`;
                 return;
             }
 
@@ -1245,6 +1786,28 @@
 
                 const avatarHtml = obtenerAvatarHtml(u.avatar, 40);
 
+                // Badge de estado de acceso y botón de suspender/reactivar
+                let badgeEstadoHtml = "";
+                let botonSuspenderHtml = "";
+
+                if (esAdminPrincipal || u.rol === "admin") {
+                    badgeEstadoHtml = `<span class="badge-estado-usuario admin" title="Acceso garantizado permanente">🛡️ Protegido (Admin)</span>`;
+                } else {
+                    const usuarioSuspendido = u.estado === "suspendido";
+                    const servicioGlobalSuspendido = estadoServicioGlobal === "suspendido";
+
+                    if (usuarioSuspendido) {
+                        badgeEstadoHtml = `<span class="badge-estado-usuario suspendido" title="Usuario suspendido individualmente por cuota">⛔ Suspendido</span>`;
+                        botonSuspenderHtml = `<button class="btn-toggle-suspension btn-toggle-reactivar" onclick="alternarSuspensionUsuario('${escapeHtml(u.usuario)}', 'activo')" title="Habilitar inicio de sesión">✅ Reactivar</button>`;
+                    } else if (servicioGlobalSuspendido) {
+                        badgeEstadoHtml = `<span class="badge-estado-usuario bloqueado-global" title="Acceso pausado por cuota mensual de respaldos general">⚠️ Bloqueado (Cuota General)</span>`;
+                        botonSuspenderHtml = `<button class="btn-toggle-suspension btn-toggle-suspender" onclick="alternarSuspensionUsuario('${escapeHtml(u.usuario)}', 'suspendido')" title="Suspender individualmente">⛔ Suspender</button>`;
+                    } else {
+                        badgeEstadoHtml = `<span class="badge-estado-usuario activo" title="Usuario activo al día">🟢 Activo</span>`;
+                        botonSuspenderHtml = `<button class="btn-toggle-suspension btn-toggle-suspender" onclick="alternarSuspensionUsuario('${escapeHtml(u.usuario)}', 'suspendido')" title="Suspender inicio de sesión por cuota pendiente">⛔ Suspender</button>`;
+                    }
+                }
+
                 return `
                     <tr>
                         <td style="text-align:center;">
@@ -1255,6 +1818,7 @@
                         <td><strong>${escapeHtml(u.usuario)}</strong></td>
                         <td><strong>${escapeHtml(nombreLimpio)}</strong></td>
                         <td><span class="rol ${u.rol === 'admin' ? 'rol-admin' : 'rol-operador'}">${u.rol}</span></td>
+                        <td style="text-align:center;">${badgeEstadoHtml}</td>
                         <td>
                             <div class="acciones">
                                 <button class="btn-avatar-accion" style="background:#f8fafc; color:#1e293b; border-color:#cbd5e1; font-weight:700;" onclick="abrirModalEditarUsuario('${escapeHtml(u.usuario)}', '${escapeHtml(nombreLimpio)}', '${escapeHtml(u.rol)}')">
@@ -1266,6 +1830,7 @@
                                 <button class="btn-password" onclick="cambiarPassword('${escapeHtml(u.usuario)}')">
                                     🔑 Clave
                                 </button>
+                                ${botonSuspenderHtml}
                                 ${botonEliminar}
                             </div>
                         </td>
