@@ -845,7 +845,7 @@
             </div>
         </div>
 
-        <div class="estadistica">
+        <div class="estadistica" id="cardStatCuota">
             <div class="icono" id="iconoStatServicio" style="background:#eff6ff;">💳</div>
             <div>
                 <div class="numero" id="totalEstadoServicio" style="font-size:16px; font-weight:800; color:#15803d;">Habilitado</div>
@@ -854,8 +854,8 @@
         </div>
     </section>
 
-    <!-- SECCIÓN: CONTROL DE ACCESO POR CUOTA MENSUAL (RESPALDOS Y MANTENIMIENTOS) -->
-    <section class="card" id="seccionControlCuota" style="border: 2px solid #e2e8f0; border-radius: 16px; padding: 22px; margin-bottom: 25px; background: #ffffff; box-shadow: 0 4px 16px rgba(0,0,0,0.04);">
+    <!-- SECCIÓN: CONTROL DE ACCESO POR CUOTA MENSUAL (RESPALDOS Y MANTENIMIENTOS - EXCLUSIVO ADMINISTRADOR GENERAL) -->
+    <section class="card" id="seccionControlCuota" style="display:none; border: 2px solid #e2e8f0; border-radius: 16px; padding: 22px; margin-bottom: 25px; background: #ffffff; box-shadow: 0 4px 16px rgba(0,0,0,0.04);">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px; margin-bottom:18px;">
             <div>
                 <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px; flex-wrap:wrap;">
@@ -1247,6 +1247,7 @@
     const usuarioLogueado = sessionStorage.getItem("usuarioLogueado");
     const nombreUsuario = sessionStorage.getItem("nombreUsuario");
     const rolUsuario = sessionStorage.getItem("rolUsuario");
+    const esSuperAdminLogueado = String(usuarioLogueado || "").toLowerCase().trim() === "admin";
     const claveLocalAvatar = "usuarioAvatar_" + String(usuarioLogueado || "").toLowerCase().trim();
     const avatarSesion = localStorage.getItem(claveLocalAvatar) || sessionStorage.getItem("avatarUsuario") || "avatar-admin";
 
@@ -1255,6 +1256,20 @@
     } else if (!rolUsuario || rolUsuario.toLowerCase() !== "admin") {
         alert("No tienes permisos de administrador para acceder a esta sección.");
         window.location.href = "/";
+    }
+
+    // Si Daniel u otro usuario que no sea 'admin' ingresa, ocultar de inmediato controles de suspensión
+    if (!esSuperAdminLogueado) {
+        const estiloOcultar = document.createElement("style");
+        estiloOcultar.innerHTML = `
+            #seccionControlCuota, #cardStatCuota, .btn-toggle-suspension, #modalConfirmarSuspensionGeneral, #modalPreviewAvisoCliente {
+                display: none !important;
+            }
+            .estadisticas {
+                grid-template-columns: repeat(3, 1fr) !important;
+            }
+        `;
+        document.head.appendChild(estiloOcultar);
     }
 
     document.getElementById("usuarioActual").textContent =
@@ -1527,6 +1542,25 @@
     // 3. CONTROL DE CUOTA MENSUAL Y SUSPENSIÓN DE CLIENTES
     // =====================================================
     async function cargarEstadoServicio() {
+        if (!esSuperAdminLogueado) {
+            // Si es Daniel o cualquier otro usuario no-admin, ocultar de inmediato
+            const seccion = document.getElementById("seccionControlCuota");
+            if (seccion) seccion.style.display = "none";
+            const cardStat = document.getElementById("cardStatCuota");
+            if (cardStat) cardStat.style.display = "none";
+            const elEstadisticas = document.querySelector(".estadisticas");
+            if (elEstadisticas) elEstadisticas.style.gridTemplateColumns = "repeat(3, 1fr)";
+            return;
+        }
+
+        // Si es el Administrador General ("admin"), habilitar la sección
+        const seccion = document.getElementById("seccionControlCuota");
+        if (seccion) seccion.style.display = "block";
+        const cardStat = document.getElementById("cardStatCuota");
+        if (cardStat) cardStat.style.display = "flex";
+        const elEstadisticas = document.querySelector(".estadisticas");
+        if (elEstadisticas) elEstadisticas.style.gridTemplateColumns = "repeat(4, 1fr)";
+
         try {
             const res = await fetch("/api/servicio/estado");
             if (res.ok) {
@@ -1545,6 +1579,8 @@
     }
 
     function actualizarUIEstadoServicio(fechaMod) {
+        if (!esSuperAdminLogueado) return;
+
         const esActivo = estadoServicioGlobal === "activo";
         localStorage.setItem("corssen_servicio_suspendido", esActivo ? "false" : "true");
 
@@ -1605,6 +1641,11 @@
     }
 
     function abrirModalSuspensionGeneral(tipo) {
+        if (!esSuperAdminLogueado) {
+            alert("Acceso denegado: Solo el Administrador General (admin) tiene autorización para suspender o reactivar servicios.");
+            return;
+        }
+
         accionPendienteModal = tipo;
         const modal = document.getElementById("modalConfirmarSuspensionGeneral");
         const titulo = document.getElementById("modalSuspensionTitulo");
@@ -1622,9 +1663,9 @@
             alerta.style.color = "#991b1b";
             alerta.innerHTML = `
                 <div style="font-weight:800; margin-bottom:6px;">¿Está seguro de suspender el acceso de clientes por falta de pago?</div>
-                <div>• Ningún cliente u operador podrá iniciar sesión en la plataforma.</div>
-                <div>• Verán la notificación de suspensión por cuota mensual de respaldos y mantenimiento pendiente.</div>
-                <div>• Su usuario Administrador General <strong>seguirá teniendo acceso completo</strong> para administrar y respaldar.</div>
+                <div>• Ningún cliente u operador (incluyendo a Daniel y mecánicos) podrá iniciar sesión en la plataforma.</div>
+                <div>• Verán la notificación formal de suspensión por cuota de respaldos y mantenimientos.</div>
+                <div>• Su usuario Administrador General <strong>seguirá teniendo acceso completo</strong> para respaldar y reactivar.</div>
             `;
             btnConfirmar.textContent = "⛔ Confirmar y Bloquear Acceso";
             btnConfirmar.style.background = "#dc2626";
@@ -1638,7 +1679,7 @@
             alerta.style.color = "#166534";
             alerta.innerHTML = `
                 <div style="font-weight:800; margin-bottom:6px;">¿Desea restaurar el acceso normal para los clientes?</div>
-                <div>• Todos los clientes y operadores con cuota al día podrán volver a iniciar sesión de inmediato.</div>
+                <div>• Todos los clientes y operadores podrán volver a iniciar sesión de inmediato.</div>
                 <div>• Se restablece la operatividad completa de las cuentas.</div>
             `;
             btnConfirmar.textContent = "✅ Confirmar y Reactivar Acceso";
@@ -1654,6 +1695,11 @@
     }
 
     async function ejecutarCambioEstadoServicio() {
+        if (!esSuperAdminLogueado) {
+            alert("Acceso denegado: Solo el Administrador General (admin) tiene autorización.");
+            return;
+        }
+
         const nuevoEstado = (accionPendienteModal === "suspender") ? "suspendido" : "activo";
         const motivo = document.getElementById("inputMotivoSuspension").value.trim() || 
             (nuevoEstado === "suspendido" ? "Cuota mensual de respaldos y mantenimientos pendiente de pago" : "Cuota mensual de respaldos y mantenimientos al día");
@@ -1698,6 +1744,11 @@
     }
 
     async function alternarSuspensionUsuario(usuario, nuevoEstado) {
+        if (!esSuperAdminLogueado) {
+            alert("Acceso denegado: Solo el Administrador General (admin) puede suspender o reactivar usuarios.");
+            return;
+        }
+
         const accionTxt = nuevoEstado === "suspendido" ? "suspender el inicio de sesión" : "reactivar el inicio de sesión";
         const confirmMsg = nuevoEstado === "suspendido"
             ? `¿Confirma que desea suspender al usuario '${usuario}' por cuota de respaldo/mantenimiento? No podrá ingresar hasta que se reactive.`
@@ -1729,6 +1780,7 @@
     }
 
     function abrirModalPreviewAvisoCliente() {
+        if (!esSuperAdminLogueado) return;
         document.getElementById("modalPreviewAvisoCliente").style.display = "flex";
     }
 
@@ -1774,8 +1826,8 @@
             }
 
             lista.innerHTML = usuarios.map(u => {
-                const esAdminPrincipal = u.usuario.toLowerCase() === "admin";
-                const botonEliminar = esAdminPrincipal
+                const esFilaAdminPrincipal = (u.usuario.toLowerCase() === "admin");
+                const botonEliminar = esFilaAdminPrincipal
                     ? `<button class="btn-eliminar" disabled title="No se puede eliminar el administrador principal">Protegido</button>`
                     : `<button class="btn-eliminar" onclick="eliminarUsuario('${escapeHtml(u.usuario)}')">🗑️ Eliminar</button>`;
 
@@ -1790,21 +1842,30 @@
                 let badgeEstadoHtml = "";
                 let botonSuspenderHtml = "";
 
-                if (esAdminPrincipal || u.rol === "admin") {
+                if (esFilaAdminPrincipal) {
                     badgeEstadoHtml = `<span class="badge-estado-usuario admin" title="Acceso garantizado permanente">🛡️ Protegido (Admin)</span>`;
                 } else {
-                    const usuarioSuspendido = u.estado === "suspendido";
-                    const servicioGlobalSuspendido = estadoServicioGlobal === "suspendido";
-
-                    if (usuarioSuspendido) {
-                        badgeEstadoHtml = `<span class="badge-estado-usuario suspendido" title="Usuario suspendido individualmente por cuota">⛔ Suspendido</span>`;
-                        botonSuspenderHtml = `<button class="btn-toggle-suspension btn-toggle-reactivar" onclick="alternarSuspensionUsuario('${escapeHtml(u.usuario)}', 'activo')" title="Habilitar inicio de sesión">✅ Reactivar</button>`;
-                    } else if (servicioGlobalSuspendido) {
-                        badgeEstadoHtml = `<span class="badge-estado-usuario bloqueado-global" title="Acceso pausado por cuota mensual de respaldos general">⚠️ Bloqueado (Cuota General)</span>`;
-                        botonSuspenderHtml = `<button class="btn-toggle-suspension btn-toggle-suspender" onclick="alternarSuspensionUsuario('${escapeHtml(u.usuario)}', 'suspendido')" title="Suspender individualmente">⛔ Suspender</button>`;
+                    // Si el usuario en sesión es Daniel (o cualquier usuario que no sea 'admin'), NO ve opciones de suspensión ni avisos de cuota
+                    if (!esSuperAdminLogueado) {
+                        badgeEstadoHtml = (u.rol === "admin")
+                            ? `<span class="badge-estado-usuario admin">🛡️ Administrador</span>`
+                            : `<span class="badge-estado-usuario activo">🟢 Activo</span>`;
+                        botonSuspenderHtml = ""; // Daniel no ve ni tiene botón de suspender
                     } else {
-                        badgeEstadoHtml = `<span class="badge-estado-usuario activo" title="Usuario activo al día">🟢 Activo</span>`;
-                        botonSuspenderHtml = `<button class="btn-toggle-suspension btn-toggle-suspender" onclick="alternarSuspensionUsuario('${escapeHtml(u.usuario)}', 'suspendido')" title="Suspender inicio de sesión por cuota pendiente">⛔ Suspender</button>`;
+                        // El Administrador General ('admin') sí tiene control de suspensión sobre Daniel y operadores
+                        const usuarioSuspendido = (u.estado === "suspendido");
+                        const servicioGlobalSuspendido = (estadoServicioGlobal === "suspendido");
+
+                        if (usuarioSuspendido) {
+                            badgeEstadoHtml = `<span class="badge-estado-usuario suspendido" title="Usuario suspendido individualmente por cuota">⛔ Suspendido</span>`;
+                            botonSuspenderHtml = `<button class="btn-toggle-suspension btn-toggle-reactivar" onclick="alternarSuspensionUsuario('${escapeHtml(u.usuario)}', 'activo')" title="Habilitar inicio de sesión">✅ Reactivar</button>`;
+                        } else if (servicioGlobalSuspendido) {
+                            badgeEstadoHtml = `<span class="badge-estado-usuario bloqueado-global" title="Acceso pausado por cuota mensual de respaldos general">⚠️ Bloqueado (Cuota General)</span>`;
+                            botonSuspenderHtml = `<button class="btn-toggle-suspension btn-toggle-suspender" onclick="alternarSuspensionUsuario('${escapeHtml(u.usuario)}', 'suspendido')" title="Suspender individualmente">⛔ Suspender</button>`;
+                        } else {
+                            badgeEstadoHtml = `<span class="badge-estado-usuario activo" title="Usuario activo al día">🟢 Activo</span>`;
+                            botonSuspenderHtml = `<button class="btn-toggle-suspension btn-toggle-suspender" onclick="alternarSuspensionUsuario('${escapeHtml(u.usuario)}', 'suspendido')" title="Suspender inicio de sesión por cuota pendiente">⛔ Suspender</button>`;
+                        }
                     }
                 }
 
