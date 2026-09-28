@@ -9,16 +9,25 @@ let IN_MEMORY_USERS = [
     password: "admin123",
     nombre: "Administrador General",
     rol: "admin",
-    avatar: "avatar-admin"
+    avatar: "avatar-admin",
+    estado: "activo"
   },
   {
     usuario: "operador",
     password: "operador123",
     nombre: "Operador Principal",
     rol: "operador",
-    avatar: "avatar-mecanico"
+    avatar: "avatar-mecanico",
+    estado: "activo"
   }
 ];
+
+let GLOBAL_CONFIG_SERVICIO = {
+  estadoServicio: "activo",
+  motivo: "Cuota mensual de respaldos y mantenimientos al día",
+  fechaModificacion: new Date().toISOString(),
+  modificadoPor: "admin"
+};
 
 export default {
   async fetch(request, env, ctx) {
@@ -72,6 +81,29 @@ export default {
       return IN_MEMORY_USERS;
     }
 
+    // Funciones auxiliares para configuración global del servicio y cuota mensual
+    async function obtenerConfigServicio() {
+      if (kv) {
+        try {
+          const stored = await kv.get("config_servicio", "json");
+          if (stored && stored.estadoServicio) {
+            GLOBAL_CONFIG_SERVICIO = stored;
+            return stored;
+          }
+        } catch (_) {}
+      }
+      return GLOBAL_CONFIG_SERVICIO;
+    }
+
+    async function guardarConfigServicioWorker(nuevaCfg) {
+      GLOBAL_CONFIG_SERVICIO = nuevaCfg;
+      if (kv) {
+        try {
+          await kv.put("config_servicio", JSON.stringify(nuevaCfg));
+        } catch (_) {}
+      }
+    }
+
     // Función auxiliar para guardar usuario en D1 y sincronizar en KV
     async function persistirUsuario(nuevoUsuario) {
       const uNorm = (nuevoUsuario.usuario || "").trim().toLowerCase();
@@ -79,6 +111,7 @@ export default {
       const uPass = nuevoUsuario.password || "1234";
       const uRol = nuevoUsuario.rol || "operador";
       const uAvatar = nuevoUsuario.avatar || (uRol === "admin" ? "avatar-admin" : "avatar-mecanico");
+      const uEstado = uNorm === "admin" ? "activo" : (nuevoUsuario.estado || "activo");
 
       // 1. Guardar en Cloudflare D1
       if (env && env.DB) {
@@ -100,7 +133,7 @@ export default {
 
       // 2. Sincronizar en memoria y KV
       const idx = IN_MEMORY_USERS.findIndex(u => u.usuario.toLowerCase() === uNorm);
-      const userObj = { usuario: uNorm, password: uPass, nombre: uNombre, rol: uRol, avatar: uAvatar };
+      const userObj = { usuario: uNorm, password: uPass, nombre: uNombre, rol: uRol, avatar: uAvatar, estado: uEstado };
       if (idx >= 0) {
         IN_MEMORY_USERS[idx] = userObj;
       } else {
@@ -131,6 +164,47 @@ export default {
       });
     }
 
+    // API Estado del Servicio y Cuota Mensual - GET
+    if (path === "/api/servicio/estado" && request.method === "GET") {
+      const cfg = await obtenerConfigServicio();
+      return new Response(JSON.stringify(cfg), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
+    // API Estado del Servicio y Cuota Mensual - POST (Solo Admin)
+    if (path === "/api/servicio/estado" && request.method === "POST") {
+      try {
+        const body = await request.json();
+        const { estadoServicio, motivo } = body;
+        if (estadoServicio !== "activo" && estadoServicio !== "suspendido") {
+          return new Response(JSON.stringify({ mensaje: "El estado debe ser 'activo' o 'suspendido'." }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
+        }
+        const userHeader = request.headers.get("x-usuario") || "admin";
+        const nuevaCfg = {
+          estadoServicio,
+          motivo: (motivo && String(motivo).trim()) || (estadoServicio === "suspendido" ? "Cuota mensual de respaldos y mantenimientos pendiente de pago" : "Cuota mensual de respaldos y mantenimientos al día"),
+          fechaModificacion: new Date().toISOString(),
+          modificadoPor: userHeader
+        };
+        await guardarConfigServicioWorker(nuevaCfg);
+        return new Response(JSON.stringify({
+          mensaje: estadoServicio === "suspendido" ? "Acceso de clientes suspendido preventivamente por cuota pendiente." : "Acceso de clientes reactivado con éxito.",
+          config: nuevaCfg
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      } catch (err) {
+        return new Response(JSON.stringify({ mensaje: "Error al actualizar estado del servicio: " + err.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+    }
+
     // API Login
     if (path === "/api/login" && request.method === "POST") {
       try {
@@ -153,19 +227,53 @@ export default {
 
         if (passValida) {
           const esAdmin = uNorm === "admin" || (uFound && uFound.rol === "admin");
+          const configServicio = await obtenerConfigServicio();
+
+          // VALIDACIÓN DE SUSPENSIÓN POR CUOTA MENSUAL (EL ADMIN GENERAL SIEMPRE TIENE ACCESO)
+          if (!esAdmin) {
+            // 1. Suspensión global de servicio
+            if (configServicio.estadoServicio === "suspendido") {
+              return new Response(JSON.stringify({
+                error: "SERVICIO_SUSPENDIDO",
+                mensaje: "Acceso suspendido temporalmente por concepto de cuota mensual de respaldos y mantenimientos pendiente de regularización.",
+                motivo: configServicio.motivo || "Cuota mensual de respaldos y mantenimientos pendiente de pago",
+                suspendido: true
+              }), {
+                status: 403,
+                headers: { ...corsHeaders, "Content-Type": "application/json" }
+              });
+            }
+
+            // 2. Suspensión individual del usuario
+            if (uFound && uFound.estado === "suspendido") {
+              return new Response(JSON.stringify({
+                error: "USUARIO_SUSPENDIDO",
+                mensaje: "Tu cuenta de usuario ha sido suspendida temporalmente por la administración.",
+                motivo: "Acceso individual suspendido por concepto de cuota de servicio o mantención",
+                suspendido: true
+              }), {
+                status: 403,
+                headers: { ...corsHeaders, "Content-Type": "application/json" }
+              });
+            }
+          }
+
           const avatarFinal = (uFound && uFound.avatar) ? uFound.avatar : (esAdmin ? "avatar-admin" : "avatar-mecanico");
           let nombreFinal = (uFound && uFound.nombre) ? uFound.nombre : (esAdmin ? "Administrador General" : "Operador Principal");
           if (nombreFinal.includes("Corsser")) {
             nombreFinal = nombreFinal.replace(/Corsser/gi, "Corssen");
           }
           const rolFinal = (uFound && uFound.rol) ? uFound.rol : (esAdmin ? "admin" : "operador");
+          const estadoFinal = esAdmin ? "activo" : ((uFound && uFound.estado) || "activo");
 
           return new Response(JSON.stringify({
             mensaje: "Inicio de sesión correcto",
             usuario: uNorm,
             nombre: nombreFinal,
             rol: rolFinal,
-            avatar: avatarFinal
+            avatar: avatarFinal,
+            estado: estadoFinal,
+            estadoServicio: configServicio.estadoServicio
           }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" }
           });
@@ -178,6 +286,50 @@ export default {
       } catch (err) {
         return new Response(JSON.stringify({ mensaje: "Error procesando login" }), {
           status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+    }
+
+    // API Usuarios - Alternar suspensión individual (/api/usuarios/:usuario/estado)
+    if (path.startsWith("/api/usuarios/") && path.endsWith("/estado") && (request.method === "PATCH" || request.method === "POST")) {
+      try {
+        const parts = path.split("/");
+        const userTarget = decodeURIComponent(parts[3] || "").toLowerCase().trim();
+        const body = await request.json().catch(() => ({}));
+        const estado = body.estado;
+
+        if (userTarget === "admin") {
+          return new Response(JSON.stringify({ mensaje: "El administrador general tiene acceso permanente y no puede ser suspendido." }), {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
+        }
+
+        if (estado !== "activo" && estado !== "suspendido") {
+          return new Response(JSON.stringify({ mensaje: "El estado debe ser 'activo' o 'suspendido'." }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
+        }
+
+        let users = await obtenerUsuarios();
+        const uIdx = users.findIndex(u => u.usuario.toLowerCase() === userTarget);
+        if (uIdx !== -1) {
+          users[uIdx].estado = estado;
+          if (kv) try { await kv.put("usuarios_lista", JSON.stringify(users)); } catch (_) {}
+        }
+
+        return new Response(JSON.stringify({
+          mensaje: estado === "suspendido" ? `Inicio de sesión suspendido para el usuario '${userTarget}'.` : `Inicio de sesión reactivado para el usuario '${userTarget}'.`,
+          usuario: userTarget,
+          estado
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      } catch (err) {
+        return new Response(JSON.stringify({ mensaje: "Error al actualizar estado del usuario: " + err.message }), {
+          status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" }
         });
       }
@@ -196,7 +348,8 @@ export default {
             usuario: u.usuario,
             nombre: uNombre,
             rol: u.rol || "operador",
-            avatar: u.avatar || (u.rol === "admin" ? "avatar-admin" : "avatar-mecanico")
+            avatar: u.avatar || (u.rol === "admin" ? "avatar-admin" : "avatar-mecanico"),
+            estado: u.usuario.toLowerCase() === "admin" ? "activo" : (u.estado || "activo")
           };
         })), {
           headers: { ...corsHeaders, "Content-Type": "application/json" }
