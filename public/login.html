@@ -507,6 +507,143 @@
             color: #1e293b;
         }
 
+        /* MODAL SUSPENSIÓN DE ACCESO POR CUOTA MENSUAL */
+        .modal-suspension-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 999999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            animation: fadeInModal 0.25s ease-out forwards;
+        }
+
+        @keyframes fadeInModal {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-suspension-card {
+            background: #ffffff;
+            border-radius: 22px;
+            padding: 28px 24px 22px 24px;
+            max-width: 440px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 25px 60px -15px rgba(220, 38, 38, 0.4), 0 0 0 1px rgba(239, 68, 68, 0.2);
+            border: 2px solid #ef4444;
+            animation: zoomInCard 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            box-sizing: border-box;
+        }
+
+        @keyframes zoomInCard {
+            from { transform: scale(0.92) translateY(20px); opacity: 0; }
+            to { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        .suspension-icono-alerta {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: #fee2e2;
+            border: 3px solid #ef4444;
+            color: #dc2626;
+            font-size: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px auto;
+            box-shadow: 0 0 30px rgba(239, 68, 68, 0.3);
+            animation: pulseAlert 2s infinite ease-in-out;
+        }
+
+        @keyframes pulseAlert {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.06); }
+        }
+
+        .suspension-titulo {
+            font-size: 18px;
+            font-weight: 900;
+            color: #0f172a;
+            margin-bottom: 4px;
+            letter-spacing: -0.3px;
+        }
+
+        .suspension-subtitulo {
+            font-size: 13px;
+            font-weight: 700;
+            color: #dc2626;
+            margin-bottom: 16px;
+        }
+
+        .suspension-mensaje-caja {
+            background: #fff1f2;
+            border: 1px solid #fecdd3;
+            border-radius: 14px;
+            padding: 16px;
+            text-align: left;
+            margin-bottom: 16px;
+        }
+
+        .suspension-mensaje-caja p {
+            font-size: 13px;
+            color: #881337;
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+
+        .suspension-detalles-lista {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 12px;
+            color: #9f1239;
+        }
+
+        .suspension-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            line-height: 1.4;
+        }
+
+        .suspension-contacto-bar {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 12.5px;
+            color: #334155;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+
+        .btn-cerrar-suspension {
+            width: 100%;
+            padding: 13px;
+            background: #0f172a;
+            color: #ffffff;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-cerrar-suspension:hover {
+            background: #1e293b;
+            transform: translateY(-1px);
+        }
+
         /* RESPONSIVE MÓVIL */
         @media (max-width: 480px) {
             body {
@@ -695,6 +832,42 @@
     </div>
 </div>
 
+<!-- MODAL SUSPENSIÓN POR CUOTA MENSUAL DE RESPALDOS Y MANTENIMIENTO -->
+<div id="modalAccesoSuspendidoCliente" class="modal-suspension-overlay" style="display:none;">
+    <div class="modal-suspension-card">
+        <div class="suspension-icono-alerta">
+            🔒
+        </div>
+        <h3 class="suspension-titulo">ACCESO TEMPORALMENTE SUSPENDIDO</h3>
+        <p class="suspension-subtitulo">Cuota Mensual de Respaldos y Mantenimiento Pendiente</p>
+        
+        <div class="suspension-mensaje-caja">
+            <p id="textoMotivoSuspensionLogin">
+                Estimado Cliente: El inicio de sesión a su cuenta se encuentra actualmente pausado por concepto de <strong>cuota mensual de mantención y respaldos en la nube</strong> pendiente de regularización.
+            </p>
+            <div class="suspension-detalles-lista">
+                <div class="suspension-item">
+                    <span style="font-size:14px;">⚠️</span>
+                    <span>Para habilitar de inmediato su sesión y sincronizar sus registros, contacte a la Administración General.</span>
+                </div>
+                <div class="suspension-item">
+                    <span style="font-size:14px;">🛡️</span>
+                    <span>Toda la información técnica de su flota, fichas y mantenimientos permanecen 100% resguardadas.</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="suspension-contacto-bar">
+            <span>📧 Administración General:</span>
+            <strong>aeliasmartinez24@gmail.com</strong>
+        </div>
+
+        <button type="button" class="btn-cerrar-suspension" onclick="cerrarModalSuspensionCliente()">
+            Entendido / Cerrar Aviso
+        </button>
+    </div>
+</div>
+
 <script>
     // Mostrar / Ocultar contraseña
     const togglePassword = document.getElementById("togglePassword");
@@ -794,6 +967,45 @@
         }, 1100);
     }
 
+    function escapeHtmlLogin(t) {
+        return String(t || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function mostrarAvisoAccesoSuspendido(mensaje, motivo) {
+        const modal = document.getElementById("modalAccesoSuspendidoCliente");
+        const textoMotivo = document.getElementById("textoMotivoSuspensionLogin");
+        const card = document.getElementById("loginCard");
+        const feedback = document.getElementById("mensajeFeedback");
+        const boton = document.getElementById("btnIngresar");
+
+        if (textoMotivo && (mensaje || motivo)) {
+            const motivoLimpio = escapeHtmlLogin(motivo || mensaje || "cuota mensual de respaldos y mantenimientos");
+            textoMotivo.innerHTML = `Estimado Cliente: El inicio de sesión a su cuenta se encuentra actualmente pausado por concepto de <strong>${motivoLimpio}</strong> pendiente de regularización.`;
+        }
+
+        if (modal) {
+            modal.style.display = "flex";
+        }
+
+        if (feedback) {
+            feedback.textContent = "⛔ Acceso suspendido: Cuota de mantenimiento/respaldo pendiente.";
+            feedback.style.color = "#dc2626";
+        }
+        if (boton) {
+            boton.disabled = false;
+            boton.innerHTML = "<span>Ingresar al Sistema</span> <span>→</span>";
+        }
+
+        card?.classList.remove("shake");
+        void card?.offsetWidth;
+        card?.classList.add("shake");
+    }
+
+    function cerrarModalSuspensionCliente() {
+        const modal = document.getElementById("modalAccesoSuspendidoCliente");
+        if (modal) modal.style.display = "none";
+    }
+
     function mostrarErrorAnimado(mensaje) {
         const card = document.getElementById("loginCard");
         const feedback = document.getElementById("mensajeFeedback");
@@ -832,7 +1044,17 @@
 
             const datos = await res.json();
 
+            // Si el servidor indica que el servicio o usuario está suspendido
+            if (res.status === 403 || datos.suspendido) {
+                mostrarAvisoAccesoSuspendido(datos.mensaje, datos.motivo);
+                return;
+            }
+
             if (res.ok) {
+                // Sincronizar estado del servicio si vino en la respuesta
+                if (datos.estadoServicio) {
+                    localStorage.setItem("corssen_servicio_suspendido", datos.estadoServicio === "suspendido" ? "true" : "false");
+                }
                 feedback.textContent = "✓ Credenciales autorizadas. Ingresando...";
                 feedback.style.color = "#16a34a";
                 ejecutarTransicionExitosa(datos);
@@ -842,6 +1064,17 @@
         } catch (err) {
             console.warn("Servidor backend no disponible, evaluando autenticación local:", err);
             const uNorm = usuario.toLowerCase().trim();
+            const servicioSuspendidoLocal = localStorage.getItem("corssen_servicio_suspendido") === "true";
+
+            // Si el servicio de clientes está suspendido preventivamente por cuota y no es el administrador
+            if (uNorm !== "admin" && servicioSuspendidoLocal) {
+                mostrarAvisoAccesoSuspendido(
+                    "Acceso suspendido temporalmente por concepto de cuota mensual de respaldos y mantenimientos pendiente.",
+                    "Cuota mensual de respaldos y mantenimientos pendiente de pago"
+                );
+                return;
+            }
+
             if ((uNorm === "admin" && (password === "admin" || password === "corssen2026")) ||
                 (uNorm === "operador" && (password === "1234" || password === "operador"))) {
                 const esAdmin = uNorm === "admin";
@@ -860,6 +1093,14 @@
             mostrarErrorAnimado("Usuario o contraseña incorrectos. Acceso denegado.");
         }
     });
+
+    // Detectar si fue redirigido por suspensión de cuenta
+    if (new URLSearchParams(window.location.search).get("suspendido")) {
+        mostrarAvisoAccesoSuspendido(
+            "Su sesión fue suspendida temporalmente por cuota mensual de respaldos y mantenimientos pendiente.",
+            "Cuota mensual de mantenimientos y respaldos pendiente de pago"
+        );
+    }
 </script>
 
 </body>
