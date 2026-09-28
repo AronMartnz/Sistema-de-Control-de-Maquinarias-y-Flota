@@ -3891,7 +3891,7 @@ function renderizarFlotaRegistrada() {
                                 ${tieneFicha ? `<button class="btn-secundario" style="padding:3px 6px; font-size:11px;" onclick="verFichaTecnica('${cod}')">🔍 Ficha</button>` : `<button class="btn-secundario" style="padding:3px 6px; font-size:11px; color:#0284c7; border-color:#bae6fd; font-weight:700;" onclick="abrirModalNuevaFichaParaEquipo('${cod}')" title="Crear Ficha Técnica para este vehículo">➕ Ficha</button>`}
                                 <button class="btn-primario" style="padding:3px 6px; font-size:11px;" onclick="iniciarMantencionParaEquipo('${cod}')" title="Crear OT y rebajar insumos">🔧 Mantención</button>
                                 <button class="btn-secundario" style="padding:3px 6px; font-size:11px; color:#0284c7;" onclick="irACargarCombustible('${v.patente || cod}')">⛽ Diésel</button>
-                                <button class="btn-peligro" style="padding:3px 6px; font-size:11px;" onclick="eliminarVehiculo('${cod}')" title="Eliminar vehículo de la flota">🗑️ Eliminar</button>
+                                <button class="btn-peligro" style="padding:3px 6px; font-size:11px;" onclick="eliminarVehiculo('${cod}')" title="Eliminar vehículo de la flota">🗑️</button>
                             </div>
                         </td>
                     </tr>
@@ -3941,7 +3941,7 @@ function renderizarFlotaRegistrada() {
                                 ${tieneFicha ? `<button class="btn-secundario" style="padding:3px 6px; font-size:11px;" onclick="verFichaTecnica('${cod}')">🔍 Ficha</button>` : `<button class="btn-secundario" style="padding:3px 6px; font-size:11px; color:#0284c7; border-color:#bae6fd; font-weight:700;" onclick="abrirModalNuevaFichaParaEquipo('${cod}')" title="Crear Ficha Técnica para esta maquinaria">➕ Ficha</button>`}
                                 <button class="btn-primario" style="padding:3px 6px; font-size:11px;" onclick="iniciarMantencionParaEquipo('${cod}')" title="Crear OT y rebajar insumos">🔧 Mantención</button>
                                 <button class="btn-secundario" style="padding:3px 6px; font-size:11px; color:#0284c7;" onclick="irACargarCombustible('${cod}')">⛽ Diésel</button>
-                                <button class="btn-peligro" style="padding:3px 6px; font-size:11px;" onclick="eliminarMaquinaria('${cod}')" title="Eliminar maquinaria de la flota">🗑️ Eliminar</button>
+                                <button class="btn-peligro" style="padding:3px 6px; font-size:11px;" onclick="eliminarMaquinaria('${cod}')" title="Eliminar maquinaria de la flota">🗑️</button>
                             </div>
                         </td>
                     </tr>
@@ -3980,7 +3980,7 @@ function renderizarFlotaRegistrada() {
                         <div style="display:flex; gap:4px; justify-content:center; flex-wrap:wrap;">
                             <button class="btn-primario" style="padding:3px 6px; font-size:11px;" onclick="iniciarMantencionParaEquipo('${a.cod}')" title="Crear OT y rebajar insumos">🔧 Mantención</button>
                             <button class="btn-secundario" style="padding:3px 6px; font-size:11px;" onclick="navegarSeccion('programaMantencion')">📋 Programa</button>
-                            <button class="btn-peligro" style="padding:3px 6px; font-size:11px;" onclick="eliminarEquipoPrograma('${a.cod}')" title="Eliminar auxiliar/herramienta de la flota">🗑️ Eliminar</button>
+                            <button class="btn-peligro" style="padding:3px 6px; font-size:11px;" onclick="eliminarEquipoPrograma('${a.cod}')" title="Eliminar auxiliar/herramienta de la flota">🗑️</button>
                         </div>
                     </td>
                 </tr>
@@ -4016,7 +4016,7 @@ function renderizarFlotaRegistrada() {
                         <div style="display:flex; gap:4px; justify-content:center; flex-wrap:wrap;">
                             <button class="btn-primario" style="padding:3px 6px; font-size:11px;" onclick="iniciarMantencionParaEquipo('${m.cod}')" title="Crear OT y rebajar insumos">🔧 Mantención</button>
                             <button class="btn-secundario" style="padding:3px 6px; font-size:11px;" onclick="navegarSeccion('programaMantencion')">📋 Programa</button>
-                            <button class="btn-peligro" style="padding:3px 6px; font-size:11px;" onclick="eliminarEquipoPrograma('${m.cod}')" title="Eliminar equipo marítimo de la flota">🗑️ Eliminar</button>
+                            <button class="btn-peligro" style="padding:3px 6px; font-size:11px;" onclick="eliminarEquipoPrograma('${m.cod}')" title="Eliminar equipo marítimo de la flota">🗑️</button>
                         </div>
                     </td>
                 </tr>
@@ -9521,6 +9521,22 @@ document.addEventListener("DOMContentLoaded", () => {
     if (rolUsuario && (rolUsuario.toLowerCase() === "administrador" || rolUsuario.toLowerCase() === "admin")) {
         const btnAdmin = document.getElementById("btnAdministrarUsuarios");
         if (btnAdmin) btnAdmin.style.display = "flex";
+    } else {
+        // Para clientes y operadores: verificar si el servicio está suspendido por cuota pendiente
+        (async () => {
+            try {
+                const resServ = await fetch("/api/servicio/estado");
+                if (resServ.ok) {
+                    const dataServ = await resServ.json();
+                    if (dataServ.estadoServicio === "suspendido") {
+                        localStorage.setItem("corssen_servicio_suspendido", "true");
+                        sessionStorage.clear();
+                        window.location.replace("/login.html?suspendido=1");
+                        return;
+                    }
+                }
+            } catch (_) {}
+        })();
     }
 
     cargarTodo();
