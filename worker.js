@@ -19,6 +19,14 @@ let IN_MEMORY_USERS = [
     rol: "operador",
     avatar: "avatar-mecanico",
     estado: "activo"
+  },
+  {
+    usuario: "daniel",
+    password: "1234",
+    nombre: "Daniel corssen",
+    rol: "admin",
+    avatar: "avatar-admin",
+    estado: "activo"
   }
 ];
 
@@ -172,9 +180,20 @@ export default {
       });
     }
 
-    // API Estado del Servicio y Cuota Mensual - POST (Solo Admin)
+    // API Estado del Servicio y Cuota Mensual - POST (Solo Administrador General 'admin')
     if (path === "/api/servicio/estado" && request.method === "POST") {
       try {
+        const userHeader = (request.headers.get("x-usuario") || "").toLowerCase().trim();
+        if (userHeader !== "admin") {
+          return new Response(JSON.stringify({
+            error: "NO_AUTORIZADO",
+            mensaje: "Acceso denegado: Solo el Administrador General (admin) tiene autorización para suspender o reactivar servicios."
+          }), {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
+        }
+
         const body = await request.json();
         const { estadoServicio, motivo } = body;
         if (estadoServicio !== "activo" && estadoServicio !== "suspendido") {
@@ -183,7 +202,7 @@ export default {
             headers: { ...corsHeaders, "Content-Type": "application/json" }
           });
         }
-        const userHeader = request.headers.get("x-usuario") || "admin";
+
         const nuevaCfg = {
           estadoServicio,
           motivo: (motivo && String(motivo).trim()) || (estadoServicio === "suspendido" ? "Cuota mensual de respaldos y mantenimientos pendiente de pago" : "Cuota mensual de respaldos y mantenimientos al día"),
@@ -226,11 +245,12 @@ export default {
           ));
 
         if (passValida) {
-          const esAdmin = uNorm === "admin" || (uFound && uFound.rol === "admin");
+          // Solo el usuario 'admin' (Administrador General) es inmune a la suspensión por cuota
+          const esSuperAdmin = (uNorm === "admin");
           const configServicio = await obtenerConfigServicio();
 
-          // VALIDACIÓN DE SUSPENSIÓN POR CUOTA MENSUAL (EL ADMIN GENERAL SIEMPRE TIENE ACCESO)
-          if (!esAdmin) {
+          // VALIDACIÓN DE SUSPENSIÓN POR CUOTA MENSUAL (CLIENTES Y OPERADORES, INCLUYENDO A DANIEL)
+          if (!esSuperAdmin) {
             // 1. Suspensión global de servicio
             if (configServicio.estadoServicio === "suspendido") {
               return new Response(JSON.stringify({
@@ -258,13 +278,14 @@ export default {
             }
           }
 
-          const avatarFinal = (uFound && uFound.avatar) ? uFound.avatar : (esAdmin ? "avatar-admin" : "avatar-mecanico");
-          let nombreFinal = (uFound && uFound.nombre) ? uFound.nombre : (esAdmin ? "Administrador General" : "Operador Principal");
+          const esAdminRol = uNorm === "admin" || (uFound && uFound.rol === "admin");
+          const avatarFinal = (uFound && uFound.avatar) ? uFound.avatar : (esAdminRol ? "avatar-admin" : "avatar-mecanico");
+          let nombreFinal = (uFound && uFound.nombre) ? uFound.nombre : (esSuperAdmin ? "Administrador General" : "Operador Principal");
           if (nombreFinal.includes("Corsser")) {
             nombreFinal = nombreFinal.replace(/Corsser/gi, "Corssen");
           }
-          const rolFinal = (uFound && uFound.rol) ? uFound.rol : (esAdmin ? "admin" : "operador");
-          const estadoFinal = esAdmin ? "activo" : ((uFound && uFound.estado) || "activo");
+          const rolFinal = (uFound && uFound.rol) ? uFound.rol : (esAdminRol ? "admin" : "operador");
+          const estadoFinal = esSuperAdmin ? "activo" : ((uFound && uFound.estado) || "activo");
 
           return new Response(JSON.stringify({
             mensaje: "Inicio de sesión correcto",
@@ -291,9 +312,20 @@ export default {
       }
     }
 
-    // API Usuarios - Alternar suspensión individual (/api/usuarios/:usuario/estado)
+    // API Usuarios - Alternar suspensión individual (/api/usuarios/:usuario/estado - Solo admin)
     if (path.startsWith("/api/usuarios/") && path.endsWith("/estado") && (request.method === "PATCH" || request.method === "POST")) {
       try {
+        const userHeader = (request.headers.get("x-usuario") || "").toLowerCase().trim();
+        if (userHeader !== "admin") {
+          return new Response(JSON.stringify({
+            error: "NO_AUTORIZADO",
+            mensaje: "Acceso denegado: Solo el Administrador General (admin) tiene autorización para suspender o reactivar usuarios."
+          }), {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
+        }
+
         const parts = path.split("/");
         const userTarget = decodeURIComponent(parts[3] || "").toLowerCase().trim();
         const body = await request.json().catch(() => ({}));
