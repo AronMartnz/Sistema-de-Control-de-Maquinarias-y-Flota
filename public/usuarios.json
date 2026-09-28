@@ -4,13 +4,23 @@
         "password": "$2b$10$uYTOyaJeHb9FQfOosVFElehPB3AntqhXGSMUTUbJGjYTXv.KLx/x2",
         "nombre": "Administrador General",
         "rol": "admin",
-        "avatar": "avatar-admin"
+        "avatar": "avatar-admin",
+        "estado": "activo"
     },
     {
         "usuario": "operador",
         "password": "$2b$10$qac5xGf7UI3udD4j88V/O.OiWQUFBa5qJX3Yb.V5YpbmMR8FWzYL6",
         "nombre": "Operador Principal",
         "rol": "operador",
-        "avatar": "avatar-mecanico"
+        "avatar": "avatar-mecanico",
+        "estado": "activo"
+    },
+    {
+        "usuario": "daniel",
+        "password": "$2b$10$qac5xGf7UI3udD4j88V/O.OiWQUFBa5qJX3Yb.V5YpbmMR8FWzYL6",
+        "nombre": "Daniel corssen",
+        "rol": "admin",
+        "avatar": "avatar-admin",
+        "estado": "activo"
     }
 ]
