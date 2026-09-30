@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
     nombre TEXT NOT NULL,
     rol TEXT NOT NULL CHECK (rol IN ('admin', 'operador')),
     avatar TEXT DEFAULT 'avatar-mecanico',
+    estado TEXT DEFAULT 'activo',
     creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
     actualizado_en DATETIME DEFAULT CURRENT_TIMESTAMP
 );
