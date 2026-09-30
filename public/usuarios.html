@@ -1757,25 +1757,46 @@
         if (!confirm(confirmMsg)) return;
 
         try {
-            const res = await fetch(`/api/usuarios/${encodeURIComponent(usuario)}/estado`, {
+            const payload = {
+                estado: nuevoEstado,
+                adminUsuario: usuarioLogueado || "admin"
+            };
+            const reqHeaders = {
+                "Content-Type": "application/json",
+                "x-usuario": usuarioLogueado || "admin"
+            };
+
+            let res = await fetch(`/api/usuarios/${encodeURIComponent(usuario)}/estado`, {
                 method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                    "x-usuario": usuarioLogueado || "admin"
-                },
-                body: JSON.stringify({ estado: nuevoEstado })
+                headers: reqHeaders,
+                body: JSON.stringify(payload)
             });
 
-            const data = await res.json();
+            // Si el proxy o CDN de Cloudflare bloquea PATCH con 405 o 404, reintentar con POST
+            if (!res.ok && (res.status === 405 || res.status === 404)) {
+                res = await fetch(`/api/usuarios/${encodeURIComponent(usuario)}/estado`, {
+                    method: "POST",
+                    headers: reqHeaders,
+                    body: JSON.stringify(payload)
+                });
+            }
+
+            let data = null;
+            try {
+                data = await res.json();
+            } catch (_) {
+                data = { mensaje: await res.text() };
+            }
+
             if (res.ok) {
-                alert("✓ " + (data.mensaje || "Estado de usuario actualizado correctamente."));
+                alert("✓ " + (data?.mensaje || "Estado de usuario actualizado correctamente."));
                 await cargarUsuarios();
             } else {
-                alert(data.mensaje || "Error actualizando estado del usuario.");
+                alert(data?.mensaje || "Error actualizando estado del usuario (" + res.status + ")");
             }
         } catch (e) {
-            console.error(e);
-            alert("Error de conexión al actualizar estado del usuario.");
+            console.error("Error al actualizar estado del usuario:", e);
+            alert("Error de conexión al actualizar estado del usuario: " + (e.message || ""));
         }
     }
 
