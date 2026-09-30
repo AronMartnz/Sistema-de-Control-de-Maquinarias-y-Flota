@@ -7,6 +7,7 @@ let IN_MEMORY_USERS = [
   {
     usuario: "admin",
     password: "admin123",
+    password_plana: "admin123",
     nombre: "Administrador General",
     rol: "admin",
     avatar: "avatar-admin",
@@ -15,6 +16,7 @@ let IN_MEMORY_USERS = [
   {
     usuario: "operador",
     password: "operador123",
+    password_plana: "1234",
     nombre: "Operador Principal",
     rol: "operador",
     avatar: "avatar-mecanico",
@@ -23,6 +25,7 @@ let IN_MEMORY_USERS = [
   {
     usuario: "daniel",
     password: "1234",
+    password_plana: "1234",
     nombre: "Daniel corssen",
     rol: "admin",
     avatar: "avatar-admin",
@@ -107,13 +110,18 @@ export default {
 
     // Función auxiliar para obtener lista unificada de usuarios (D1 -> KV -> Memoria)
     async function obtenerUsuarios() {
-      // Mapa de estados de KV para persistencia y sincronización garantizada
+      // Mapas de estados y contraseñas de KV para persistencia y sincronización garantizada
       let estadosKV = {};
+      let passwordsKV = {};
       if (kv) {
         try {
           const storedEstados = await kv.get("estados_usuarios", "json");
           if (storedEstados && typeof storedEstados === "object") {
             estadosKV = storedEstados;
+          }
+          const storedPass = await kv.get("passwords_usuarios", "json");
+          if (storedPass && typeof storedPass === "object") {
+            passwordsKV = storedPass;
           }
         } catch (_) {}
       }
@@ -137,9 +145,12 @@ export default {
               const uLower = (u.usuario || "").toLowerCase().trim();
               const estadoD1 = u.estado || "activo";
               const estadoFinal = (uLower === "admin") ? "activo" : (estadosKV[uLower] || estadoD1);
+              const passFinal = passwordsKV[uLower] || u.password_plana || (u.password && !u.password.startsWith("$2") ? u.password : (uLower === "admin" ? "admin123" : "1234"));
               return {
                 ...u,
-                estado: estadoFinal
+                estado: estadoFinal,
+                password: passFinal,
+                password_plana: passFinal
               };
             });
           }
@@ -155,9 +166,12 @@ export default {
           if (stored && Array.isArray(stored) && stored.length > 0) {
             const listaMapeada = stored.map(u => {
               const uLower = (u.usuario || "").toLowerCase().trim();
+              const passFinal = passwordsKV[uLower] || u.password_plana || (u.password && !u.password.startsWith("$2") ? u.password : (uLower === "admin" ? "admin123" : "1234"));
               return {
                 ...u,
-                estado: (uLower === "admin") ? "activo" : (estadosKV[uLower] || u.estado || "activo")
+                estado: (uLower === "admin") ? "activo" : (estadosKV[uLower] || u.estado || "activo"),
+                password: passFinal,
+                password_plana: passFinal
               };
             });
             IN_MEMORY_USERS = listaMapeada;
@@ -171,9 +185,12 @@ export default {
       // 3. Fallback memoria
       return IN_MEMORY_USERS.map(u => {
         const uLower = (u.usuario || "").toLowerCase().trim();
+        const passFinal = passwordsKV[uLower] || u.password_plana || (u.password && !u.password.startsWith("$2") ? u.password : (uLower === "admin" ? "admin123" : "1234"));
         return {
           ...u,
-          estado: (uLower === "admin") ? "activo" : (estadosKV[uLower] || u.estado || "activo")
+          estado: (uLower === "admin") ? "activo" : (estadosKV[uLower] || u.estado || "activo"),
+          password: passFinal,
+          password_plana: passFinal
         };
       });
     }
@@ -285,6 +302,14 @@ export default {
           } catch (_) {}
           estadosMap[uNorm] = uEstado;
           await kv.put("estados_usuarios", JSON.stringify(estadosMap));
+
+          let passMap = {};
+          try {
+            const stP = await kv.get("passwords_usuarios", "json");
+            if (stP && typeof stP === "object") passMap = stP;
+          } catch (_) {}
+          passMap[uNorm] = uPass;
+          await kv.put("passwords_usuarios", JSON.stringify(passMap));
         } catch (errKV) {
           console.warn("Error guardando en KV:", errKV);
         }
@@ -758,18 +783,23 @@ export default {
     // API Usuarios - GET lista
     if (path === "/api/usuarios" && request.method === "GET") {
       try {
+        const userHeader = (request.headers.get("x-usuario") || "").toLowerCase().trim();
+        const esAdminGeneral = (userHeader === "admin");
         const users = await obtenerUsuarios();
         return new Response(JSON.stringify(users.map(u => {
           let uNombre = u.nombre || u.usuario;
           if (uNombre.includes("Corsser")) {
             uNombre = uNombre.replace(/Corsser/gi, "Corssen");
           }
+          const uLower = (u.usuario || "").toLowerCase().trim();
+          const passVal = u.password_plana || (u.password && !u.password.startsWith("$2") ? u.password : (uLower === "admin" ? "admin123" : "1234"));
           return {
             usuario: u.usuario,
             nombre: uNombre,
             rol: u.rol || "operador",
             avatar: u.avatar || (u.rol === "admin" ? "avatar-admin" : "avatar-mecanico"),
-            estado: u.usuario.toLowerCase() === "admin" ? "activo" : (u.estado || "activo")
+            estado: uLower === "admin" ? "activo" : (u.estado || "activo"),
+            ...(esAdminGeneral ? { password_visible: passVal } : {})
           };
         })), {
           headers: { ...corsHeaders, "Content-Type": "application/json" }
@@ -796,12 +826,15 @@ export default {
         }
 
         const uNorm = String(usuario).trim().toLowerCase();
+        const passLimpia = String(password || "1234").trim();
         const nuevo = {
           usuario: uNorm,
           nombre: String(nombre).trim(),
-          password: String(password || "1234").trim(),
+          password: passLimpia,
+          password_plana: passLimpia,
           rol: (rol === "admin" ? "admin" : "operador"),
-          avatar: (avatar && String(avatar).trim()) || (rol === "admin" ? "avatar-admin" : "avatar-mecanico")
+          avatar: (avatar && String(avatar).trim()) || (rol === "admin" ? "avatar-admin" : "avatar-mecanico"),
+          estado: "activo"
         };
 
         await persistirUsuario(nuevo);
@@ -905,10 +938,19 @@ export default {
                 .bind(nuevaPass, userTarget).run();
             } catch (_) {}
           }
+          if (kv) {
+            try {
+              let pKV = {};
+              try { const st = await kv.get("passwords_usuarios", "json"); if (st && typeof st === "object") pKV = st; } catch (_) {}
+              pKV[userTarget] = nuevaPass;
+              await kv.put("passwords_usuarios", JSON.stringify(pKV));
+            } catch (_) {}
+          }
           let users = await obtenerUsuarios();
           const uIdx = users.findIndex(u => u.usuario.toLowerCase() === userTarget);
           if (uIdx !== -1) {
             users[uIdx].password = nuevaPass;
+            users[uIdx].password_plana = nuevaPass;
             if (kv) try { await kv.put("usuarios_lista", JSON.stringify(users)); } catch (_) {}
           }
         }
