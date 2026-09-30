@@ -11022,6 +11022,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         actualizarUIVentanaMantenimiento();
+        if (typeof cargarEstadoServicioCuota === "function") {
+            await cargarEstadoServicioCuota();
+        }
     }
 
     function actualizarUIVentanaMantenimiento() {
@@ -11693,6 +11696,215 @@ Atentamente,
         }).join("");
     }
 
+    // =========================================================
+    // 12.C CONTROL DE ACCESO POR CUOTA MENSUAL (RESPALDOS & MANTENCIÓN)
+    // =========================================================
+    let estadoServicioGlobal = "activo";
+    let motivoServicioGlobal = "Cuota mensual de respaldos y mantenimientos al día";
+    let accionPendienteCuotaModal = null;
+
+    async function cargarEstadoServicioCuota() {
+        const usuarioActual = (sessionStorage.getItem("usuarioLogueado") || "").toLowerCase().trim();
+        if (usuarioActual !== "admin") return;
+
+        try {
+            const res = await fetch("/api/servicio/estado");
+            if (res.ok) {
+                const data = await res.json();
+                estadoServicioGlobal = data.estadoServicio || "activo";
+                motivoServicioGlobal = data.motivo || "Cuota mensual de respaldos y mantenimientos al día";
+                actualizarUIEstadoServicioCuota(data.fechaModificacion);
+            } else {
+                actualizarUIEstadoServicioCuota();
+            }
+        } catch (e) {
+            console.warn("No se pudo cargar estado del servicio desde API, evaluando local:", e);
+            estadoServicioGlobal = localStorage.getItem("corssen_servicio_suspendido") === "true" ? "suspendido" : "activo";
+            actualizarUIEstadoServicioCuota();
+        }
+    }
+
+    function actualizarUIEstadoServicioCuota(fechaMod) {
+        const esActivo = estadoServicioGlobal === "activo";
+        localStorage.setItem("corssen_servicio_suspendido", esActivo ? "false" : "true");
+
+        const elKpi = document.getElementById("kpiCuotaEstadoTexto");
+        if (elKpi) {
+            elKpi.textContent = esActivo ? "Al Día (Habilitado)" : "Suspendido (No Pago)";
+            elKpi.style.color = esActivo ? "#059669" : "#dc2626";
+        }
+
+        const elPill = document.getElementById("badgeEstadoServicioPill");
+        if (elPill) {
+            elPill.className = "badge-servicio-pill " + (esActivo ? "activo" : "suspendido");
+            elPill.textContent = esActivo ? "🟢 Clientes Habilitados" : "🔴 Clientes Suspendidos";
+        }
+
+        const caja = document.getElementById("cajaEstadoServicioDinamica");
+        const icono = document.getElementById("iconoEstadoServicioGrande");
+        const titulo = document.getElementById("tituloEstadoServicioTexto");
+        const desc = document.getElementById("descEstadoServicioTexto");
+        const infoMod = document.getElementById("infoUltimaModificacionServicio");
+        const btnSuspender = document.getElementById("btnSuspenderServicioGeneral");
+        const btnReactivar = document.getElementById("btnReactivarServicioGeneral");
+
+        if (caja) {
+            caja.className = "caja-estado-servicio " + (esActivo ? "activo" : "suspendido");
+        }
+        if (icono) {
+            icono.className = "icono-estado-grande " + (esActivo ? "activo" : "suspendido");
+            icono.textContent = esActivo ? "✓" : "⛔";
+        }
+        if (titulo) {
+            titulo.textContent = esActivo ? "ACCESO TOTAL HABILITADO — CLIENTES AL DÍA" : "ACCESO SUSPENDIDO PREVENTIVAMENTE (CUOTA PENDIENTE)";
+            titulo.style.color = esActivo ? "#15803d" : "#b91c1c";
+        }
+        if (desc) {
+            desc.textContent = esActivo
+                ? "Los clientes y operadores pueden iniciar sesión, consultar flotas y operar el sistema con total normalidad."
+                : `El inicio de sesión de clientes y operadores está bloqueado. Motivo activo: "${motivoServicioGlobal || 'Cuota mensual de respaldos y mantenimientos pendiente'}".`;
+        }
+        if (infoMod && fechaMod) {
+            try {
+                const f = new Date(fechaMod);
+                infoMod.textContent = `Última modificación: ${f.toLocaleDateString("es-CL")} ${f.toLocaleTimeString("es-CL")}`;
+            } catch (_) {
+                infoMod.textContent = `Última modificación registrada: ${fechaMod}`;
+            }
+        }
+        if (btnSuspender) btnSuspender.style.display = esActivo ? "inline-flex" : "none";
+        if (btnReactivar) btnReactivar.style.display = esActivo ? "none" : "inline-flex";
+    }
+
+    function abrirModalSuspensionGeneral(tipo) {
+        const usuarioActual = (sessionStorage.getItem("usuarioLogueado") || "").toLowerCase().trim();
+        if (usuarioActual !== "admin") {
+            alert("Acceso denegado: Solo el Administrador General (admin) tiene autorización para suspender o reactivar servicios.");
+            return;
+        }
+
+        accionPendienteCuotaModal = tipo;
+        const modal = document.getElementById("modalConfirmarSuspensionGeneral");
+        const titulo = document.getElementById("modalSuspensionTitulo");
+        const icono = document.getElementById("modalSuspensionIcono");
+        const alerta = document.getElementById("modalSuspensionAlertaBox");
+        const btnConfirmar = document.getElementById("btnConfirmarSuspensionModal");
+        const campoMotivo = document.getElementById("campoMotivoSuspension");
+        const inputMotivo = document.getElementById("inputMotivoSuspension");
+
+        if (tipo === "suspender") {
+            if (titulo) titulo.textContent = "Suspender Inicio de Sesión de Clientes";
+            if (icono) icono.textContent = "⛔";
+            if (alerta) {
+                alerta.style.background = "#fef2f2";
+                alerta.style.border = "1.5px solid #fecaca";
+                alerta.style.color = "#991b1b";
+                alerta.innerHTML = `
+                    <div style="font-weight:800; margin-bottom:6px;">¿Está seguro de suspender el acceso de clientes por falta de pago?</div>
+                    <div>• Ningún cliente u operador (incluyendo a Daniel y mecánicos) podrá iniciar sesión en la plataforma.</div>
+                    <div>• Verán la notificación formal de suspensión por cuota de respaldos y mantenimientos.</div>
+                    <div>• Su usuario Administrador General <strong>seguirá teniendo acceso completo</strong> para respaldar y reactivar.</div>
+                `;
+            }
+            if (btnConfirmar) {
+                btnConfirmar.textContent = "⛔ Confirmar y Bloquear Acceso";
+                btnConfirmar.style.background = "#dc2626";
+                btnConfirmar.style.borderColor = "#dc2626";
+            }
+            if (campoMotivo) campoMotivo.style.display = "block";
+            if (inputMotivo) inputMotivo.value = "Cuota mensual de respaldos y mantenimientos pendiente de pago";
+        } else {
+            if (titulo) titulo.textContent = "Reactivar Inicio de Sesión de Clientes";
+            if (icono) icono.textContent = "✅";
+            if (alerta) {
+                alerta.style.background = "#f0fdf4";
+                alerta.style.border = "1.5px solid #bbf7d0";
+                alerta.style.color = "#166534";
+                alerta.innerHTML = `
+                    <div style="font-weight:800; margin-bottom:6px;">¿Desea restaurar el acceso normal para los clientes?</div>
+                    <div>• Todos los clientes y operadores podrán volver a iniciar sesión de inmediato.</div>
+                    <div>• Se restablece la operatividad completa de las cuentas.</div>
+                `;
+            }
+            if (btnConfirmar) {
+                btnConfirmar.textContent = "✅ Confirmar y Reactivar Acceso";
+                btnConfirmar.style.background = "#16a34a";
+                btnConfirmar.style.borderColor = "#16a34a";
+            }
+            if (campoMotivo) campoMotivo.style.display = "none";
+        }
+
+        if (modal) modal.style.display = "flex";
+    }
+
+    function cerrarModalSuspensionGeneral() {
+        const modal = document.getElementById("modalConfirmarSuspensionGeneral");
+        if (modal) modal.style.display = "none";
+    }
+
+    async function ejecutarCambioEstadoServicio() {
+        const usuarioActual = (sessionStorage.getItem("usuarioLogueado") || "").toLowerCase().trim();
+        if (usuarioActual !== "admin") {
+            alert("Acceso denegado: Solo el Administrador General (admin) tiene autorización.");
+            return;
+        }
+
+        const nuevoEstado = (accionPendienteCuotaModal === "suspender") ? "suspendido" : "activo";
+        const inputMotivo = document.getElementById("inputMotivoSuspension");
+        const motivo = (inputMotivo && inputMotivo.value.trim()) || 
+            (nuevoEstado === "suspendido" ? "Cuota mensual de respaldos y mantenimientos pendiente de pago" : "Cuota mensual de respaldos y mantenimientos al día");
+
+        const btn = document.getElementById("btnConfirmarSuspensionModal");
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = "Procesando...";
+        }
+
+        try {
+            const res = await fetch("/api/servicio/estado", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-usuario": "admin"
+                },
+                body: JSON.stringify({ estadoServicio: nuevoEstado, motivo })
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                estadoServicioGlobal = nuevoEstado;
+                motivoServicioGlobal = motivo;
+                actualizarUIEstadoServicioCuota(data.config?.fechaModificacion);
+                cerrarModalSuspensionGeneral();
+                alert("✓ " + (data.mensaje || "Estado de cuota de servicio actualizado con éxito."));
+            } else {
+                alert(data.mensaje || "Error al actualizar estado de la cuota.");
+            }
+        } catch (e) {
+            console.error(e);
+            estadoServicioGlobal = nuevoEstado;
+            motivoServicioGlobal = motivo;
+            actualizarUIEstadoServicioCuota(new Date().toISOString());
+            cerrarModalSuspensionGeneral();
+            alert("✓ Estado de cuota actualizado localmente.");
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = "Confirmar Acción";
+            }
+        }
+    }
+
+    function abrirModalPreviewAvisoCliente() {
+        const modal = document.getElementById("modalPreviewAvisoCliente");
+        if (modal) modal.style.display = "flex";
+    }
+
+    function cerrarModalPreviewAvisoCliente() {
+        const modal = document.getElementById("modalPreviewAvisoCliente");
+        if (modal) modal.style.display = "none";
+    }
+
     // Vincular funciones del módulo de mantenimiento a window
     window.cargarModuloVentanaMantenimiento = cargarModuloVentanaMantenimiento;
     window.actualizarUIVentanaMantenimiento = actualizarUIVentanaMantenimiento;
@@ -11712,6 +11924,15 @@ Atentamente,
     window.copiarMensajeWhatsappPortapapeles = copiarMensajeWhatsappPortapapeles;
     window.enviarMensajeEmailCliente = enviarMensajeEmailCliente;
     window.renderizarHistorialAvisos = renderizarHistorialAvisos;
+
+    // Funciones de cuota mensual
+    window.cargarEstadoServicioCuota = cargarEstadoServicioCuota;
+    window.actualizarUIEstadoServicioCuota = actualizarUIEstadoServicioCuota;
+    window.abrirModalSuspensionGeneral = abrirModalSuspensionGeneral;
+    window.cerrarModalSuspensionGeneral = cerrarModalSuspensionGeneral;
+    window.ejecutarCambioEstadoServicio = ejecutarCambioEstadoServicio;
+    window.abrirModalPreviewAvisoCliente = abrirModalPreviewAvisoCliente;
+    window.cerrarModalPreviewAvisoCliente = cerrarModalPreviewAvisoCliente;
 
     // Si el usuario logueado es admin, precargar configuración de mantenimiento
     if ((sessionStorage.getItem("usuarioLogueado") || "").toLowerCase().trim() === "admin") {
