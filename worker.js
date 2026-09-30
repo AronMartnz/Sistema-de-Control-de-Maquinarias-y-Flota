@@ -93,16 +93,55 @@ export default {
     // Helper para obtener el almacenamiento KV correcto
     const kv = (env && (env.CORSSEN_STORAGE || env.CORSSEN_KV)) || null;
 
+    // Función auxiliar para asegurar columna 'estado' en Cloudflare D1
+    let d1EstadoVerificado = false;
+    async function asegurarColumnaEstadoD1(db) {
+      if (!db || d1EstadoVerificado) return;
+      try {
+        await db.prepare("ALTER TABLE usuarios ADD COLUMN estado TEXT DEFAULT 'activo'").run();
+      } catch (_) {
+        // Ignorar si la columna ya existe en D1
+      }
+      d1EstadoVerificado = true;
+    }
+
     // Función auxiliar para obtener lista unificada de usuarios (D1 -> KV -> Memoria)
     async function obtenerUsuarios() {
+      // Mapa de estados de KV para persistencia y sincronización garantizada
+      let estadosKV = {};
+      if (kv) {
+        try {
+          const storedEstados = await kv.get("estados_usuarios", "json");
+          if (storedEstados && typeof storedEstados === "object") {
+            estadosKV = storedEstados;
+          }
+        } catch (_) {}
+      }
+
       // 1. Intentar desde Cloudflare D1 Database
       if (env && env.DB) {
         try {
-          const queryResult = await env.DB.prepare(
-            "SELECT id, usuario, password, nombre, rol, avatar FROM usuarios ORDER BY id ASC"
-          ).all();
+          await asegurarColumnaEstadoD1(env.DB);
+          let queryResult = null;
+          try {
+            queryResult = await env.DB.prepare(
+              "SELECT id, usuario, password, nombre, rol, avatar, estado FROM usuarios ORDER BY id ASC"
+            ).all();
+          } catch (_) {
+            queryResult = await env.DB.prepare(
+              "SELECT id, usuario, password, nombre, rol, avatar FROM usuarios ORDER BY id ASC"
+            ).all();
+          }
           if (queryResult && queryResult.results && queryResult.results.length > 0) {
-            return queryResult.results;
+            return queryResult.results.map(u => {
+              const uLower = (u.usuario || "").toLowerCase().trim();
+              const estadoD1 = u.estado || "activo";
+              const estadoFinal = (uLower === "admin") ? "activo" : (estadosKV[uLower] || estadoD1);
+              return {
+                ...u,
+                estado: estadoFinal
+              };
+            });
           }
         } catch (eD1) {
           console.warn("D1 obtenerUsuarios error:", eD1);
@@ -114,8 +153,15 @@ export default {
         try {
           const stored = await kv.get("usuarios_lista", "json");
           if (stored && Array.isArray(stored) && stored.length > 0) {
-            IN_MEMORY_USERS = stored;
-            return stored;
+            const listaMapeada = stored.map(u => {
+              const uLower = (u.usuario || "").toLowerCase().trim();
+              return {
+                ...u,
+                estado: (uLower === "admin") ? "activo" : (estadosKV[uLower] || u.estado || "activo")
+              };
+            });
+            IN_MEMORY_USERS = listaMapeada;
+            return listaMapeada;
           }
         } catch (eKV) {
           console.warn("KV obtenerUsuarios error:", eKV);
@@ -123,7 +169,13 @@ export default {
       }
 
       // 3. Fallback memoria
-      return IN_MEMORY_USERS;
+      return IN_MEMORY_USERS.map(u => {
+        const uLower = (u.usuario || "").toLowerCase().trim();
+        return {
+          ...u,
+          estado: (uLower === "admin") ? "activo" : (estadosKV[uLower] || u.estado || "activo")
+        };
+      });
     }
 
     // Funciones auxiliares para configuración global del servicio y cuota mensual
@@ -184,16 +236,31 @@ export default {
       // 1. Guardar en Cloudflare D1
       if (env && env.DB) {
         try {
-          await env.DB.prepare(`
-            INSERT INTO usuarios (usuario, password, nombre, rol, avatar, actualizado_en)
-            VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-            ON CONFLICT(usuario) DO UPDATE SET
-              password = excluded.password,
-              nombre = excluded.nombre,
-              rol = excluded.rol,
-              avatar = excluded.avatar,
-              actualizado_en = CURRENT_TIMESTAMP
-          `).bind(uNorm, uPass, uNombre, uRol, uAvatar).run();
+          await asegurarColumnaEstadoD1(env.DB);
+          try {
+            await env.DB.prepare(`
+              INSERT INTO usuarios (usuario, password, nombre, rol, avatar, estado, actualizado_en)
+              VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+              ON CONFLICT(usuario) DO UPDATE SET
+                password = excluded.password,
+                nombre = excluded.nombre,
+                rol = excluded.rol,
+                avatar = excluded.avatar,
+                estado = excluded.estado,
+                actualizado_en = CURRENT_TIMESTAMP
+            `).bind(uNorm, uPass, uNombre, uRol, uAvatar, uEstado).run();
+          } catch (errCol) {
+            await env.DB.prepare(`
+              INSERT INTO usuarios (usuario, password, nombre, rol, avatar, actualizado_en)
+              VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+              ON CONFLICT(usuario) DO UPDATE SET
+                password = excluded.password,
+                nombre = excluded.nombre,
+                rol = excluded.rol,
+                avatar = excluded.avatar,
+                actualizado_en = CURRENT_TIMESTAMP
+            `).bind(uNorm, uPass, uNombre, uRol, uAvatar).run();
+          }
         } catch (errD1) {
           console.error("Error persistiendo usuario en D1:", errD1);
         }
@@ -211,6 +278,13 @@ export default {
       if (kv) {
         try {
           await kv.put("usuarios_lista", JSON.stringify(IN_MEMORY_USERS));
+          let estadosMap = {};
+          try {
+            const st = await kv.get("estados_usuarios", "json");
+            if (st && typeof st === "object") estadosMap = st;
+          } catch (_) {}
+          estadosMap[uNorm] = uEstado;
+          await kv.put("estados_usuarios", JSON.stringify(estadosMap));
         } catch (errKV) {
           console.warn("Error guardando en KV:", errKV);
         }
@@ -588,9 +662,11 @@ export default {
     }
 
     // API Usuarios - Alternar suspensión individual (/api/usuarios/:usuario/estado - Solo admin)
-    if (path.startsWith("/api/usuarios/") && path.endsWith("/estado") && (request.method === "PATCH" || request.method === "POST")) {
+    const matchSuspensionUsuario = path.match(/^\/api\/usuarios\/([^/]+)\/estado\/?$/);
+    if (matchSuspensionUsuario && (request.method === "PATCH" || request.method === "POST" || request.method === "PUT")) {
       try {
-        const userHeader = (request.headers.get("x-usuario") || "").toLowerCase().trim();
+        const body = await request.json().catch(() => ({}));
+        const userHeader = (request.headers.get("x-usuario") || body.adminUsuario || body.usuarioAdmin || "").toLowerCase().trim();
         if (userHeader !== "admin") {
           return new Response(JSON.stringify({
             error: "NO_AUTORIZADO",
@@ -601,9 +677,7 @@ export default {
           });
         }
 
-        const parts = path.split("/");
-        const userTarget = decodeURIComponent(parts[3] || "").toLowerCase().trim();
-        const body = await request.json().catch(() => ({}));
+        const userTarget = decodeURIComponent(matchSuspensionUsuario[1] || "").toLowerCase().trim();
         const estado = body.estado;
 
         if (userTarget === "admin") {
@@ -620,18 +694,57 @@ export default {
           });
         }
 
-        let users = await obtenerUsuarios();
-        const uIdx = users.findIndex(u => u.usuario.toLowerCase() === userTarget);
+        // 1. Persistir en Cloudflare D1
+        if (env && env.DB) {
+          try {
+            await asegurarColumnaEstadoD1(env.DB);
+            await env.DB.prepare(
+              "UPDATE usuarios SET estado = ?, actualizado_en = CURRENT_TIMESTAMP WHERE LOWER(usuario) = LOWER(?)"
+            ).bind(estado, userTarget).run();
+          } catch (errD1) {
+            console.warn("Error actualizando estado en D1:", errD1);
+          }
+        }
+
+        // 2. Persistir en Cloudflare KV (Mapa rápido de estados y lista)
+        if (kv) {
+          try {
+            let estadosMap = {};
+            try {
+              const st = await kv.get("estados_usuarios", "json");
+              if (st && typeof st === "object") estadosMap = st;
+            } catch (_) {}
+            estadosMap[userTarget] = estado;
+            await kv.put("estados_usuarios", JSON.stringify(estadosMap));
+
+            let kvUsers = await kv.get("usuarios_lista", "json");
+            if (Array.isArray(kvUsers)) {
+              const idxKV = kvUsers.findIndex(u => (u.usuario || "").toLowerCase().trim() === userTarget);
+              if (idxKV !== -1) {
+                kvUsers[idxKV].estado = estado;
+                await kv.put("usuarios_lista", JSON.stringify(kvUsers));
+              }
+            }
+          } catch (errKV) {
+            console.warn("Error actualizando estado en KV:", errKV);
+          }
+        }
+
+        // 3. Persistir en memoria del worker
+        const uIdx = IN_MEMORY_USERS.findIndex(u => (u.usuario || "").toLowerCase().trim() === userTarget);
         if (uIdx !== -1) {
-          users[uIdx].estado = estado;
-          if (kv) try { await kv.put("usuarios_lista", JSON.stringify(users)); } catch (_) {}
+          IN_MEMORY_USERS[uIdx].estado = estado;
         }
 
         return new Response(JSON.stringify({
-          mensaje: estado === "suspendido" ? `Inicio de sesión suspendido para el usuario '${userTarget}'.` : `Inicio de sesión reactivado para el usuario '${userTarget}'.`,
+          ok: true,
+          mensaje: estado === "suspendido"
+            ? `Inicio de sesión suspendido para el usuario '${userTarget}'.`
+            : `Inicio de sesión reactivado para el usuario '${userTarget}'.`,
           usuario: userTarget,
           estado
         }), {
+          status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" }
         });
       } catch (err) {
@@ -839,7 +952,7 @@ export default {
     }
 
     // API Usuarios - Actualizar datos (Nombre y Rol - PUT/POST/PATCH)
-    if (path.startsWith("/api/usuarios/") && !path.endsWith("/avatar") && !path.endsWith("/password") && (request.method === "PUT" || request.method === "POST" || request.method === "PATCH")) {
+    if (path.startsWith("/api/usuarios/") && !path.endsWith("/avatar") && !path.endsWith("/password") && !path.includes("/estado") && (request.method === "PUT" || request.method === "POST" || request.method === "PATCH")) {
       const userToUpdate = decodeURIComponent(path.split("/")[3] || "").toLowerCase().trim();
       try {
         const body = await request.json().catch(() => ({}));
