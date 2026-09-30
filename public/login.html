@@ -868,6 +868,46 @@
     </div>
 </div>
 
+<!-- MODAL VENTANA DE MANTENIMIENTO TÉCNICO EN CURSO (SOLO ADMIN PUEDE ENTRAR) -->
+<div id="modalMantenimientoActivoLogin" class="modal-suspension-overlay" style="display:none;">
+    <div class="modal-suspension-card" style="border-top: 5px solid #f59e0b;">
+        <div class="suspension-icono-alerta" style="background:#fef3c7; color:#d97706;">
+            🚧
+        </div>
+        <h3 class="suspension-titulo" style="color:#b45309;" id="tituloModalMantenimiento">MANTENIMIENTO DEL SISTEMA EN PROGRESO</h3>
+        <p class="suspension-subtitulo" id="subtituloModalMantenimiento">Plataforma en optimización y corrección de incidencias</p>
+        
+        <div class="suspension-mensaje-caja" style="background:#fffbeb; border-color:#fde68a;">
+            <p id="textoMensajeMantenimientoLogin" style="font-size:13.5px; color:#1e293b; line-height:1.6; margin-bottom:12px;">
+                La plataforma se encuentra temporalmente fuera de servicio por labores programadas de mantenimiento y optimización técnica ejecutadas por el Administrador General.
+            </p>
+            <div class="suspension-detalles-lista">
+                <div class="suspension-item" style="background:#ffffff; border:1px solid #fde68a;">
+                    <span style="font-size:16px;">⏱️</span>
+                    <span><strong>Hora Estimada de Restablecimiento:</strong> <span id="horaFinEstimadaMantenimientoText">Por confirmar</span></span>
+                </div>
+                <div class="suspension-item" style="background:#ffffff; border:1px solid #fde68a;">
+                    <span style="font-size:16px;">🎯</span>
+                    <span><strong>Motivo de los Trabajos:</strong> <span id="motivoMantenimientoLoginText">Corrección de errores y optimización del software</span></span>
+                </div>
+                <div class="suspension-item" style="background:#ffffff; border:1px solid #fde68a;">
+                    <span style="font-size:16px;">🔒</span>
+                    <span>Por seguridad e integridad de la base de datos, ningún usuario ni cliente puede estar conectado durante esta intervención. El acceso se restablecerá de inmediato al finalizar.</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="suspension-contacto-bar" style="background:#f8fafc;">
+            <span>👷 Soporte Técnico y Administración:</span>
+            <strong>Administrador General (admin)</strong>
+        </div>
+
+        <button type="button" class="btn-cerrar-suspension" style="background:#d97706;" onclick="cerrarModalMantenimientoLogin()">
+            Entendido / Cerrar Aviso
+        </button>
+    </div>
+</div>
+
 <script>
     // Mostrar / Ocultar contraseña
     const togglePassword = document.getElementById("togglePassword");
@@ -1006,6 +1046,46 @@
         if (modal) modal.style.display = "none";
     }
 
+    function mostrarAvisoMantenimiento(datos) {
+        const modal = document.getElementById("modalMantenimientoActivoLogin");
+        const tit = document.getElementById("tituloModalMantenimiento");
+        const sub = document.getElementById("subtituloModalMantenimiento");
+        const msg = document.getElementById("textoMensajeMantenimientoLogin");
+        const horaFin = document.getElementById("horaFinEstimadaMantenimientoText");
+        const motivo = document.getElementById("motivoMantenimientoLoginText");
+        const feedback = document.getElementById("mensajeFeedback");
+        const boton = document.getElementById("btnIngresar");
+        const card = document.getElementById("loginCard");
+
+        if (tit && datos.titulo) tit.textContent = datos.titulo.toUpperCase();
+        if (sub && datos.subtitulo) sub.textContent = datos.subtitulo;
+        if (msg && datos.mensaje) msg.textContent = datos.mensaje;
+        if (horaFin) {
+            const h = (datos.fechaFinEstimada ? datos.fechaFinEstimada + " " : "") + (datos.horaFinEstimada || "");
+            horaFin.textContent = h.trim() || "Por confirmar por la administración";
+        }
+        if (motivo && datos.motivo) motivo.textContent = datos.motivo;
+
+        if (modal) modal.style.display = "flex";
+        if (feedback) {
+            feedback.textContent = "🚧 Plataforma en mantenimiento. Acceso temporalmente restringido.";
+            feedback.style.color = "#d97706";
+        }
+        if (boton) {
+            boton.disabled = false;
+            boton.innerHTML = "<span>Ingresar al Sistema</span> <span>→</span>";
+        }
+
+        card?.classList.remove("shake");
+        void card?.offsetWidth;
+        card?.classList.add("shake");
+    }
+
+    function cerrarModalMantenimientoLogin() {
+        const modal = document.getElementById("modalMantenimientoActivoLogin");
+        if (modal) modal.style.display = "none";
+    }
+
     function mostrarErrorAnimado(mensaje) {
         const card = document.getElementById("loginCard");
         const feedback = document.getElementById("mensajeFeedback");
@@ -1044,9 +1124,13 @@
 
             const datos = await res.json();
 
-            // Si el servidor indica que el servicio o usuario está suspendido
+            // Si el servidor indica que el servicio o usuario está suspendido o en mantenimiento
             if (res.status === 403 || datos.suspendido) {
-                mostrarAvisoAccesoSuspendido(datos.mensaje, datos.motivo);
+                if (datos.mantenimiento || datos.error === "MANTENIMIENTO_ACTIVO") {
+                    mostrarAvisoMantenimiento(datos);
+                } else {
+                    mostrarAvisoAccesoSuspendido(datos.mensaje, datos.motivo);
+                }
                 return;
             }
 
@@ -1094,12 +1178,25 @@
         }
     });
 
-    // Detectar si fue redirigido por suspensión de cuenta
+    // Detectar si fue redirigido por suspensión de cuenta o mantenimiento activo
     if (new URLSearchParams(window.location.search).get("suspendido")) {
         mostrarAvisoAccesoSuspendido(
             "Su sesión fue suspendida temporalmente por cuota mensual de respaldos y mantenimientos pendiente.",
             "Cuota mensual de mantenimientos y respaldos pendiente de pago"
         );
+    } else if (new URLSearchParams(window.location.search).get("mantenimiento")) {
+        fetch("/api/mantenimiento/config")
+            .then(r => r.json())
+            .then(data => {
+                mostrarAvisoMantenimiento(data);
+            })
+            .catch(() => {
+                mostrarAvisoMantenimiento({
+                    titulo: "Mantenimiento del Sistema en Progreso",
+                    mensaje: "La plataforma se encuentra temporalmente fuera de servicio por labores programadas de mantenimiento y optimización técnica ejecutadas por el Administrador General.",
+                    motivo: "Trabajos técnicos de optimización y corrección de incidencias"
+                });
+            });
     }
 </script>
 
