@@ -125,6 +125,12 @@
             <span id="badgeCandadoMenu" style="margin-left:auto; font-size:11px; background:rgba(37,99,235,0.2); color:#60a5fa; padding:2px 6px; border-radius:4px;">🔒</span>
         </a>
 
+        <a href="#controlVentanaMantenimiento" class="menu-item" id="menuItemVentanaMantenimiento" style="display:none;" title="Ventana de Mantenimiento y Control de Acceso">
+            <span style="font-size:15px; line-height:1; display:flex; align-items:center;">🚧</span>
+            <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Vent. Mantención</span>
+            <span id="badgeEstadoVentanaMenu" class="badge badge-verde" style="margin-left:auto; font-size:9.5px; padding:2px 7px; flex-shrink:0;">OK</span>
+        </a>
+
         <a href="#videoTutoriales" class="menu-item" id="menuItemVideoTutoriales">
             <span>🎬</span>
             <span>Video Tutoriales</span>
@@ -2845,6 +2851,336 @@
                 </div>
             </div>
         </section>
+
+        <!-- =====================================================
+             12. CONTROL DE VENTANA DE MANTENIMIENTO, CALENDARIO Y AVISOS
+             (EXCLUSIVO ADMINISTRADOR GENERAL 'admin' - OCULTO A TERCEROS)
+        ===================================================== -->
+        <section class="panel" id="controlVentanaMantenimiento">
+            <div class="titulo-panel" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
+                <div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-size:24px;">🚧</span>
+                        <h2 style="margin:0;">Control de Ventana de Mantenimiento & Calendario</h2>
+                        <span class="badge badge-rojo" style="font-size:11px; font-weight:800;">🔒 EXCLUSIVO ADMIN</span>
+                    </div>
+                    <p style="margin-top:6px; color:#475569; font-size:13.5px;">
+                        Gestiona periodos de mantenimiento del sistema, bloquea el inicio de sesión de clientes y operadores durante correcciones de errores, y envía notificaciones automáticas por WhatsApp y Correo.
+                    </p>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                    <span id="badgeEstadoMantenimientoGeneral" class="badge badge-verde" style="font-size:13px; padding:8px 14px; font-weight:800;">
+                        🟢 PLATAFORMA OPERATIVA
+                    </span>
+                    <button type="button" id="btnToggleMantenimientoGeneral" onclick="toggleVentanaMantenimientoPrincipal()" class="btn-primario" style="background:#d97706; border-color:#d97706; font-weight:800; display:inline-flex; align-items:center; gap:8px;">
+                        <span>⚡ Iniciar Mantenimiento Ahora</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Grid de Métricas y Estado Rápido -->
+            <div class="grid-tarjetas" style="margin-bottom:24px;">
+                <div class="tarjeta-dash">
+                    <div class="tarjeta-icono" style="background:#fef3c7; color:#d97706; font-size:22px;">⚙️</div>
+                    <div>
+                        <div class="numero" id="kpiMantenimientoEstadoTexto" style="font-size:19px; color:#059669;">Operativo Normal</div>
+                        <div class="etiqueta">Estado de la Plataforma</div>
+                    </div>
+                </div>
+
+                <div class="tarjeta-dash">
+                    <div class="tarjeta-icono" style="background:#eff6ff; color:#2563eb; font-size:22px;">🛡️</div>
+                    <div>
+                        <div class="numero" style="font-size:19px; color:#2563eb;">admin (Único)</div>
+                        <div class="etiqueta">Pase Permanente Garantizado</div>
+                    </div>
+                </div>
+
+                <div class="tarjeta-dash">
+                    <div class="tarjeta-icono" style="background:#fdf2f8; color:#db2777; font-size:22px;">🚫</div>
+                    <div>
+                        <div class="numero" id="kpiUsuariosBloqueadosCount" style="font-size:19px; color:#dc2626;">Clientes & Operadores</div>
+                        <div class="etiqueta">Audiencia Bloqueada en Mantención</div>
+                    </div>
+                </div>
+
+                <div class="tarjeta-dash">
+                    <div class="tarjeta-icono" style="background:#ecfdf5; color:#059669; font-size:22px;">📲</div>
+                    <div>
+                        <div class="numero" id="kpiTotalAvisosEnviados" style="font-size:19px; color:#059669;">0 Notificaciones</div>
+                        <div class="etiqueta">Avisos a Cliente (WA/Mail)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- APARTADO 1: CONFIGURACIÓN DE BLOQUEO DE ACCESO Y AUDIENCIA -->
+            <div style="background:#ffffff; border:1px solid #fed7aa; border-radius:14px; padding:22px; margin-bottom:24px; box-shadow:0 4px 12px rgba(217,119,6,0.06);">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-bottom:1px solid #f1f5f9; padding-bottom:14px; margin-bottom:18px;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="font-size:22px;">🔒</span>
+                        <div>
+                            <h3 style="margin:0; font-size:16px; color:#0f172a; font-weight:800;">1. Restricción de Conexiones al Iniciar Sesión</h3>
+                            <span style="font-size:12.5px; color:#64748b;">Define quiénes verán el bloqueo de inicio de sesión mientras se ejecutan correcciones y mantenciones.</span>
+                        </div>
+                    </div>
+                    <span class="badge badge-amarillo" style="font-size:11px; font-weight:700;">Seguridad Anti-Interferencia</span>
+                </div>
+
+                <!-- Aviso de Protección del Administrador -->
+                <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:12px 16px; margin-bottom:18px; display:flex; align-items:center; gap:12px;">
+                    <span style="font-size:22px;">🛡️</span>
+                    <div style="font-size:13px; color:#92400e; line-height:1.5;">
+                        <strong>Garantía de Acceso:</strong> Cuando la ventana de mantenimiento está activa, el inicio de sesión de los clientes y operadores se suspende de inmediato con la pantalla informativa. <strong>Tu usuario 'admin' (Administrador General) es el único con pase total garantizado</strong> para acceder y realizar correcciones técnicas en la base de datos sin conexiones concurrentes.
+                    </div>
+                </div>
+
+                <form id="formConfiguracionMantenimiento" onsubmit="guardarAjustesVentanaMantenimiento(event)">
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:18px; margin-bottom:18px;">
+                        <!-- Audiencia -->
+                        <div>
+                            <label style="font-size:13px; font-weight:700; color:#1e293b; display:block; margin-bottom:8px;">¿A quiénes bloquear el inicio de sesión?</label>
+                            <div style="display:flex; flex-direction:column; gap:8px; background:#f8fafc; padding:12px; border-radius:10px; border:1px solid #e2e8f0;">
+                                <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; font-weight:600; color:#0f172a;">
+                                    <input type="radio" name="radioAudienciaBloqueo" value="todos_excepto_admin" checked onchange="actualizarSeleccionAudienciaUI()" style="accent-color:#d97706;">
+                                    <span>Bloquear a TODOS (Daniel Corssen y Operadores)</span>
+                                </label>
+                                <span style="font-size:11.5px; color:#64748b; margin-left:24px;">Recomendado para mantenciones de base de datos y depuración de errores.</span>
+
+                                <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; font-weight:600; color:#0f172a; margin-top:4px;">
+                                    <input type="radio" name="radioAudienciaBloqueo" value="personalizado" onchange="actualizarSeleccionAudienciaUI()" style="accent-color:#d97706;">
+                                    <span>Seleccionar cuentas bloqueadas específicamente</span>
+                                </label>
+                                <div id="listaCheckboxesUsuariosBloqueados" style="display:none; margin-left:24px; margin-top:6px; flex-direction:column; gap:6px;">
+                                    <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; color:#334155; cursor:pointer;">
+                                        <input type="checkbox" id="checkBloquearDaniel" checked style="accent-color:#d97706;">
+                                        <span>Daniel corssen (Cuenta Cliente)</span>
+                                    </label>
+                                    <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; color:#334155; cursor:pointer;">
+                                        <input type="checkbox" id="checkBloquearOperador" checked style="accent-color:#d97706;">
+                                        <span>Operador Principal (operador)</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Horarios y Duración -->
+                        <div>
+                            <label style="font-size:13px; font-weight:700; color:#1e293b; display:block; margin-bottom:8px;">Horarios de la Ventana de Mantenimiento:</label>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+                                <div>
+                                    <span style="font-size:11.5px; color:#64748b; font-weight:600;">Fecha de Inicio:</span>
+                                    <input type="date" id="inputFechaInicioMantenimiento" class="campo-input" required style="width:100%; padding:8px 10px; font-size:13px;">
+                                </div>
+                                <div>
+                                    <span style="font-size:11.5px; color:#64748b; font-weight:600;">Hora de Inicio:</span>
+                                    <input type="time" id="inputHoraInicioMantenimiento" class="campo-input" required style="width:100%; padding:8px 10px; font-size:13px;">
+                                </div>
+                            </div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                                <div>
+                                    <span style="font-size:11.5px; color:#64748b; font-weight:600;">Fecha Fin Estimada:</span>
+                                    <input type="date" id="inputFechaFinMantenimiento" class="campo-input" required style="width:100%; padding:8px 10px; font-size:13px;">
+                                </div>
+                                <div>
+                                    <span style="font-size:11.5px; color:#64748b; font-weight:600;">Hora Fin Estimada:</span>
+                                    <input type="time" id="inputHoraFinMantenimiento" class="campo-input" required style="width:100%; padding:8px 10px; font-size:13px;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mensaje y Motivo -->
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:18px; margin-bottom:18px;">
+                        <div>
+                            <label for="inputMotivoMantenimiento" style="font-size:13px; font-weight:700; color:#1e293b; display:block; margin-bottom:6px;">Motivo Técnico de la Intervención:</label>
+                            <input type="text" id="inputMotivoMantenimiento" class="campo-input" placeholder="Ej: Corrección de incidencias, optimización de base de datos y respaldos de seguridad" required style="width:100%; padding:9px 12px; font-size:13px;">
+                        </div>
+                        <div>
+                            <label for="inputDuracionEstimadaMantenimiento" style="font-size:13px; font-weight:700; color:#1e293b; display:block; margin-bottom:6px;">Duración Estimada Total:</label>
+                            <input type="text" id="inputDuracionEstimadaMantenimiento" class="campo-input" placeholder="Ej: 3 horas (22:00 a 01:00 hrs)" required style="width:100%; padding:9px 12px; font-size:13px;">
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:18px;">
+                        <label for="inputMensajePersonalizadoMantenimiento" style="font-size:13px; font-weight:700; color:#1e293b; display:block; margin-bottom:6px;">Mensaje explicativo que verá el cliente al intentar ingresar:</label>
+                        <textarea id="inputMensajePersonalizadoMantenimiento" class="campo-input" rows="3" style="width:100%; padding:10px 12px; font-size:13px; line-height:1.5;" required placeholder="La plataforma se encuentra temporalmente fuera de servicio por labores programadas de mantenimiento y optimización técnica ejecutadas por el Administrador General..."></textarea>
+                    </div>
+
+                    <div style="display:flex; justify-content:flex-end; gap:12px;">
+                        <button type="submit" class="btn-primario" id="btnGuardarAjustesMantenimiento" style="font-weight:700; background:#0284c7; border-color:#0284c7;">
+                            💾 Guardar Configuración de la Ventana
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- APARTADO 2: CALENDARIO Y PROGRAMACIÓN DE INTERVENCIONES -->
+            <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:22px; margin-bottom:24px; box-shadow:0 4px 12px rgba(15,23,42,0.04);">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-bottom:1px solid #f1f5f9; padding-bottom:14px; margin-bottom:18px;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="font-size:22px;">📅</span>
+                        <div>
+                            <h3 style="margin:0; font-size:16px; color:#0f172a; font-weight:800;">2. Calendario de Mantenciones Programadas</h3>
+                            <span style="font-size:12.5px; color:#64748b;">Agenda fechas futuras de mantención para organizar tus labores técnicas con anticipación.</span>
+                        </div>
+                    </div>
+                    <button type="button" onclick="abrirModalNuevoEventoMantenimiento()" class="btn-secundario" style="font-size:12.5px; font-weight:700; display:inline-flex; align-items:center; gap:6px;">
+                        <span>➕ Agendar Nueva Fecha</span>
+                    </button>
+                </div>
+
+                <div class="tabla-responsive">
+                    <table class="tabla" id="tablaCalendarioMantenimiento">
+                        <thead>
+                            <tr>
+                                <th>FECHA & HORA</th>
+                                <th>TÍTULO / TRABAJO TÉCNICO</th>
+                                <th>TIPO</th>
+                                <th>DURACIÓN</th>
+                                <th>ESTADO</th>
+                                <th>AVISOS ENVIADOS</th>
+                                <th>ACCIONES</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyCalendarioMantenimiento">
+                            <!-- Inyectado dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- APARTADO 3: NOTIFICACIÓN Y AVISO AL CLIENTE (WHATSAPP & CORREO) -->
+            <div style="background:#ffffff; border:1px solid #bbf7d0; border-radius:14px; padding:22px; margin-bottom:24px; box-shadow:0 4px 12px rgba(22,163,74,0.06);">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-bottom:1px solid #f1f5f9; padding-bottom:14px; margin-bottom:18px;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="font-size:22px;">📲</span>
+                        <div>
+                            <h3 style="margin:0; font-size:16px; color:#0f172a; font-weight:800;">3. Avisar al Cliente por WhatsApp y Correo</h3>
+                            <span style="font-size:12.5px; color:#64748b;">Notifica formalmente a Daniel Corssen de la fecha, hora y duración de la mantención con 1 solo clic.</span>
+                        </div>
+                    </div>
+                    <span class="badge badge-verde" style="font-size:11px; font-weight:700;">Envío Inmediato con 1 Clic</span>
+                </div>
+
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:20px; margin-bottom:20px;">
+                    <!-- Datos de Contacto del Cliente -->
+                    <div style="background:#f8fafc; padding:16px; border-radius:12px; border:1px solid #e2e8f0;">
+                        <h4 style="margin:0 0 12px 0; font-size:14px; color:#0f172a; font-weight:700;">📋 Datos del Destinatario (Cliente)</h4>
+                        
+                        <div style="margin-bottom:10px;">
+                            <label style="font-size:11.5px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Nombre del Cliente:</label>
+                            <input type="text" id="inputNotifNombreCliente" class="campo-input" value="Daniel Corssen" oninput="regenerarMensajeAvisoCliente()" style="width:100%; padding:8px 10px; font-size:13px;">
+                        </div>
+
+                        <div style="margin-bottom:10px;">
+                            <label style="font-size:11.5px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Empresa:</label>
+                            <input type="text" id="inputNotifEmpresaCliente" class="campo-input" value="Corssen Logística y Maquinarias" oninput="regenerarMensajeAvisoCliente()" style="width:100%; padding:8px 10px; font-size:13px;">
+                        </div>
+
+                        <div style="margin-bottom:10px;">
+                            <label style="font-size:11.5px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Teléfono WhatsApp (con código de país ej: +56 9):</label>
+                            <input type="text" id="inputNotifWhatsappCliente" class="campo-input" value="+56 9 8765 4321" oninput="regenerarMensajeAvisoCliente()" placeholder="+56 9 1234 5678" style="width:100%; padding:8px 10px; font-size:13px;">
+                        </div>
+
+                        <div>
+                            <label style="font-size:11.5px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Correo Electrónico:</label>
+                            <input type="email" id="inputNotifEmailCliente" class="campo-input" value="contacto@corssen.cl" oninput="regenerarMensajeAvisoCliente()" placeholder="daniel@corssen.cl" style="width:100%; padding:8px 10px; font-size:13px;">
+                        </div>
+                    </div>
+
+                    <!-- Vista Previa del Mensaje Generado en Tiempo Real -->
+                    <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:16px; border-radius:12px; display:flex; flex-direction:column; justify-content:space-between;">
+                        <div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                <h4 style="margin:0; font-size:14px; color:#166534; font-weight:700;">👁️ Vista Previa del Mensaje a Enviar</h4>
+                                <span class="badge badge-verde" style="font-size:10px;">Formato WhatsApp & Mail</span>
+                            </div>
+                            <pre id="preMensajeGeneradoAviso" style="background:#ffffff; border:1px solid #dcfce7; padding:12px; border-radius:8px; font-size:12px; color:#1e293b; white-space:pre-wrap; font-family:inherit; max-height:220px; overflow-y:auto; line-height:1.5; margin:0;"></pre>
+                        </div>
+
+                        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:14px;">
+                            <button type="button" onclick="enviarMensajeWhatsappCliente()" class="btn-primario" style="background:#22c55e; border-color:#22c55e; font-weight:700; flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+                                <span>📲 Enviar por WhatsApp</span>
+                            </button>
+                            <button type="button" onclick="copiarMensajeWhatsappPortapapeles()" class="btn-secundario" style="font-weight:700; display:inline-flex; align-items:center; gap:6px;">
+                                <span>📋 Copiar Texto</span>
+                            </button>
+                            <button type="button" onclick="enviarMensajeEmailCliente()" class="btn-primario" style="background:#2563eb; border-color:#2563eb; font-weight:700; flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+                                <span>✉️ Enviar por Correo</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Historial de Avisos Realizados -->
+                <div style="border-top:1px solid #e2e8f0; padding-top:16px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <h4 style="margin:0; font-size:13.5px; color:#334155; font-weight:700;">📜 Historial de Avisos Enviados al Cliente</h4>
+                        <span id="badgeContadorAvisosHistorial" class="badge badge-azul" style="font-size:10.5px;">0 registros</span>
+                    </div>
+                    <div id="contenedorHistorialAvisos" style="display:flex; flex-direction:column; gap:8px; max-height:180px; overflow-y:auto;">
+                        <!-- Inyectado dinámicamente -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- MODAL: AGENDAR NUEVA FECHA DE MANTENIMIENTO EN CALENDARIO -->
+        <div id="modalNuevoEventoMantenimiento" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.65); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(4px);">
+            <div class="modal-contenido" style="background:#ffffff; max-width:540px; width:92%; border-radius:16px; box-shadow:0 24px 50px rgba(0,0,0,0.3); overflow:hidden; border:1px solid #cbd5e1;">
+                <div style="background:#d97706; color:#ffffff; padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
+                    <h3 style="font-size:17px; margin:0; color:#ffffff; font-weight:700;">📅 Agendar Fecha en Calendario de Mantenimiento</h3>
+                    <button type="button" onclick="cerrarModalNuevoEventoMantenimiento()" style="background:transparent; border:none; color:#ffffff; font-size:20px; cursor:pointer;">✕</button>
+                </div>
+
+                <form id="formNuevoEventoCalendario" onsubmit="guardarNuevoEventoCalendario(event)" style="padding:22px;">
+                    <div class="campo-form" style="margin-bottom:14px;">
+                        <label style="font-size:12.5px; font-weight:700; color:#334155; display:block; margin-bottom:6px;">Título del Mantenimiento / Intervención:</label>
+                        <input type="text" id="inputModalEventoTitulo" class="campo-input" required placeholder="Ej: Corrección de Base de Datos y Optimización de Servidor" style="width:100%; padding:9px 12px; font-size:13px;">
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+                        <div class="campo-form">
+                            <label style="font-size:12.5px; font-weight:700; color:#334155; display:block; margin-bottom:6px;">Tipo de Intervención:</label>
+                            <select id="selectModalEventoTipo" class="campo-input" style="width:100%; padding:9px 12px; font-size:13px; font-weight:600;">
+                                <option value="CORRECTIVO_Y_PREVENTIVO">Correctivo & Preventivo</option>
+                                <option value="CORRECCION_ERRORES">Corrección de Errores / Bugs</option>
+                                <option value="OPTIMIZACION_DB">Optimización de Base de Datos</option>
+                                <option value="RESPALDO_MAYOR">Respaldo Mayor e Infraestructura</option>
+                                <option value="ACTUALIZACION_SISTEMA">Actualización de Software</option>
+                            </select>
+                        </div>
+                        <div class="campo-form">
+                            <label style="font-size:12.5px; font-weight:700; color:#334155; display:block; margin-bottom:6px;">Duración Estimada:</label>
+                            <input type="text" id="inputModalEventoDuracion" class="campo-input" required placeholder="Ej: 3 horas" value="3 horas" style="width:100%; padding:9px 12px; font-size:13px;">
+                        </div>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+                        <div class="campo-form">
+                            <label style="font-size:12.5px; font-weight:700; color:#334155; display:block; margin-bottom:6px;">Fecha Programada:</label>
+                            <input type="date" id="inputModalEventoFecha" class="campo-input" required style="width:100%; padding:9px 12px; font-size:13px;">
+                        </div>
+                        <div class="campo-form">
+                            <label style="font-size:12.5px; font-weight:700; color:#334155; display:block; margin-bottom:6px;">Hora de Inicio:</label>
+                            <input type="time" id="inputModalEventoHora" class="campo-input" required value="22:00" style="width:100%; padding:9px 12px; font-size:13px;">
+                        </div>
+                    </div>
+
+                    <div class="campo-form" style="margin-bottom:18px;">
+                        <label style="font-size:12.5px; font-weight:700; color:#334155; display:block; margin-bottom:6px;">Motivo y Descripción:</label>
+                        <textarea id="inputModalEventoMotivo" class="campo-input" rows="2" style="width:100%; padding:9px 12px; font-size:13px;" placeholder="Detalles de las correcciones y módulos a intervenir..."></textarea>
+                    </div>
+
+                    <div style="display:flex; justify-content:flex-end; gap:10px;">
+                        <button type="button" class="btn-secundario" onclick="cerrarModalNuevoEventoMantenimiento()">Cancelar</button>
+                        <button type="submit" class="btn-primario" style="background:#d97706; border-color:#d97706; font-weight:700;">
+                            ➕ Guardar en Calendario
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
 
         <!-- =====================================================
              MODAL: CREAR NUEVO PUNTO DE RESTAURACIÓN
