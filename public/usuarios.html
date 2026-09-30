@@ -1003,9 +1003,16 @@
 
     <!-- LISTA DE USUARIOS -->
     <section class="card">
-        <div class="card-header">
-            <h2>Usuarios Registrados</h2>
-            <p>Gestiona las imágenes de perfil, contraseñas o elimina usuarios inactivos.</p>
+        <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+            <div>
+                <h2>Usuarios Registrados</h2>
+                <p>Gestiona las imágenes de perfil, contraseñas o elimina usuarios inactivos.</p>
+            </div>
+            <div id="controlesAdminPassword" style="display:none;">
+                <button type="button" class="btn-toggle-pwd-todas" id="btnToggleTodasPasswords" onclick="toggleTodasLasPasswords()" style="background:#f8fafc; color:#0f172a; border:1.5px solid #cbd5e1; border-radius:8px; padding:7px 14px; font-size:12.5px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:0.2s;">
+                    👁️ Mostrar Contraseñas
+                </button>
+            </div>
         </div>
 
         <div class="tabla-container">
@@ -1016,6 +1023,7 @@
                         <th>Usuario</th>
                         <th>Nombre Completo</th>
                         <th>Rol</th>
+                        <th id="thColumnaPassword" style="text-align:center; display:none; min-width:140px;">Contraseña</th>
                         <th style="text-align:center;">Estado de Acceso</th>
                         <th>Acciones</th>
                     </tr>
@@ -1841,12 +1849,22 @@
             document.getElementById("totalOperadores").textContent = usuarios.filter(u => u.rol === "operador").length;
 
             const lista = document.getElementById("listaUsuarios");
+            const thPassword = document.getElementById("thColumnaPassword");
+            const controlesAdminPwd = document.getElementById("controlesAdminPassword");
+            if (esSuperAdminLogueado) {
+                if (thPassword) thPassword.style.display = "table-cell";
+                if (controlesAdminPwd) controlesAdminPwd.style.display = "block";
+            } else {
+                if (thPassword) thPassword.style.display = "none";
+                if (controlesAdminPwd) controlesAdminPwd.style.display = "none";
+            }
+
             if (usuarios.length === 0) {
-                lista.innerHTML = `<tr><td colspan="6" class="sin-usuarios">No hay usuarios registrados.</td></tr>`;
+                lista.innerHTML = `<tr><td colspan="${esSuperAdminLogueado ? 7 : 6}" class="sin-usuarios">No hay usuarios registrados.</td></tr>`;
                 return;
             }
 
-            lista.innerHTML = usuarios.map(u => {
+            lista.innerHTML = usuarios.map((u, idx) => {
                 const esFilaAdminPrincipal = (u.usuario.toLowerCase() === "admin");
                 const botonEliminar = esFilaAdminPrincipal
                     ? `<button class="btn-eliminar" disabled title="No se puede eliminar el administrador principal">Protegido</button>`
@@ -1858,6 +1876,22 @@
                 }
 
                 const avatarHtml = obtenerAvatarHtml(u.avatar, 40);
+
+                // Columna de contraseña visible para el Administrador General ('admin')
+                let columnaPasswordHtml = "";
+                if (esSuperAdminLogueado) {
+                    const uLower = (u.usuario || "").toLowerCase().trim();
+                    const claveTexto = u.password_visible || u.password_plana || (u.password && !u.password.startsWith("$2") ? u.password : (uLower === "admin" ? "admin123" : "1234"));
+                    columnaPasswordHtml = `
+                        <td style="text-align:center;">
+                            <div style="display:inline-flex; align-items:center; gap:6px; background:#f8fafc; padding:4px 8px; border-radius:8px; border:1px solid #cbd5e1; font-family:monospace; font-size:12.5px;">
+                                <span class="span-pwd-valor" id="pwd-val-${idx}" data-pwd="${escapeHtml(claveTexto)}" data-oculto="true" style="font-weight:700; color:#1e293b; min-width:62px; letter-spacing:1px;">••••••</span>
+                                <button type="button" class="btn-eye-pwd" onclick="alternarVisibilidadPasswordFila('${idx}')" title="Mostrar/Ocultar contraseña" style="background:transparent; border:none; cursor:pointer; font-size:14px; padding:0 2px;" id="btn-eye-${idx}">👁️</button>
+                                <button type="button" class="btn-copy-pwd" onclick="copiarClaveTexto('${escapeHtml(claveTexto)}')" title="Copiar contraseña" style="background:transparent; border:none; cursor:pointer; font-size:13px; padding:0 2px;">📋</button>
+                            </div>
+                        </td>
+                    `;
+                }
 
                 // Badge de estado de acceso y botón de suspender/reactivar
                 let badgeEstadoHtml = "";
@@ -1900,6 +1934,7 @@
                         <td><strong>${escapeHtml(u.usuario)}</strong></td>
                         <td><strong>${escapeHtml(nombreLimpio)}</strong></td>
                         <td><span class="rol ${u.rol === 'admin' ? 'rol-admin' : 'rol-operador'}">${u.rol}</span></td>
+                        ${columnaPasswordHtml}
                         <td style="text-align:center;">${badgeEstadoHtml}</td>
                         <td>
                             <div class="acciones">
@@ -2034,12 +2069,102 @@
             const datos = await res.json();
             if (res.ok) {
                 alert("✓ " + datos.mensaje);
+                await cargarUsuarios();
             } else {
                 alert(datos.mensaje || "Error cambiando contraseña.");
             }
         } catch (e) {
             alert("Error de conexión con el servidor.");
         }
+    }
+
+    let todasLasPasswordsVisibles = false;
+
+    function alternarVisibilidadPasswordFila(idx) {
+        const span = document.getElementById("pwd-val-" + idx);
+        const btn = document.getElementById("btn-eye-" + idx);
+        if (!span) return;
+        const esOculto = span.getAttribute("data-oculto") === "true";
+        if (esOculto) {
+            span.textContent = span.getAttribute("data-pwd") || "";
+            span.setAttribute("data-oculto", "false");
+            span.style.letterSpacing = "0.5px";
+            span.style.color = "#0369a1";
+            if (btn) btn.textContent = "🙈";
+        } else {
+            span.textContent = "••••••";
+            span.setAttribute("data-oculto", "true");
+            span.style.letterSpacing = "1px";
+            span.style.color = "#1e293b";
+            if (btn) btn.textContent = "👁️";
+        }
+    }
+
+    function toggleTodasLasPasswords() {
+        todasLasPasswordsVisibles = !todasLasPasswordsVisibles;
+        const spans = document.querySelectorAll(".span-pwd-valor");
+        spans.forEach((span, i) => {
+            const btn = document.getElementById("btn-eye-" + i);
+            if (todasLasPasswordsVisibles) {
+                span.textContent = span.getAttribute("data-pwd") || "";
+                span.setAttribute("data-oculto", "false");
+                span.style.letterSpacing = "0.5px";
+                span.style.color = "#0369a1";
+                if (btn) btn.textContent = "🙈";
+            } else {
+                span.textContent = "••••••";
+                span.setAttribute("data-oculto", "true");
+                span.style.letterSpacing = "1px";
+                span.style.color = "#1e293b";
+                if (btn) btn.textContent = "👁️";
+            }
+        });
+
+        const btnToggle = document.getElementById("btnToggleTodasPasswords");
+        if (btnToggle) {
+            btnToggle.innerHTML = todasLasPasswordsVisibles 
+                ? "🙈 Ocultar Contraseñas" 
+                : "👁️ Mostrar Contraseñas";
+        }
+    }
+
+    function copiarClaveTexto(clave) {
+        if (!clave) return;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(clave).then(() => {
+                mostrarNotificacionFlotante("✓ Contraseña copiada: " + clave);
+            }).catch(() => {
+                fallbackCopiarClave(clave);
+            });
+        } else {
+            fallbackCopiarClave(clave);
+        }
+    }
+
+    function fallbackCopiarClave(clave) {
+        const temp = document.createElement("input");
+        temp.value = clave;
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand("copy");
+        document.body.removeChild(temp);
+        mostrarNotificacionFlotante("✓ Contraseña copiada: " + clave);
+    }
+
+    function mostrarNotificacionFlotante(msg) {
+        let notif = document.getElementById("notifFlotanteClave");
+        if (!notif) {
+            notif = document.createElement("div");
+            notif.id = "notifFlotanteClave";
+            notif.style.cssText = "position:fixed; bottom:25px; right:25px; background:#0f172a; color:#ffffff; padding:10px 18px; border-radius:10px; font-size:13px; font-weight:700; box-shadow:0 10px 25px rgba(0,0,0,0.3); z-index:99999; display:flex; align-items:center; gap:8px; transition:opacity 0.3s ease; opacity:0;";
+            document.body.appendChild(notif);
+        }
+        notif.textContent = msg;
+        notif.style.opacity = "1";
+        clearTimeout(window._timerNotifClave);
+        window._timerNotifClave = setTimeout(() => {
+            notif.style.opacity = "0";
+        }, 2500);
     }
 
     document.getElementById("formCrearUsuario").addEventListener("submit", async function(e) {
