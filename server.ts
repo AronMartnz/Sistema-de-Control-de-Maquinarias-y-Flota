@@ -10,8 +10,11 @@ const PORT = 3000;
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-// Log de peticiones
+// Log de peticiones y protección de archivos sensibles
 app.use((req, res, next) => {
+    if (req.path.toLowerCase() === "/usuarios.json") {
+        return res.status(403).json({ error: "ACCESO_DENEGADO", mensaje: "Acceso prohibido." });
+    }
     console.log(`[${new Date().toLocaleTimeString()}] ${req.method} ${req.url}`);
     next();
 });
@@ -192,12 +195,6 @@ function leerUsuarios(): any[] | null {
 function guardarUsuarios(usuarios: any[]): boolean {
     try {
         fs.writeFileSync(archivoUsuarios, JSON.stringify(usuarios, null, 4), "utf8");
-        const publicDir = path.join(process.cwd(), "public");
-        if (fs.existsSync(publicDir)) {
-            try {
-                fs.writeFileSync(path.join(publicDir, "usuarios.json"), JSON.stringify(usuarios, null, 4), "utf8");
-            } catch (_) {}
-        }
         return true;
     } catch (error) {
         console.error("Error guardando usuarios.json:", error);
