@@ -688,9 +688,9 @@ app.post("/api/servicio/estado", (req, res) => {
 });
 
 // Endpoint: Alternar suspensión individual de un usuario cliente/operador (Solo Administrador General 'admin')
-app.patch("/api/usuarios/:usuario/estado", (req, res) => {
+const handleSuspensionUsuario = (req: any, res: any) => {
     try {
-        const usuarioHeader = String(req.headers["x-usuario"] || "").toLowerCase().trim();
+        const usuarioHeader = String(req.headers["x-usuario"] || req.body?.adminUsuario || req.body?.usuarioAdmin || "").toLowerCase().trim();
         if (usuarioHeader !== "admin") {
             return res.status(403).json({
                 error: "NO_AUTORIZADO",
@@ -731,7 +731,9 @@ app.patch("/api/usuarios/:usuario/estado", (req, res) => {
         console.error("Error cambiando estado individual de usuario:", error);
         res.status(500).json({ mensaje: "Error interno al modificar estado del usuario." });
     }
-});
+};
+app.patch("/api/usuarios/:usuario/estado", handleSuspensionUsuario);
+app.post("/api/usuarios/:usuario/estado", handleSuspensionUsuario);
 
 // ========================================================
 // ENDPOINTS: CONTROL DE VENTANA DE MANTENIMIENTO Y CALENDARIO (EXCLUSIVO ADMIN GENERAL)
