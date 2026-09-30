@@ -1,0 +1,111 @@
+{
+  "mantenimientoActivo": false,
+  "titulo": "Mantenimiento y Corrección de Errores del Sistema",
+  "motivo": "Mantenimiento de prueba automatizada",
+  "fechaInicio": "2026-09-30",
+  "horaInicio": "22:00",
+  "fechaFinEstimada": "2026-10-01",
+  "horaFinEstimada": "02:00",
+  "duracionEstimada": "2 horas",
+  "mensajePersonalizado": "La plataforma se encuentra temporalmente fuera de servicio por labores programadas de mantenimiento y optimización técnica ejecutadas por el Administrador General. Rogamos no intentar acceder durante este periodo para resguardar la integridad de los datos.",
+  "audienciaBloqueo": "todos_excepto_admin",
+  "usuariosBloqueados": [
+    "daniel",
+    "operador"
+  ],
+  "excepcionAdmin": "admin",
+  "clienteNotificacion": {
+    "nombre": "Daniel Corssen",
+    "empresa": "Corssen Logística y Maquinarias",
+    "email": "contacto@corssen.cl",
+    "whatsapp": "+56912345678"
+  },
+  "calendario": [
+    {
+      "id": "MNT-1790706385496",
+      "titulo": "Mantención Programada Servidores",
+      "tipo": "CORRECCION_ERRORES",
+      "fecha": "2026-10-05",
+      "hora": "23:00",
+      "duracion": "3 horas",
+      "estado": "PROGRAMADO",
+      "motivo": "Optimización técnica y mantención",
+      "notificadoEmail": false,
+      "notificadoWhatsapp": true,
+      "creadoEn": "2026-09-29T18:26:25.496Z"
+    },
+    {
+      "id": "MNT-1790704257902",
+      "titulo": "Mantención Programada Servidores",
+      "tipo": "CORRECCION_ERRORES",
+      "fecha": "2026-10-05",
+      "hora": "23:00",
+      "duracion": "3 horas",
+      "estado": "PROGRAMADO",
+      "motivo": "Optimización técnica y mantención",
+      "notificadoEmail": false,
+      "notificadoWhatsapp": true,
+      "creadoEn": "2026-09-29T17:50:57.902Z"
+    },
+    {
+      "id": "MNT-1790704246182",
+      "titulo": "Mantención Programada Servidores",
+      "tipo": "CORRECCION_ERRORES",
+      "fecha": "2026-10-05",
+      "hora": "23:00",
+      "duracion": "3 horas",
+      "estado": "PROGRAMADO",
+      "motivo": "Optimización técnica y mantención",
+      "notificadoEmail": false,
+      "notificadoWhatsapp": true,
+      "creadoEn": "2026-09-29T17:50:46.182Z"
+    },
+    {
+      "id": "MNT-20260930",
+      "titulo": "Optimización de Servidor y Corrección de Errores",
+      "tipo": "PREVENTIVO_Y_CORRECTIVO",
+      "fecha": "2026-09-30",
+      "hora": "22:00",
+      "duracion": "4 horas",
+      "estado": "PROGRAMADO",
+      "motivo": "Mantenimiento preventivo de software y respaldos de seguridad",
+      "notificadoEmail": false,
+      "notificadoWhatsapp": false,
+      "creadoEn": "2026-09-29T10:45:00Z"
+    }
+  ],
+  "historialAvisos": [
+    {
+      "id": "NOTIF-1790706385500",
+      "canal": "whatsapp",
+      "destinatario": "+56912345678",
+      "mensaje": "Aviso de prueba de mantención",
+      "fechaEnvio": "29-09-2026",
+      "horaEnvio": "06:26 p. m.",
+      "timestamp": 1790706385500,
+      "eventoId": "MNT-1790706385496"
+    },
+    {
+      "id": "NOTIF-1790704257904",
+      "canal": "whatsapp",
+      "destinatario": "+56912345678",
+      "mensaje": "Aviso de prueba de mantención",
+      "fechaEnvio": "29-09-2026",
+      "horaEnvio": "05:50 p. m.",
+      "timestamp": 1790704257904,
+      "eventoId": "MNT-1790704257902"
+    },
+    {
+      "id": "NOTIF-1790704246184",
+      "canal": "whatsapp",
+      "destinatario": "+56912345678",
+      "mensaje": "Aviso de prueba de mantención",
+      "fechaEnvio": "29-09-2026",
+      "horaEnvio": "05:50 p. m.",
+      "timestamp": 1790704246184,
+      "eventoId": "MNT-1790704246182"
+    }
+  ],
+  "fechaModificacion": "2026-09-29T18:26:25.493Z",
+  "modificadoPor": "admin"
+}
