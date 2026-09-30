@@ -2881,17 +2881,25 @@
             <!-- Grid de Métricas y Estado Rápido -->
             <div class="grid-tarjetas" style="margin-bottom:24px;">
                 <div class="tarjeta-dash">
-                    <div class="tarjeta-icono" style="background:#fef3c7; color:#d97706; font-size:22px;">⚙️</div>
+                    <div class="tarjeta-icono" style="background:#eff6ff; color:#2563eb; font-size:22px;">💳</div>
                     <div>
-                        <div class="numero" id="kpiMantenimientoEstadoTexto" style="font-size:19px; color:#059669;">Operativo Normal</div>
-                        <div class="etiqueta">Estado de la Plataforma</div>
+                        <div class="numero" id="kpiCuotaEstadoTexto" style="font-size:18px; color:#059669; font-weight:800;">Al Día (Habilitado)</div>
+                        <div class="etiqueta">Cuota Mensual Respaldos</div>
                     </div>
                 </div>
 
                 <div class="tarjeta-dash">
-                    <div class="tarjeta-icono" style="background:#eff6ff; color:#2563eb; font-size:22px;">🛡️</div>
+                    <div class="tarjeta-icono" style="background:#fef3c7; color:#d97706; font-size:22px;">⚙️</div>
                     <div>
-                        <div class="numero" style="font-size:19px; color:#2563eb;">admin (Único)</div>
+                        <div class="numero" id="kpiMantenimientoEstadoTexto" style="font-size:18px; color:#059669;">Operativo Normal</div>
+                        <div class="etiqueta">Ventana Técnica en Vivo</div>
+                    </div>
+                </div>
+
+                <div class="tarjeta-dash">
+                    <div class="tarjeta-icono" style="background:#f0fdf4; color:#16a34a; font-size:22px;">🛡️</div>
+                    <div>
+                        <div class="numero" style="font-size:18px; color:#16a34a;">admin (Único)</div>
                         <div class="etiqueta">Pase Permanente Garantizado</div>
                     </div>
                 </div>
@@ -2899,17 +2907,79 @@
                 <div class="tarjeta-dash">
                     <div class="tarjeta-icono" style="background:#fdf2f8; color:#db2777; font-size:22px;">🚫</div>
                     <div>
-                        <div class="numero" id="kpiUsuariosBloqueadosCount" style="font-size:19px; color:#dc2626;">Clientes & Operadores</div>
-                        <div class="etiqueta">Audiencia Bloqueada en Mantención</div>
+                        <div class="numero" id="kpiUsuariosBloqueadosCount" style="font-size:18px; color:#dc2626;">Clientes & Operadores</div>
+                        <div class="etiqueta">Audiencia Bloqueada</div>
                     </div>
                 </div>
 
                 <div class="tarjeta-dash">
                     <div class="tarjeta-icono" style="background:#ecfdf5; color:#059669; font-size:22px;">📲</div>
                     <div>
-                        <div class="numero" id="kpiTotalAvisosEnviados" style="font-size:19px; color:#059669;">0 Notificaciones</div>
+                        <div class="numero" id="kpiTotalAvisosEnviados" style="font-size:18px; color:#059669;">0 Notificaciones</div>
                         <div class="etiqueta">Avisos a Cliente (WA/Mail)</div>
                     </div>
+                </div>
+            </div>
+
+            <!-- =====================================================
+                 CONTROL DE ACCESO POR CUOTA MENSUAL (RESPALDOS & MANTENCIÓN)
+                 (EXCLUSIVO ADMINISTRADOR GENERAL 'admin')
+                 ===================================================== -->
+            <div class="caja-blanca" id="seccionControlCuota" style="border: 2px solid #e2e8f0; border-radius: 16px; padding: 22px; margin-bottom: 24px; background: #ffffff; box-shadow: 0 4px 16px rgba(0,0,0,0.04);">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px; margin-bottom:18px;">
+                    <div>
+                        <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px; flex-wrap:wrap;">
+                            <span style="font-size:22px;">💳</span>
+                            <h3 style="font-size:17px; font-weight:800; color:#0f172a; margin:0;">Control de Acceso por Cuota Mensual de Respaldos & Mantención</h3>
+                            <span id="badgeEstadoServicioPill" class="badge-servicio-pill activo">🟢 Clientes Habilitados</span>
+                        </div>
+                        <p style="font-size:13px; color:#64748b; margin:0; max-width:760px;">
+                            Gestiona la suspensión inmediata del inicio de sesión para cuentas de clientes u operadores cuando exista una cuota mensual pendiente por concepto de <strong>respaldos en la nube y mantenimiento preventivo/correctivo</strong>.
+                        </p>
+                    </div>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <button type="button" class="btn-preview-aviso" onclick="abrirModalPreviewAvisoCliente()" title="Ver la ventana de aviso exacta que verán los clientes">
+                            👁️ Ver Aviso del Cliente
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Banner dinámico de estado del servicio -->
+                <div id="cajaEstadoServicioDinamica" class="caja-estado-servicio activo">
+                    <div style="display:flex; align-items:center; gap:16px; flex:1; min-width:280px;">
+                        <div id="iconoEstadoServicioGrande" class="icono-estado-grande activo">
+                            ✓
+                        </div>
+                        <div>
+                            <h4 id="tituloEstadoServicioTexto" style="font-size:15px; font-weight:800; color:#15803d; margin:0 0 3px 0;">
+                                ACCESO TOTAL HABILITADO — CLIENTES AL DÍA
+                            </h4>
+                            <p id="descEstadoServicioTexto" style="font-size:12.5px; color:#334155; margin:0;">
+                                Los clientes y operadores pueden iniciar sesión, consultar flotas y operar el sistema con total normalidad.
+                            </p>
+                            <div id="infoUltimaModificacionServicio" style="font-size:11px; color:#64748b; margin-top:4px;">
+                                Estado: Sistema al día con cuotas de mantenimiento y respaldos
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botones de Acción Rápida -->
+                    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                        <button type="button" id="btnSuspenderServicioGeneral" class="btn-control-cuota btn-suspender-general" onclick="abrirModalSuspensionGeneral('suspender')">
+                            ⛔ Suspender Inicio de Sesión de Clientes (Bloquear por No Pago)
+                        </button>
+                        <button type="button" id="btnReactivarServicioGeneral" class="btn-control-cuota btn-reactivar-general" style="display:none;" onclick="abrirModalSuspensionGeneral('reactivar')">
+                            ✅ Reactivar Acceso a Clientes (Habilitar Login - Cuota Pagada)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Nota informativa de protección y seguridad -->
+                <div style="display:flex; align-items:center; gap:10px; margin-top:14px; padding:10px 14px; background:#f8fafc; border-radius:10px; border:1px solid #e2e8f0; font-size:12px; color:#475569;">
+                    <span>🛡️</span>
+                    <span>
+                        <strong>Garantía para el Administrador:</strong> Su usuario Administrador General (admin) <strong>nunca</strong> pierde el acceso ni puede ser bloqueado, lo que le garantiza ingresar en cualquier momento para respaldar o reactivar el sistema.
+                    </span>
                 </div>
             </div>
 
@@ -3179,6 +3249,83 @@
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <!-- =====================================================
+             MODAL: CONFIRMAR SUSPENSIÓN / REACTIVACIÓN DE CUOTA MENSUAL
+        ===================================================== -->
+        <div id="modalConfirmarSuspensionGeneral" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.7); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(4px);">
+            <div class="modal-card" style="max-width:520px; width:92%; background:#ffffff; border-radius:16px; box-shadow:0 24px 50px rgba(0,0,0,0.3); overflow:hidden;">
+                <div class="modal-header" style="background:#0f172a; color:#ffffff; padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span id="modalSuspensionIcono" style="font-size:22px;">⛔</span>
+                        <div>
+                            <h3 id="modalSuspensionTitulo" style="margin:0; color:#ffffff; font-size:16px; font-weight:800;">Suspender Inicio de Sesión de Clientes</h3>
+                            <span id="modalSuspensionSubtitulo" style="font-size:12px; color:#94a3b8;">Control de Cuota Mensual de Respaldos & Mantenimientos</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-cerrar-modal" onclick="cerrarModalSuspensionGeneral()" style="background:transparent; border:none; color:#ffffff; font-size:20px; cursor:pointer;">✕</button>
+                </div>
+                <div class="modal-body" style="padding:22px; display:flex; flex-direction:column; gap:14px;">
+                    <div id="modalSuspensionAlertaBox" style="padding:14px; border-radius:12px; font-size:13.5px; line-height:1.5;">
+                        <!-- Dinámico -->
+                    </div>
+
+                    <div class="campo" id="campoMotivoSuspension" style="margin:0;">
+                        <label for="inputMotivoSuspension" style="display:block; font-size:12.5px; font-weight:700; color:#334155; margin-bottom:6px;">
+                            Motivo que verá el cliente al intentar entrar (*):
+                        </label>
+                        <input type="text" id="inputMotivoSuspension" value="Cuota mensual de respaldos y mantenimientos pendiente de pago" style="width:100%; padding:10px 14px; border:1.5px solid #cbd5e1; border-radius:9px; font-size:13px; box-sizing:border-box;">
+                        <span style="font-size:11.5px; color:#64748b; margin-top:4px; display:block;">
+                            Este aviso explica al cliente por qué no puede acceder y le orienta a regularizar su cuota con la administración.
+                        </span>
+                    </div>
+
+                    <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:10px; padding-top:14px; border-top:1px solid #e2e8f0;">
+                        <button type="button" class="btn-secundario" style="margin:0;" onclick="cerrarModalSuspensionGeneral()">Cancelar</button>
+                        <button type="button" id="btnConfirmarSuspensionModal" class="btn-primario" style="margin:0; background:#dc2626; border-color:#dc2626; font-weight:700;" onclick="ejecutarCambioEstadoServicio()">Confirmar Acción</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- =====================================================
+             MODAL: PREVIEW DEL AVISO AL CLIENTE (VISTA PREVIA)
+        ===================================================== -->
+        <div id="modalPreviewAvisoCliente" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.7); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(4px);">
+            <div class="modal-card" style="max-width:480px; width:92%; background:#ffffff; border-radius:16px; box-shadow:0 24px 50px rgba(0,0,0,0.3); overflow:hidden; border:2px solid #ef4444;">
+                <div class="modal-header" style="background:#0f172a; color:#ffffff; padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="font-size:22px;">👁️</span>
+                        <div>
+                            <h3 style="margin:0; color:#ffffff; font-size:15px; font-weight:800;">Vista Previa del Aviso al Cliente</h3>
+                            <span style="font-size:12px; color:#94a3b8;">Así se muestra en login.html al intentar ingresar</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-cerrar-modal" onclick="cerrarModalPreviewAvisoCliente()" style="background:transparent; border:none; color:#ffffff; font-size:20px; cursor:pointer;">✕</button>
+                </div>
+                <div class="modal-body" style="padding:22px; text-align:center;">
+                    <div style="width:68px; height:68px; border-radius:50%; background:#fee2e2; border:2.5px solid #ef4444; color:#dc2626; display:flex; align-items:center; justify-content:center; font-size:30px; margin:0 auto 14px auto; box-shadow:0 6px 18px rgba(239,68,68,0.25);">
+                        🔒
+                    </div>
+                    <h4 style="font-size:17px; font-weight:800; color:#0f172a; margin-bottom:8px;">ACCESO TEMPORALMENTE SUSPENDIDO</h4>
+                    <p style="font-size:13px; color:#475569; line-height:1.5; margin-bottom:14px;">
+                        Estimado Cliente: El inicio de sesión a su cuenta se encuentra temporalmente restringido por concepto de <strong>cuota mensual de respaldos y mantenimientos pendiente de regularización</strong>.
+                    </p>
+                    <div style="background:#fff1f2; border:1px solid #fecdd3; border-radius:12px; padding:12px 14px; text-align:left; margin-bottom:16px; font-size:12px; color:#9f1239;">
+                        <div style="font-weight:700; margin-bottom:3px;">📌 Estado de la Cuenta:</div>
+                        <div>• Cuota mensual de respaldos de datos pendiente</div>
+                        <div>• Mantenciones y soporte técnico pausados</div>
+                        <div style="margin-top:5px; font-size:11px; color:#be123c;">Para reactivar de inmediato su acceso a la plataforma de flota, coordine con la Administración General.</div>
+                    </div>
+                    <div style="padding:10px; background:#f8fafc; border-radius:9px; border:1px solid #e2e8f0; font-size:12px; color:#334155; margin-bottom:16px;">
+                        <strong>Contacto de Administración:</strong> tecphonespa@gmail.com
+                    </div>
+                    <button type="button" class="btn-secundario" style="width:100%; justify-content:center; background:#0f172a; color:white; border:none; padding:11px; font-weight:700; font-size:13px;" onclick="cerrarModalPreviewAvisoCliente()">
+                        Cerrar Vista Previa
+                    </button>
+                </div>
             </div>
         </div>
 
