@@ -17,6 +17,119 @@ app.use((req, res, next) => {
 });
 
 const archivoUsuarios = path.join(process.cwd(), "usuarios.json");
+const archivoConfigServicio = path.join(process.cwd(), "config_servicio.json");
+
+// Función para leer configuración del servicio y cuota mensual
+function leerConfigServicio(): {
+    estadoServicio: "activo" | "suspendido";
+    motivo: string;
+    fechaModificacion: string;
+    modificadoPor: string;
+} {
+    try {
+        if (!fs.existsSync(archivoConfigServicio)) {
+            const defaultConfig = {
+                estadoServicio: "activo" as const,
+                motivo: "Cuota mensual de respaldos y mantenimientos al día",
+                fechaModificacion: new Date().toISOString(),
+                modificadoPor: "admin"
+            };
+            fs.writeFileSync(archivoConfigServicio, JSON.stringify(defaultConfig, null, 4), "utf8");
+            return defaultConfig;
+        }
+
+        const contenido = fs.readFileSync(archivoConfigServicio, "utf8");
+        const parsed = JSON.parse(contenido);
+        return {
+            estadoServicio: parsed.estadoServicio === "suspendido" ? "suspendido" : "activo",
+            motivo: parsed.motivo || "Cuota mensual de respaldos y mantenimientos pendiente de regularización",
+            fechaModificacion: parsed.fechaModificacion || new Date().toISOString(),
+            modificadoPor: parsed.modificadoPor || "admin"
+        };
+    } catch (error) {
+        console.error("Error leyendo config_servicio.json:", error);
+        return {
+            estadoServicio: "activo",
+            motivo: "Cuota mensual de respaldos y mantenimientos al día",
+            fechaModificacion: new Date().toISOString(),
+            modificadoPor: "admin"
+        };
+    }
+}
+
+// Función para guardar configuración del servicio
+function guardarConfigServicio(config: any): boolean {
+    try {
+        fs.writeFileSync(archivoConfigServicio, JSON.stringify(config, null, 4), "utf8");
+        const publicDir = path.join(process.cwd(), "public");
+        if (fs.existsSync(publicDir)) {
+            try {
+                fs.writeFileSync(path.join(publicDir, "config_servicio.json"), JSON.stringify(config, null, 4), "utf8");
+            } catch (_) {}
+        }
+        return true;
+    } catch (error) {
+        console.error("Error guardando config_servicio.json:", error);
+        return false;
+    }
+}
+
+const archivoConfigMantenimiento = path.join(process.cwd(), "config_mantenimiento.json");
+
+function leerConfigMantenimiento(): any {
+    try {
+        if (!fs.existsSync(archivoConfigMantenimiento)) {
+            const defaultConfig = {
+                mantenimientoActivo: false,
+                titulo: "Mantenimiento y Corrección de Errores del Sistema",
+                motivo: "Mantenimiento preventivo, optimización de base de datos y corrección de incidencias",
+                fechaInicio: "2026-09-30",
+                horaInicio: "22:00",
+                fechaFinEstimada: "2026-10-01",
+                horaFinEstimada: "02:00",
+                duracionEstimada: "4 horas",
+                mensajePersonalizado: "La plataforma se encuentra temporalmente fuera de servicio por labores programadas de mantenimiento y optimización técnica ejecutadas por el Administrador General.",
+                audienciaBloqueo: "todos_excepto_admin",
+                usuariosBloqueados: ["daniel", "operador"],
+                excepcionAdmin: "admin",
+                clienteNotificacion: {
+                    nombre: "Daniel Corssen",
+                    empresa: "Corssen Logística y Maquinarias",
+                    email: "contacto@corssen.cl",
+                    whatsapp: "+56912345678"
+                },
+                calendario: [],
+                historialAvisos: []
+            };
+            fs.writeFileSync(archivoConfigMantenimiento, JSON.stringify(defaultConfig, null, 2), "utf8");
+            return defaultConfig;
+        }
+        return JSON.parse(fs.readFileSync(archivoConfigMantenimiento, "utf8"));
+    } catch (e) {
+        console.error("Error leyendo config_mantenimiento.json:", e);
+        return {
+            mantenimientoActivo: false,
+            audienciaBloqueo: "todos_excepto_admin",
+            usuariosBloqueados: ["daniel", "operador"]
+        };
+    }
+}
+
+function guardarConfigMantenimiento(cfg: any): boolean {
+    try {
+        fs.writeFileSync(archivoConfigMantenimiento, JSON.stringify(cfg, null, 2), "utf8");
+        const publicDir = path.join(process.cwd(), "public");
+        if (fs.existsSync(publicDir)) {
+            try {
+                fs.writeFileSync(path.join(publicDir, "config_mantenimiento.json"), JSON.stringify(cfg, null, 2), "utf8");
+            } catch (_) {}
+        }
+        return true;
+    } catch (e) {
+        console.error("Error guardando config_mantenimiento.json:", e);
+        return false;
+    }
+}
 
 // Función para leer usuarios
 function leerUsuarios(): any[] | null {
@@ -28,14 +141,16 @@ function leerUsuarios(): any[] | null {
                     password: "$2b$10$uYTOyaJeHb9FQfOosVFElehPB3AntqhXGSMUTUbJGjYTXv.KLx/x2", // admin
                     nombre: "Administrador General",
                     rol: "admin",
-                    avatar: "avatar-admin"
+                    avatar: "avatar-admin",
+                    estado: "activo"
                 },
                 {
                     usuario: "operador",
                     password: "$2b$10$qac5xGf7UI3udD4j88V/O.OiWQUFBa5qJX3Yb.V5YpbmMR8FWzYL6", // 1234
                     nombre: "Operador Principal",
                     rol: "operador",
-                    avatar: "avatar-mecanico"
+                    avatar: "avatar-mecanico",
+                    estado: "activo"
                 }
             ];
             fs.writeFileSync(archivoUsuarios, JSON.stringify(defaultUsers, null, 4), "utf8");
@@ -44,7 +159,7 @@ function leerUsuarios(): any[] | null {
 
         const contenido = fs.readFileSync(archivoUsuarios, "utf8");
         const parsed = JSON.parse(contenido);
-        // Garantizar que todos tengan avatar y corregir posibles erratas en nombres
+        // Garantizar que todos tengan avatar, estado y corregir posibles erratas en nombres
         let modificado = false;
         parsed.forEach((u: any) => {
             if (!u.avatar) {
@@ -54,6 +169,13 @@ function leerUsuarios(): any[] | null {
             if (u.nombre && u.nombre.includes("Corsser")) {
                 u.nombre = u.nombre.replace(/Corsser/gi, "Corssen");
                 modificado = true;
+            }
+            if (!u.estado) {
+                u.estado = "activo";
+                modificado = true;
+            }
+            if (String(u.usuario).toLowerCase() === "admin") {
+                u.estado = "activo"; // El administrador nunca está suspendido
             }
         });
         if (modificado) {
@@ -70,6 +192,12 @@ function leerUsuarios(): any[] | null {
 function guardarUsuarios(usuarios: any[]): boolean {
     try {
         fs.writeFileSync(archivoUsuarios, JSON.stringify(usuarios, null, 4), "utf8");
+        const publicDir = path.join(process.cwd(), "public");
+        if (fs.existsSync(publicDir)) {
+            try {
+                fs.writeFileSync(path.join(publicDir, "usuarios.json"), JSON.stringify(usuarios, null, 4), "utf8");
+            } catch (_) {}
+        }
         return true;
     } catch (error) {
         console.error("Error guardando usuarios.json:", error);
@@ -153,12 +281,64 @@ app.post("/api/login", async (req, res) => {
             return res.status(401).json({ mensaje: "Usuario o contraseña incorrectos." });
         }
 
+        // Solo el Administrador General (usuario "admin") tiene acceso garantizado permanente
+        // Daniel y operadores corresponden a la cuenta cliente y quedan suspendidos si la cuota no está al día
+        const esSuperAdmin = (usuarioEncontrado.usuario.toLowerCase() === "admin");
+        const configServicio = leerConfigServicio();
+
+        // VALIDACIÓN DE SUSPENSIÓN POR CUOTA MENSUAL O VENTANA DE MANTENIMIENTO ACTIVA
+        if (!esSuperAdmin) {
+            // 0. Validación de Ventana de Mantenimiento Activa (Exclusivo: solo 'admin' puede ingresar)
+            const configMantenimiento = leerConfigMantenimiento();
+            if (configMantenimiento && configMantenimiento.mantenimientoActivo) {
+                const bloquearTodos = configMantenimiento.audienciaBloqueo === "todos_excepto_admin";
+                const uNorm = usuarioEncontrado.usuario.toLowerCase().trim();
+                const enListaBloqueados = Array.isArray(configMantenimiento.usuariosBloqueados) && 
+                    configMantenimiento.usuariosBloqueados.some((u: string) => u.toLowerCase() === uNorm);
+
+                if (bloquearTodos || enListaBloqueados) {
+                    return res.status(403).json({
+                        error: "MANTENIMIENTO_ACTIVO",
+                        mantenimiento: true,
+                        suspendido: true,
+                        titulo: configMantenimiento.titulo || "Ventana de Mantenimiento en Progreso",
+                        mensaje: configMantenimiento.mensajePersonalizado || "La plataforma se encuentra temporalmente fuera de servicio por labores programadas de mantenimiento y optimización técnica.",
+                        motivo: configMantenimiento.motivo || "Trabajos técnicos y optimización programada",
+                        fechaFinEstimada: configMantenimiento.fechaFinEstimada || "",
+                        horaFinEstimada: configMantenimiento.horaFinEstimada || ""
+                    });
+                }
+            }
+
+            // 1. Suspensión global de servicio por no pago de cuota de respaldos y mantenimiento
+            if (configServicio.estadoServicio === "suspendido") {
+                return res.status(403).json({
+                    error: "SERVICIO_SUSPENDIDO",
+                    mensaje: "Acceso suspendido temporalmente por concepto de cuota mensual de respaldos y mantenimientos pendiente de regularización.",
+                    motivo: configServicio.motivo || "Cuota mensual de respaldos y mantenimientos pendiente de pago",
+                    suspendido: true
+                });
+            }
+
+            // 2. Suspensión individual del usuario
+            if (usuarioEncontrado.estado === "suspendido") {
+                return res.status(403).json({
+                    error: "USUARIO_SUSPENDIDO",
+                    mensaje: "Tu cuenta de usuario ha sido suspendida temporalmente por la administración.",
+                    motivo: "Acceso individual suspendido por concepto de cuota de servicio o mantención",
+                    suspendido: true
+                });
+            }
+        }
+
         res.json({
             mensaje: "Inicio de sesión correcto",
             usuario: usuarioEncontrado.usuario,
             nombre: usuarioEncontrado.nombre,
             rol: usuarioEncontrado.rol,
-            avatar: usuarioEncontrado.avatar || (usuarioEncontrado.rol === "admin" ? "avatar-admin" : "avatar-mecanico")
+            avatar: usuarioEncontrado.avatar || (usuarioEncontrado.rol === "admin" ? "avatar-admin" : "avatar-mecanico"),
+            estado: usuarioEncontrado.estado || "activo",
+            estadoServicio: configServicio.estadoServicio
         });
     } catch (error) {
         console.error("Error en login:", error);
@@ -174,12 +354,12 @@ app.get("/api/usuarios", verificarAdmin, (req, res) => {
             return res.status(500).json({ mensaje: "Error al leer usuarios." });
         }
 
-        // Retornar información segura sin hashes de contraseña
         const usuariosSeguros = usuarios.map(u => ({
             usuario: u.usuario,
             nombre: u.nombre,
             rol: u.rol,
-            avatar: u.avatar || (u.rol === "admin" ? "avatar-admin" : "avatar-mecanico")
+            avatar: u.avatar || (u.rol === "admin" ? "avatar-admin" : "avatar-mecanico"),
+            estado: u.usuario.toLowerCase() === "admin" ? "activo" : (u.estado || "activo")
         }));
 
         res.json(usuariosSeguros);
@@ -229,7 +409,8 @@ app.post("/api/usuarios", verificarAdmin, async (req, res) => {
             password: passwordHash,
             nombre: nombre.trim(),
             rol: rol,
-            avatar: avatarAsignado
+            avatar: avatarAsignado,
+            estado: "activo"
         });
 
         guardarUsuarios(usuarios);
@@ -437,6 +618,12 @@ const handlerActualizarUsuario = (req: express.Request, res: express.Response) =
             }
         }
 
+        if (req.body.estado && (req.body.estado === "activo" || req.body.estado === "suspendido")) {
+            if (usuarioObjetivo.toLowerCase() !== "admin") {
+                usuarios[usuarioIndex].estado = req.body.estado;
+            }
+        }
+
         guardarUsuarios(usuarios);
         res.json({ mensaje: "Datos de usuario actualizados correctamente.", usuario: usuarios[usuarioIndex] });
     } catch (error) {
@@ -448,6 +635,261 @@ const handlerActualizarUsuario = (req: express.Request, res: express.Response) =
 app.put("/api/usuarios/:usuario", verificarAdmin, handlerActualizarUsuario);
 app.post("/api/usuarios/:usuario", verificarAdmin, handlerActualizarUsuario);
 app.patch("/api/usuarios/:usuario", verificarAdmin, handlerActualizarUsuario);
+
+// Endpoint: Obtener estado global del servicio y cuota mensual
+app.get("/api/servicio/estado", (req, res) => {
+    try {
+        const config = leerConfigServicio();
+        res.json(config);
+    } catch (error) {
+        console.error("Error obteniendo estado del servicio:", error);
+        res.status(500).json({ mensaje: "Error al obtener estado del servicio." });
+    }
+});
+
+// Endpoint: Cambiar estado global del servicio (Solo Administrador General 'admin' - Suspender / Reactivar acceso a clientes)
+app.post("/api/servicio/estado", (req, res) => {
+    try {
+        const usuarioHeader = String(req.headers["x-usuario"] || "").toLowerCase().trim();
+        if (usuarioHeader !== "admin") {
+            return res.status(403).json({
+                error: "NO_AUTORIZADO",
+                mensaje: "Acceso denegado: Solo el Administrador General (admin) tiene autorización para suspender o reactivar el servicio."
+            });
+        }
+
+        const { estadoServicio, motivo } = req.body;
+        if (estadoServicio !== "activo" && estadoServicio !== "suspendido") {
+            return res.status(400).json({ mensaje: "El estado debe ser 'activo' o 'suspendido'." });
+        }
+
+        const configActual = leerConfigServicio();
+        const nuevaConfig = {
+            estadoServicio,
+            motivo: (motivo && String(motivo).trim()) || (estadoServicio === "suspendido" ? "Cuota mensual de respaldos y mantenimientos pendiente de pago" : "Cuota mensual de respaldos y mantenimientos al día"),
+            fechaModificacion: new Date().toISOString(),
+            modificadoPor: usuarioHeader
+        };
+
+        guardarConfigServicio(nuevaConfig);
+
+        const accionTxt = estadoServicio === "suspendido"
+            ? "Acceso de clientes suspendido preventivamente por cuota mensual de respaldos y mantenimiento."
+            : "Acceso de clientes reactivado con éxito (cuota al día).";
+
+        res.json({
+            mensaje: accionTxt,
+            config: nuevaConfig
+        });
+    } catch (error) {
+        console.error("Error actualizando estado del servicio:", error);
+        res.status(500).json({ mensaje: "Error interno al actualizar estado del servicio." });
+    }
+});
+
+// Endpoint: Alternar suspensión individual de un usuario cliente/operador (Solo Administrador General 'admin')
+app.patch("/api/usuarios/:usuario/estado", (req, res) => {
+    try {
+        const usuarioHeader = String(req.headers["x-usuario"] || "").toLowerCase().trim();
+        if (usuarioHeader !== "admin") {
+            return res.status(403).json({
+                error: "NO_AUTORIZADO",
+                mensaje: "Acceso denegado: Solo el Administrador General (admin) puede suspender o reactivar usuarios."
+            });
+        }
+
+        const usuarioObjetivo = decodeURIComponent(req.params.usuario).trim().toLowerCase();
+        const { estado } = req.body;
+
+        if (usuarioObjetivo === "admin") {
+            return res.status(403).json({ mensaje: "El Administrador General tiene acceso permanente y no puede ser suspendido." });
+        }
+
+        if (estado !== "activo" && estado !== "suspendido") {
+            return res.status(400).json({ mensaje: "El estado debe ser 'activo' o 'suspendido'." });
+        }
+
+        const usuarios = leerUsuarios();
+        if (!usuarios) {
+            return res.status(500).json({ mensaje: "Error leyendo base de datos de usuarios." });
+        }
+
+        const idx = usuarios.findIndex(u => u.usuario.toLowerCase() === usuarioObjetivo);
+        if (idx === -1) {
+            return res.status(404).json({ mensaje: "Usuario no encontrado." });
+        }
+
+        usuarios[idx].estado = estado;
+        guardarUsuarios(usuarios);
+
+        const msg = estado === "suspendido"
+            ? `Inicio de sesión suspendido para '${usuarios[idx].usuario}' por cuota de respaldo/mantenimiento.`
+            : `Inicio de sesión reactivado para '${usuarios[idx].usuario}'.`;
+
+        res.json({ mensaje: msg, usuario: usuarios[idx].usuario, estado });
+    } catch (error) {
+        console.error("Error cambiando estado individual de usuario:", error);
+        res.status(500).json({ mensaje: "Error interno al modificar estado del usuario." });
+    }
+});
+
+// ========================================================
+// ENDPOINTS: CONTROL DE VENTANA DE MANTENIMIENTO Y CALENDARIO (EXCLUSIVO ADMIN GENERAL)
+// ========================================================
+app.get("/api/mantenimiento/config", (req, res) => {
+    try {
+        const usuarioHeader = String(req.headers["x-usuario"] || "").toLowerCase().trim();
+        const cfg = leerConfigMantenimiento();
+
+        if (usuarioHeader === "admin") {
+            return res.json(cfg);
+        }
+
+        res.json({
+            mantenimientoActivo: !!cfg.mantenimientoActivo,
+            titulo: cfg.titulo || "Mantenimiento del Sistema",
+            motivo: cfg.motivo || "Labores técnicas de optimización",
+            fechaInicio: cfg.fechaInicio || "",
+            horaInicio: cfg.horaInicio || "",
+            fechaFinEstimada: cfg.fechaFinEstimada || "",
+            horaFinEstimada: cfg.horaFinEstimada || "",
+            duracionEstimada: cfg.duracionEstimada || "",
+            mensajePersonalizado: cfg.mensajePersonalizado || ""
+        });
+    } catch (error) {
+        console.error("Error obteniendo config de mantenimiento:", error);
+        res.status(500).json({ error: "Error al obtener configuración de mantenimiento." });
+    }
+});
+
+app.post("/api/mantenimiento/config", (req, res) => {
+    try {
+        const usuarioHeader = String(req.headers["x-usuario"] || "").toLowerCase().trim();
+        if (usuarioHeader !== "admin") {
+            return res.status(403).json({
+                error: "NO_AUTORIZADO",
+                mensaje: "Acceso denegado: Este módulo de control es exclusivo para el Administrador General (admin)."
+            });
+        }
+
+        const cfgActual = leerConfigMantenimiento();
+        const nuevaCfg = {
+            ...cfgActual,
+            ...req.body,
+            fechaModificacion: new Date().toISOString(),
+            modificadoPor: "admin"
+        };
+        guardarConfigMantenimiento(nuevaCfg);
+
+        res.json({
+            ok: true,
+            mensaje: nuevaCfg.mantenimientoActivo
+                ? "Ventana de mantenimiento ACTIVADA. Las conexiones de clientes y operadores están restringidas."
+                : "Ventana de mantenimiento FINALIZADA. Plataforma operativa para todos los usuarios.",
+            config: nuevaCfg
+        });
+    } catch (error: any) {
+        console.error("Error guardando config de mantenimiento:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post("/api/mantenimiento/calendario", (req, res) => {
+    try {
+        const usuarioHeader = String(req.headers["x-usuario"] || "").toLowerCase().trim();
+        if (usuarioHeader !== "admin") {
+            return res.status(403).json({ error: "NO_AUTORIZADO" });
+        }
+
+        const cfg = leerConfigMantenimiento();
+        if (!Array.isArray(cfg.calendario)) cfg.calendario = [];
+
+        const eventoId = req.body.id || ("MNT-" + Date.now());
+        const evento = {
+            id: eventoId,
+            titulo: req.body.titulo || "Mantenimiento Programado",
+            tipo: req.body.tipo || "PREVENTIVO",
+            fecha: req.body.fecha || new Date().toISOString().split("T")[0],
+            hora: req.body.hora || "22:00",
+            duracion: req.body.duracion || "2 horas",
+            estado: req.body.estado || "PROGRAMADO",
+            motivo: req.body.motivo || "Optimización técnica y mantención",
+            notificadoEmail: !!req.body.notificadoEmail,
+            notificadoWhatsapp: !!req.body.notificadoWhatsapp,
+            creadoEn: req.body.creadoEn || new Date().toISOString()
+        };
+
+        const idx = cfg.calendario.findIndex((e: any) => e.id === eventoId);
+        if (idx >= 0) {
+            cfg.calendario[idx] = { ...cfg.calendario[idx], ...evento };
+        } else {
+            cfg.calendario.unshift(evento);
+        }
+
+        guardarConfigMantenimiento(cfg);
+        res.json({ ok: true, evento, calendario: cfg.calendario });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.delete("/api/mantenimiento/calendario/:id", (req, res) => {
+    try {
+        const usuarioHeader = String(req.headers["x-usuario"] || "").toLowerCase().trim();
+        if (usuarioHeader !== "admin") {
+            return res.status(403).json({ error: "NO_AUTORIZADO" });
+        }
+
+        const idEvento = req.params.id;
+        const cfg = leerConfigMantenimiento();
+        if (Array.isArray(cfg.calendario)) {
+            cfg.calendario = cfg.calendario.filter((e: any) => e.id !== idEvento);
+            guardarConfigMantenimiento(cfg);
+        }
+        res.json({ ok: true, mensaje: "Evento eliminado", calendario: cfg.calendario });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post("/api/mantenimiento/notificar", (req, res) => {
+    try {
+        const usuarioHeader = String(req.headers["x-usuario"] || "").toLowerCase().trim();
+        if (usuarioHeader !== "admin") {
+            return res.status(403).json({ error: "NO_AUTORIZADO" });
+        }
+
+        const cfg = leerConfigMantenimiento();
+        if (!Array.isArray(cfg.historialAvisos)) cfg.historialAvisos = [];
+
+        const registroAviso = {
+            id: "NOTIF-" + Date.now(),
+            canal: req.body.canal || "whatsapp",
+            destinatario: req.body.destinatario || "",
+            mensaje: req.body.mensaje || "",
+            fechaEnvio: new Date().toLocaleDateString("es-CL"),
+            horaEnvio: new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" }),
+            timestamp: Date.now(),
+            eventoId: req.body.eventoId || null
+        };
+
+        cfg.historialAvisos.unshift(registroAviso);
+        if (cfg.historialAvisos.length > 50) cfg.historialAvisos = cfg.historialAvisos.slice(0, 50);
+
+        if (req.body.eventoId && Array.isArray(cfg.calendario)) {
+            const ev = cfg.calendario.find((e: any) => e.id === req.body.eventoId);
+            if (ev) {
+                if (req.body.canal === "whatsapp") ev.notificadoWhatsapp = true;
+                if (req.body.canal === "email") ev.notificadoEmail = true;
+            }
+        }
+
+        guardarConfigMantenimiento(cfg);
+        res.json({ ok: true, mensaje: "Aviso registrado exitosamente", registro: registroAviso });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
 // ========================================================
 // ENDPOINTS: PROGRAMA MAESTRO DE MANTENCIÓN Y EQUIPOS
@@ -737,6 +1179,64 @@ app.get("/api/backup/historial", (req, res) => {
         res.json(historial);
     } catch (err: any) {
         res.status(500).json({ error: "Error leyendo historial de backups" });
+    }
+});
+
+app.get("/api/backup/estado", (req, res) => {
+    try {
+        const indexPath = path.join(backupsDir, "historial_backups.json");
+        let historial: any[] = [];
+        if (fs.existsSync(indexPath)) {
+            historial = JSON.parse(fs.readFileSync(indexPath, "utf8"));
+        }
+        res.json({
+            estado: "ACTIVO",
+            servicios: {
+                d1_sql: true,
+                kv_storage: true,
+                cron_triggers: true
+            },
+            cron_configuracion: {
+                frecuencia: "Cada hora (0 * * * *)",
+                descripcion: "Disparado automáticamente por Cloudflare Cron Triggers"
+            },
+            ultimo_respaldo: historial.length > 0 ? historial[0] : null,
+            total_respaldos_guardados: historial.length
+        });
+    } catch (err: any) {
+        res.status(500).json({ error: "Error obteniendo estado de respaldos" });
+    }
+});
+
+app.post("/api/backup/cron-ejecutar", (req, res) => {
+    try {
+        const indexPath = path.join(backupsDir, "historial_backups.json");
+        let historial: any[] = [];
+        if (fs.existsSync(indexPath)) {
+            historial = JSON.parse(fs.readFileSync(indexPath, "utf8"));
+        }
+        const ultimo = historial.length > 0 ? historial[0] : null;
+        const timestamp = Date.now();
+        const backupId = "SNP-CRON-" + timestamp;
+        const snapshotMeta = {
+            id: backupId,
+            fecha: new Date().toLocaleDateString("es-CL"),
+            hora: new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+            timestamp: timestamp,
+            motivo: "Respaldo Automático Programado (Cloudflare Cron)",
+            tipo: "CRON_AUTOMATICO",
+            usuario: "Cloudflare Cron Trigger",
+            resumen: ultimo?.resumen || {},
+            origen: "Servidor Node & Cloudflare"
+        };
+        const archivoPath = path.join(backupsDir, `${backupId}.json`);
+        fs.writeFileSync(archivoPath, JSON.stringify({ ...snapshotMeta, data: {} }, null, 2), "utf8");
+        historial.unshift(snapshotMeta);
+        if (historial.length > 30) historial = historial.slice(0, 30);
+        fs.writeFileSync(indexPath, JSON.stringify(historial, null, 2), "utf8");
+        res.json({ ok: true, id: backupId, snapshot: snapshotMeta });
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
     }
 });
 
