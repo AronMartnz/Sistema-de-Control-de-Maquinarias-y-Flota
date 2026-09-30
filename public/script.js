@@ -2524,6 +2524,15 @@ function actualizarPermisosFlotaRegistrada() {
         menuItemMaq.style.display = esAdmin ? "flex" : "none";
     }
 
+    // CONTROL ESTRICTO DE VISIBILIDAD: Módulo de Ventana y Alertas de Mantenimiento
+    // Exclusivo para el usuario 'admin' (Administrador General). Oculto para Daniel y operadores.
+    const usuarioActual = (sessionStorage.getItem("usuarioLogueado") || "").toLowerCase().trim();
+    const esAdminGeneralExclusivo = (usuarioActual === "admin");
+    const menuItemMantenimiento = document.getElementById("menuItemVentanaMantenimiento");
+    if (menuItemMantenimiento) {
+        menuItemMantenimiento.style.display = esAdminGeneralExclusivo ? "flex" : "none";
+    }
+
     if (btnRegUnidad) {
         btnRegUnidad.style.display = esAdmin ? "inline-flex" : "none";
     }
@@ -7281,6 +7290,18 @@ function navegarSeccion(idSeccion) {
         iniciarModuloVideoTutoriales();
     }
 
+    if (idSeccion === "controlVentanaMantenimiento") {
+        const u = (sessionStorage.getItem("usuarioLogueado") || "").toLowerCase().trim();
+        if (u !== "admin") {
+            alert("⛔ Acceso Denegado: Este módulo de control de ventana de mantenimiento y restricción de conexiones es exclusivo para el Administrador General (admin).");
+            navegarSeccion("dashboard");
+            return;
+        }
+        if (typeof window.cargarModuloVentanaMantenimiento === "function") {
+            window.cargarModuloVentanaMantenimiento();
+        }
+    }
+
     if ((idSeccion === "registrarVehiculo" || idSeccion === "registrarMaquinaria") && !esUsuarioAdministrador()) {
         alert("⛔ Acceso Restringido: Únicamente los usuarios con rol de Administrador pueden dar de alta o editar unidades de la flota.");
         navegarSeccion("vehiculos");
@@ -9523,11 +9544,20 @@ document.addEventListener("DOMContentLoaded", () => {
         if (btnAdmin) btnAdmin.style.display = "flex";
     }
 
+    // Visibilidad exclusiva de menú de Mantenimiento para usuario 'admin'
+    const esSuperAdminPrincipal = (usuarioLogueado || "").toLowerCase().trim() === "admin";
+    const menuItemMantenimiento = document.getElementById("menuItemVentanaMantenimiento");
+    if (menuItemMantenimiento) {
+        menuItemMantenimiento.style.display = esSuperAdminPrincipal ? "flex" : "none";
+    }
+
     // Para clientes y operadores (cualquiera que NO sea el Administrador General 'admin', incluyendo a Daniel):
-    // verificar si el servicio general fue suspendido por cuota pendiente
+    // 1. verificar si el servicio general fue suspendido por cuota pendiente
+    // 2. verificar si la plataforma está actualmente en ventana de mantenimiento
     if (usuarioLogueado && usuarioLogueado.toLowerCase().trim() !== "admin") {
         (async () => {
             try {
+                // Validación de servicio suspendido
                 const resServ = await fetch("/api/servicio/estado");
                 if (resServ.ok) {
                     const dataServ = await resServ.json();
@@ -9535,6 +9565,17 @@ document.addEventListener("DOMContentLoaded", () => {
                         localStorage.setItem("corssen_servicio_suspendido", "true");
                         sessionStorage.clear();
                         window.location.replace("/login.html?suspendido=1");
+                        return;
+                    }
+                }
+
+                // Validación de ventana de mantenimiento activa
+                const resMant = await fetch("/api/mantenimiento/config");
+                if (resMant.ok) {
+                    const dataMant = await resMant.json();
+                    if (dataMant.mantenimientoActivo) {
+                        sessionStorage.clear();
+                        window.location.replace("/login.html?mantenimiento=1");
                         return;
                     }
                 }
@@ -10934,9 +10975,767 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    // =========================================================
+    // 12.B CONTROL DE VENTANA DE MANTENIMIENTO, CALENDARIO Y AVISOS
+    // EXCLUSIVO ADMINISTRADOR GENERAL ('admin')
+    // =========================================================
+    let configMantenimientoActual = null;
+    let eventoSeleccionadoParaAviso = null;
+
+    async function cargarModuloVentanaMantenimiento() {
+        const usuarioActual = (sessionStorage.getItem("usuarioLogueado") || "").toLowerCase().trim();
+        if (usuarioActual !== "admin") {
+            alert("⛔ Acceso Denegado: Este módulo de control de ventana de mantenimiento y restricción de conexiones es exclusivo para el Administrador General (admin).");
+            navegarSeccion("dashboard");
+            return;
+        }
+
+        try {
+            const res = await fetch("/api/mantenimiento/config", {
+                headers: { "x-usuario": "admin" }
+            });
+            if (!res.ok) throw new Error("Error consultando configuración");
+            configMantenimientoActual = await res.json();
+        } catch (err) {
+            console.error("Error al cargar configuración de mantenimiento:", err);
+            configMantenimientoActual = {
+                mantenimientoActivo: false,
+                titulo: "Mantenimiento y Corrección de Errores del Sistema",
+                motivo: "Mantenimiento preventivo, optimización de base de datos y corrección de incidencias",
+                fechaInicio: new Date().toISOString().split("T")[0],
+                horaInicio: "22:00",
+                fechaFinEstimada: new Date().toISOString().split("T")[0],
+                horaFinEstimada: "02:00",
+                duracionEstimada: "4 horas",
+                mensajePersonalizado: "La plataforma se encuentra temporalmente fuera de servicio por labores programadas de mantenimiento y optimización técnica ejecutadas por el Administrador General. Rogamos no intentar acceder durante este periodo para resguardar la integridad de los datos.",
+                audienciaBloqueo: "todos_excepto_admin",
+                usuariosBloqueados: ["daniel", "operador"],
+                clienteNotificacion: {
+                    nombre: "Daniel Corssen",
+                    empresa: "Corssen Logística y Maquinarias",
+                    whatsapp: "+56 9 8765 4321",
+                    email: "contacto@corssen.cl"
+                },
+                calendario: [],
+                historialAvisos: []
+            };
+        }
+
+        actualizarUIVentanaMantenimiento();
+    }
+
+    function actualizarUIVentanaMantenimiento() {
+        if (!configMantenimientoActual) return;
+        const cfg = configMantenimientoActual;
+        const activo = !!cfg.mantenimientoActivo;
+
+        // Badge y botón principal
+        const badgeGeneral = document.getElementById("badgeEstadoMantenimientoGeneral");
+        const btnToggle = document.getElementById("btnToggleMantenimientoGeneral");
+        const badgeMenu = document.getElementById("badgeEstadoVentanaMenu");
+        const kpiEstadoTexto = document.getElementById("kpiMantenimientoEstadoTexto");
+        const kpiUsuariosBloq = document.getElementById("kpiUsuariosBloqueadosCount");
+        const kpiTotalAvisos = document.getElementById("kpiTotalAvisosEnviados");
+
+        if (badgeGeneral) {
+            if (activo) {
+                badgeGeneral.className = "badge badge-rojo";
+                badgeGeneral.textContent = "🚧 MANTENIMIENTO ACTIVO (BLOQUEO EN VIVO)";
+                badgeGeneral.style.background = "#fee2e2";
+                badgeGeneral.style.color = "#dc2626";
+                badgeGeneral.style.border = "1px solid #fca5a5";
+            } else {
+                badgeGeneral.className = "badge badge-verde";
+                badgeGeneral.textContent = "🟢 PLATAFORMA OPERATIVA";
+                badgeGeneral.style.background = "#dcfce7";
+                badgeGeneral.style.color = "#15803d";
+                badgeGeneral.style.border = "1px solid #86efac";
+            }
+        }
+
+        if (btnToggle) {
+            if (activo) {
+                btnToggle.style.background = "#16a34a";
+                btnToggle.style.borderColor = "#16a34a";
+                btnToggle.innerHTML = "<span>🟢 Finalizar Mantenimiento y Abrir Acceso</span>";
+            } else {
+                btnToggle.style.background = "#d97706";
+                btnToggle.style.borderColor = "#d97706";
+                btnToggle.innerHTML = "<span>⚡ Iniciar Mantenimiento Ahora</span>";
+            }
+        }
+
+        if (badgeMenu) {
+            if (activo) {
+                badgeMenu.className = "badge badge-amarillo";
+                badgeMenu.textContent = "MANT.";
+                badgeMenu.style.background = "#fef3c7";
+                badgeMenu.style.color = "#b45309";
+            } else {
+                badgeMenu.className = "badge badge-verde";
+                badgeMenu.textContent = "OK";
+                badgeMenu.style.background = "#dcfce7";
+                badgeMenu.style.color = "#15803d";
+            }
+            badgeMenu.style.fontSize = "9.5px";
+            badgeMenu.style.padding = "2px 7px";
+            badgeMenu.style.flexShrink = "0";
+            badgeMenu.style.marginLeft = "auto";
+        }
+
+        if (kpiEstadoTexto) {
+            if (activo) {
+                kpiEstadoTexto.textContent = "Mantenimiento Activo";
+                kpiEstadoTexto.style.color = "#dc2626";
+            } else {
+                kpiEstadoTexto.textContent = "Operativo Normal";
+                kpiEstadoTexto.style.color = "#059669";
+            }
+        }
+
+        if (kpiUsuariosBloq) {
+            if (cfg.audienciaBloqueo === "todos_excepto_admin") {
+                kpiUsuariosBloq.textContent = "Todos (Daniel & Operadores)";
+            } else {
+                const count = (cfg.usuariosBloqueados || []).length;
+                kpiUsuariosBloq.textContent = `${count} Cuentas Seleccionadas`;
+            }
+        }
+
+        const avisosList = Array.isArray(cfg.historialAvisos) ? cfg.historialAvisos : [];
+        if (kpiTotalAvisos) {
+            kpiTotalAvisos.textContent = `${avisosList.length} Notificaciones`;
+        }
+
+        // Formulario
+        const radioAud = document.querySelector(`input[name="radioAudienciaBloqueo"][value="${cfg.audienciaBloqueo || 'todos_excepto_admin'}"]`);
+        if (radioAud) radioAud.checked = true;
+        actualizarSeleccionAudienciaUI();
+
+        const checkDan = document.getElementById("checkBloquearDaniel");
+        if (checkDan) checkDan.checked = (cfg.usuariosBloqueados || []).includes("daniel");
+
+        const checkOp = document.getElementById("checkBloquearOperador");
+        if (checkOp) checkOp.checked = (cfg.usuariosBloqueados || []).includes("operador");
+
+        const inFechaIni = document.getElementById("inputFechaInicioMantenimiento");
+        if (inFechaIni) inFechaIni.value = cfg.fechaInicio || new Date().toISOString().split("T")[0];
+
+        const inHoraIni = document.getElementById("inputHoraInicioMantenimiento");
+        if (inHoraIni) inHoraIni.value = cfg.horaInicio || "22:00";
+
+        const inFechaFin = document.getElementById("inputFechaFinMantenimiento");
+        if (inFechaFin) inFechaFin.value = cfg.fechaFinEstimada || new Date().toISOString().split("T")[0];
+
+        const inHoraFin = document.getElementById("inputHoraFinMantenimiento");
+        if (inHoraFin) inHoraFin.value = cfg.horaFinEstimada || "02:00";
+
+        const inMotivo = document.getElementById("inputMotivoMantenimiento");
+        if (inMotivo) inMotivo.value = cfg.motivo || "Mantenimiento preventivo, optimización de base de datos y corrección de incidencias";
+
+        const inDuracion = document.getElementById("inputDuracionEstimadaMantenimiento");
+        if (inDuracion) inDuracion.value = cfg.duracionEstimada || "4 horas";
+
+        const inMsg = document.getElementById("inputMensajePersonalizadoMantenimiento");
+        if (inMsg) inMsg.value = cfg.mensajePersonalizado || "La plataforma se encuentra temporalmente fuera de servicio por labores programadas de mantenimiento y optimización técnica ejecutadas por el Administrador General. Rogamos no intentar acceder durante este periodo para resguardar la integridad de los datos.";
+
+        // Datos del cliente destinatario
+        if (cfg.clienteNotificacion) {
+            const inNombre = document.getElementById("inputNotifNombreCliente");
+            const inEmpresa = document.getElementById("inputNotifEmpresaCliente");
+            const inWsp = document.getElementById("inputNotifWhatsappCliente");
+            const inEmail = document.getElementById("inputNotifEmailCliente");
+
+            if (inNombre && cfg.clienteNotificacion.nombre) inNombre.value = cfg.clienteNotificacion.nombre;
+            if (inEmpresa && cfg.clienteNotificacion.empresa) inEmpresa.value = cfg.clienteNotificacion.empresa;
+            if (inWsp && cfg.clienteNotificacion.whatsapp) inWsp.value = cfg.clienteNotificacion.whatsapp;
+            if (inEmail && cfg.clienteNotificacion.email) inEmail.value = cfg.clienteNotificacion.email;
+        }
+
+        renderizarTablaCalendario();
+        regenerarMensajeAvisoCliente();
+        renderizarHistorialAvisos();
+    }
+
+    function actualizarSeleccionAudienciaUI() {
+        const radioPersonalizado = document.querySelector('input[name="radioAudienciaBloqueo"][value="personalizado"]');
+        const cajaCheckboxes = document.getElementById("listaCheckboxesUsuariosBloqueados");
+        if (cajaCheckboxes) {
+            cajaCheckboxes.style.display = (radioPersonalizado && radioPersonalizado.checked) ? "flex" : "none";
+        }
+    }
+
+    async function toggleVentanaMantenimientoPrincipal() {
+        if (!configMantenimientoActual) await cargarModuloVentanaMantenimiento();
+        if (!configMantenimientoActual) return;
+
+        const nuevoEstado = !configMantenimientoActual.mantenimientoActivo;
+
+        if (nuevoEstado) {
+            const confirmar = confirm(
+                "⚠️ ¿Desea ACTIVAR la ventana de mantenimiento en vivo?\n\n" +
+                "• Los clientes (Daniel Corssen) y operadores serán BLOQUEADOS de inmediato al intentar iniciar sesión.\n" +
+                "• Si tienen sesiones abiertas, serán desconectados con aviso explicativo.\n" +
+                "• Tu usuario 'admin' (Administrador General) es el ÚNICO con pase total garantizado para realizar correcciones y mantención sin interferencias."
+            );
+            if (!confirmar) return;
+        } else {
+            const confirmar = confirm(
+                "🟢 ¿Desea FINALIZAR la ventana de mantenimiento?\n\n" +
+                "• Se reactivará el acceso regular a la plataforma para todos los clientes y operadores autorizados."
+            );
+            if (!confirmar) return;
+        }
+
+        try {
+            const payload = {
+                ...configMantenimientoActual,
+                mantenimientoActivo: nuevoEstado
+            };
+
+            const res = await fetch("/api/mantenimiento/config", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-usuario": "admin"
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) throw new Error("Error al modificar estado de mantenimiento");
+            const data = await res.json();
+            configMantenimientoActual = data.config;
+            actualizarUIVentanaMantenimiento();
+
+            alert(nuevoEstado 
+                ? "🚧 VENTANA DE MANTENIMIENTO ACTIVADA:\n\nLos clientes y operadores han sido bloqueados. Únicamente tu cuenta 'admin' puede operar en la plataforma." 
+                : "🟢 VENTANA DE MANTENIMIENTO FINALIZADA:\n\nLa plataforma está 100% operativa y el acceso de clientes ha sido restablecido.");
+        } catch (err) {
+            alert("Error al cambiar estado: " + err.message);
+        }
+    }
+
+    async function guardarAjustesVentanaMantenimiento(e) {
+        if (e) e.preventDefault();
+        if (!configMantenimientoActual) return;
+
+        const radioAud = document.querySelector('input[name="radioAudienciaBloqueo"]:checked');
+        const audVal = radioAud ? radioAud.value : "todos_excepto_admin";
+
+        const bloqList = [];
+        if (document.getElementById("checkBloquearDaniel")?.checked) bloqList.push("daniel");
+        if (document.getElementById("checkBloquearOperador")?.checked) bloqList.push("operador");
+
+        const payload = {
+            ...configMantenimientoActual,
+            audienciaBloqueo: audVal,
+            usuariosBloqueados: bloqList,
+            fechaInicio: document.getElementById("inputFechaInicioMantenimiento")?.value || "",
+            horaInicio: document.getElementById("inputHoraInicioMantenimiento")?.value || "",
+            fechaFinEstimada: document.getElementById("inputFechaFinMantenimiento")?.value || "",
+            horaFinEstimada: document.getElementById("inputHoraFinMantenimiento")?.value || "",
+            motivo: document.getElementById("inputMotivoMantenimiento")?.value || "",
+            duracionEstimada: document.getElementById("inputDuracionEstimadaMantenimiento")?.value || "",
+            mensajePersonalizado: document.getElementById("inputMensajePersonalizadoMantenimiento")?.value || "",
+            clienteNotificacion: {
+                nombre: document.getElementById("inputNotifNombreCliente")?.value || "Daniel Corssen",
+                empresa: document.getElementById("inputNotifEmpresaCliente")?.value || "Corssen Logística y Maquinarias",
+                whatsapp: document.getElementById("inputNotifWhatsappCliente")?.value || "+56 9 8765 4321",
+                email: document.getElementById("inputNotifEmailCliente")?.value || "contacto@corssen.cl"
+            }
+        };
+
+        try {
+            const res = await fetch("/api/mantenimiento/config", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-usuario": "admin"
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) throw new Error("Error al guardar ajustes");
+            const data = await res.json();
+            configMantenimientoActual = data.config;
+            actualizarUIVentanaMantenimiento();
+            alert("✓ Configuración de la ventana de mantenimiento y destinatario guardada con éxito.");
+        } catch (err) {
+            alert("Error al guardar: " + err.message);
+        }
+    }
+
+    function renderizarTablaCalendario() {
+        const tbody = document.getElementById("tbodyCalendarioMantenimiento");
+        if (!tbody) return;
+
+        const lista = (configMantenimientoActual && Array.isArray(configMantenimientoActual.calendario)) 
+            ? configMantenimientoActual.calendario 
+            : [];
+
+        if (lista.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align:center; padding:24px; color:#64748b; font-size:13px;">
+                        📅 No hay mantenciones programadas en el calendario. Haz clic en <strong>"➕ Agendar Nueva Fecha"</strong> para organizar tus labores técnicas.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = lista.map(ev => {
+            const badgeTipo = ev.tipo === "CORRECCION_ERRORES" 
+                ? `<span class="badge badge-rojo" style="font-size:10.5px;">Corrección Errores</span>`
+                : ev.tipo === "OPTIMIZACION_DB"
+                ? `<span class="badge badge-azul" style="font-size:10.5px;">Optimización DB</span>`
+                : ev.tipo === "RESPALDO_MAYOR"
+                ? `<span class="badge badge-morado" style="font-size:10.5px; background:#f3e8ff; color:#7e22ce;">Respaldo Mayor</span>`
+                : `<span class="badge badge-amarillo" style="font-size:10.5px;">Preventivo & Correctivo</span>`;
+
+            const badgeEstado = ev.estado === "EN_CURSO"
+                ? `<span class="badge badge-rojo" style="font-weight:700;">🚧 EN CURSO</span>`
+                : ev.estado === "FINALIZADO"
+                ? `<span class="badge badge-verde" style="font-weight:700;">✓ FINALIZADO</span>`
+                : `<span class="badge badge-azul" style="font-weight:700;">📅 PROGRAMADO</span>`;
+
+            const badgeWsp = ev.notificadoWhatsapp 
+                ? `<span style="display:inline-flex; align-items:center; gap:2px; font-size:11px; color:#16a34a; font-weight:700;">📲 WA ✓</span>`
+                : `<span style="font-size:11px; color:#94a3b8;">📲 WA -</span>`;
+
+            const badgeMail = ev.notificadoEmail
+                ? `<span style="display:inline-flex; align-items:center; gap:2px; font-size:11px; color:#2563eb; font-weight:700;">✉️ Mail ✓</span>`
+                : `<span style="font-size:11px; color:#94a3b8;">✉️ Mail -</span>`;
+
+            const fParts = (ev.fecha || "").split("-");
+            const fechaFormateada = fParts.length === 3 ? `${fParts[2]}/${fParts[1]}/${fParts[0]}` : ev.fecha;
+
+            return `
+                <tr>
+                    <td style="white-space:nowrap;">
+                        <div style="font-weight:700; color:#0f172a;">${fechaFormateada}</div>
+                        <div style="font-size:11.5px; color:#64748b;">⏰ ${ev.hora || '22:00'} hrs</div>
+                    </td>
+                    <td>
+                        <div style="font-weight:700; color:#1e293b;">${ev.titulo || 'Mantenimiento del Sistema'}</div>
+                        <div style="font-size:11.5px; color:#64748b; margin-top:2px;">${ev.motivo || ''}</div>
+                    </td>
+                    <td>${badgeTipo}</td>
+                    <td style="font-weight:600; color:#334155;">${ev.duracion || '2 horas'}</td>
+                    <td>${badgeEstado}</td>
+                    <td>
+                        <div style="display:flex; gap:6px; flex-direction:column;">
+                            ${badgeWsp}
+                            ${badgeMail}
+                        </div>
+                    </td>
+                    <td style="white-space:nowrap;">
+                        <div style="display:flex; gap:6px; align-items:center;">
+                            <button type="button" onclick="cargarEventoEnAviso('${ev.id}')" class="btn-secundario" style="padding:4px 8px; font-size:11px; font-weight:700;" title="Cargar fecha y hora en el mensaje de aviso">
+                                📲 Preparar Aviso
+                            </button>
+                            <button type="button" onclick="iniciarMantenimientoDesdeCalendario('${ev.id}')" class="btn-primario" style="padding:4px 8px; font-size:11px; font-weight:700; background:#d97706; border-color:#d97706;" title="Activar ventana con estos datos">
+                                ⚡ Iniciar
+                            </button>
+                            <button type="button" onclick="eliminarEventoCalendario('${ev.id}')" class="btn-secundario" style="padding:4px 8px; font-size:11px; color:#dc2626; border-color:#fca5a5;" title="Eliminar del calendario">
+                                🗑️
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join("");
+    }
+
+    function abrirModalNuevoEventoMantenimiento() {
+        const modal = document.getElementById("modalNuevoEventoMantenimiento");
+        if (modal) {
+            const inFecha = document.getElementById("inputModalEventoFecha");
+            if (inFecha && !inFecha.value) inFecha.value = new Date().toISOString().split("T")[0];
+            modal.style.display = "flex";
+        }
+    }
+
+    function cerrarModalNuevoEventoMantenimiento() {
+        const modal = document.getElementById("modalNuevoEventoMantenimiento");
+        if (modal) modal.style.display = "none";
+    }
+
+    async function guardarNuevoEventoCalendario(e) {
+        if (e) e.preventDefault();
+
+        const titulo = document.getElementById("inputModalEventoTitulo")?.value || "Mantenimiento Técnico";
+        const tipo = document.getElementById("selectModalEventoTipo")?.value || "CORRECTIVO_Y_PREVENTIVO";
+        const duracion = document.getElementById("inputModalEventoDuracion")?.value || "3 horas";
+        const fecha = document.getElementById("inputModalEventoFecha")?.value || new Date().toISOString().split("T")[0];
+        const hora = document.getElementById("inputModalEventoHora")?.value || "22:00";
+        const motivo = document.getElementById("inputModalEventoMotivo")?.value || "";
+
+        const nuevoEvento = {
+            id: "MNT-" + Date.now(),
+            titulo,
+            tipo,
+            duracion,
+            fecha,
+            hora,
+            motivo,
+            estado: "PROGRAMADO",
+            notificadoWhatsapp: false,
+            notificadoEmail: false,
+            creadoEn: new Date().toISOString()
+        };
+
+        try {
+            const res = await fetch("/api/mantenimiento/calendario", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-usuario": "admin"
+                },
+                body: JSON.stringify(nuevoEvento)
+            });
+
+            if (!res.ok) throw new Error("Error al guardar evento en calendario");
+            const data = await res.json();
+            if (configMantenimientoActual) {
+                configMantenimientoActual.calendario = data.calendario;
+            }
+            cerrarModalNuevoEventoMantenimiento();
+            actualizarUIVentanaMantenimiento();
+            alert(`✓ Evento "${titulo}" agendado con éxito en el calendario para el ${fecha} a las ${hora} hrs.`);
+        } catch (err) {
+            alert("Error al agendar evento: " + err.message);
+        }
+    }
+
+    async function eliminarEventoCalendario(id) {
+        const confirmar = confirm("¿Desea eliminar esta fecha de mantención del calendario?");
+        if (!confirmar) return;
+
+        try {
+            const res = await fetch(`/api/mantenimiento/calendario/${encodeURIComponent(id)}`, {
+                method: "DELETE",
+                headers: { "x-usuario": "admin" }
+            });
+            if (!res.ok) throw new Error("Error al eliminar evento");
+            const data = await res.json();
+            if (configMantenimientoActual) {
+                configMantenimientoActual.calendario = data.calendario;
+            }
+            renderizarTablaCalendario();
+        } catch (err) {
+            alert("Error al eliminar: " + err.message);
+        }
+    }
+
+    async function iniciarMantenimientoDesdeCalendario(id) {
+        if (!configMantenimientoActual || !Array.isArray(configMantenimientoActual.calendario)) return;
+        const ev = configMantenimientoActual.calendario.find(e => e.id === id);
+        if (!ev) return;
+
+        const conf = confirm(
+            `⚡ ¿Desea iniciar inmediatamente la ventana de mantenimiento para:\n"${ev.titulo}" (${ev.fecha} ${ev.hora} hrs)?\n\n` +
+            `Esto activará el bloqueo para clientes y operadores de inmediato.`
+        );
+        if (!conf) return;
+
+        const payload = {
+            ...configMantenimientoActual,
+            mantenimientoActivo: true,
+            titulo: ev.titulo,
+            motivo: ev.motivo || ev.titulo,
+            fechaInicio: ev.fecha,
+            horaInicio: ev.hora,
+            duracionEstimada: ev.duracion
+        };
+
+        try {
+            const res = await fetch("/api/mantenimiento/config", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-usuario": "admin"
+                },
+                body: JSON.stringify(payload)
+            });
+            if (!res.ok) throw new Error("Error al activar mantenimiento");
+            const data = await res.json();
+            configMantenimientoActual = data.config;
+            actualizarUIVentanaMantenimiento();
+            alert("🚧 Mantenimiento ACTIVADO. Clientes bloqueados. Acceso exclusivo para el Administrador General.");
+        } catch (err) {
+            alert("Error al iniciar: " + err.message);
+        }
+    }
+
+    function cargarEventoEnAviso(id) {
+        if (!configMantenimientoActual || !Array.isArray(configMantenimientoActual.calendario)) return;
+        const ev = configMantenimientoActual.calendario.find(e => e.id === id);
+        if (!ev) return;
+
+        eventoSeleccionadoParaAviso = ev;
+
+        const inFechaIni = document.getElementById("inputFechaInicioMantenimiento");
+        const inHoraIni = document.getElementById("inputHoraInicioMantenimiento");
+        const inMotivo = document.getElementById("inputMotivoMantenimiento");
+        const inDuracion = document.getElementById("inputDuracionEstimadaMantenimiento");
+
+        if (inFechaIni) inFechaIni.value = ev.fecha;
+        if (inHoraIni) inHoraIni.value = ev.hora;
+        if (inMotivo) inMotivo.value = ev.motivo || ev.titulo;
+        if (inDuracion) inDuracion.value = ev.duracion;
+
+        regenerarMensajeAvisoCliente();
+
+        const elAviso = document.getElementById("preMensajeGeneradoAviso");
+        if (elAviso) {
+            elAviso.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+    }
+
+    function generarTextoMensajeAviso() {
+        const nombreCliente = document.getElementById("inputNotifNombreCliente")?.value.trim() || "Daniel Corssen";
+        const empresaCliente = document.getElementById("inputNotifEmpresaCliente")?.value.trim() || "Corssen Logística y Maquinarias";
+        const fechaIni = document.getElementById("inputFechaInicioMantenimiento")?.value || (configMantenimientoActual?.fechaInicio || "");
+        const horaIni = document.getElementById("inputHoraInicioMantenimiento")?.value || (configMantenimientoActual?.horaInicio || "22:00");
+        const duracion = document.getElementById("inputDuracionEstimadaMantenimiento")?.value || (configMantenimientoActual?.duracionEstimada || "4 horas");
+        const horaFin = document.getElementById("inputHoraFinMantenimiento")?.value || (configMantenimientoActual?.horaFinEstimada || "02:00");
+        const motivo = document.getElementById("inputMotivoMantenimiento")?.value || (configMantenimientoActual?.motivo || "Optimización técnica del sistema y corrección de incidencias");
+
+        const fParts = fechaIni.split("-");
+        const fechaFormateada = fParts.length === 3 ? `${fParts[2]}/${fParts[1]}/${fParts[0]}` : fechaIni;
+
+        return `🚜 *AVISO DE MANTENIMIENTO TÉCNICO PROGRAMADO*
+*${empresaCliente}*
+
+Estimado(a) *${nombreCliente}*:
+
+Le informamos que se ejecutará una ventana programada de mantenimiento preventivo, optimización de base de datos y corrección de errores en la plataforma de control de flota.
+
+📅 *Fecha:* ${fechaFormateada}
+⏰ *Hora de Inicio:* ${horaIni} hrs
+⏱️ *Duración Estimada:* ${duracion} (Restablecimiento aprox: ${horaFin} hrs)
+🔧 *Labores Técnicas:* ${motivo}
+
+⚠️ *Información Importante:*
+Durante este intervalo, el inicio de sesión a la plataforma estará temporalmente suspendido para resguardar la seguridad y consistencia de los datos mientras el Administrador General aplica las actualizaciones.
+
+Agradecemos su comprensión y colaboración.
+Atentamente,
+*Administración General - Plataforma Corssen*`;
+    }
+
+    function regenerarMensajeAvisoCliente() {
+        const pre = document.getElementById("preMensajeGeneradoAviso");
+        if (pre) {
+            pre.textContent = generarTextoMensajeAviso();
+        }
+    }
+
+    async function enviarMensajeWhatsappCliente() {
+        const wspInput = document.getElementById("inputNotifWhatsappCliente")?.value || "";
+        const cleanPhone = wspInput.replace(/[^0-9+]/g, "").replace(/^\+/, "");
+        if (!cleanPhone) {
+            alert("Por favor ingrese un número de teléfono de WhatsApp válido (ej: 56912345678).");
+            return;
+        }
+
+        const texto = generarTextoMensajeAviso();
+        const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(texto)}`;
+
+        try {
+            await fetch("/api/mantenimiento/notificar", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-usuario": "admin"
+                },
+                body: JSON.stringify({
+                    canal: "whatsapp",
+                    destinatario: wspInput,
+                    mensaje: texto,
+                    eventoId: eventoSeleccionadoParaAviso ? eventoSeleccionadoParaAviso.id : null
+                })
+            });
+
+            if (configMantenimientoActual) {
+                if (!Array.isArray(configMantenimientoActual.historialAvisos)) configMantenimientoActual.historialAvisos = [];
+                configMantenimientoActual.historialAvisos.unshift({
+                    id: "NOTIF-" + Date.now(),
+                    canal: "whatsapp",
+                    destinatario: wspInput,
+                    mensaje: texto,
+                    fechaEnvio: new Date().toLocaleDateString("es-CL"),
+                    horaEnvio: new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" }),
+                    timestamp: Date.now()
+                });
+                if (eventoSeleccionadoParaAviso) {
+                    eventoSeleccionadoParaAviso.notificadoWhatsapp = true;
+                }
+            }
+            renderizarHistorialAvisos();
+            renderizarTablaCalendario();
+        } catch (_) {}
+
+        window.open(url, "_blank");
+    }
+
+    function copiarMensajeWhatsappPortapapeles() {
+        const texto = generarTextoMensajeAviso();
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(texto).then(() => {
+                alert("✓ Mensaje copiado al portapapeles con formato listo para WhatsApp o correo.");
+            }).catch(() => {
+                copiarTextoFallback(texto);
+            });
+        } else {
+            copiarTextoFallback(texto);
+        }
+    }
+
+    function copiarTextoFallback(texto) {
+        const ta = document.createElement("textarea");
+        ta.value = texto;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        alert("✓ Mensaje copiado al portapapeles.");
+    }
+
+    async function enviarMensajeEmailCliente() {
+        const emailInput = document.getElementById("inputNotifEmailCliente")?.value.trim() || "";
+        if (!emailInput || !emailInput.includes("@")) {
+            alert("Por favor ingrese un correo electrónico válido para el cliente.");
+            return;
+        }
+
+        const texto = generarTextoMensajeAviso();
+        const fechaIni = document.getElementById("inputFechaInicioMantenimiento")?.value || "";
+        const asunto = `Aviso de Mantenimiento Técnico Programado - Plataforma Corssen (${fechaIni})`;
+        const mailtoUrl = `mailto:${encodeURIComponent(emailInput)}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(texto)}`;
+
+        try {
+            await fetch("/api/mantenimiento/notificar", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-usuario": "admin"
+                },
+                body: JSON.stringify({
+                    canal: "email",
+                    destinatario: emailInput,
+                    mensaje: texto,
+                    eventoId: eventoSeleccionadoParaAviso ? eventoSeleccionadoParaAviso.id : null
+                })
+            });
+
+            if (configMantenimientoActual) {
+                if (!Array.isArray(configMantenimientoActual.historialAvisos)) configMantenimientoActual.historialAvisos = [];
+                configMantenimientoActual.historialAvisos.unshift({
+                    id: "NOTIF-" + Date.now(),
+                    canal: "email",
+                    destinatario: emailInput,
+                    mensaje: texto,
+                    fechaEnvio: new Date().toLocaleDateString("es-CL"),
+                    horaEnvio: new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" }),
+                    timestamp: Date.now()
+                });
+                if (eventoSeleccionadoParaAviso) {
+                    eventoSeleccionadoParaAviso.notificadoEmail = true;
+                }
+            }
+            renderizarHistorialAvisos();
+            renderizarTablaCalendario();
+        } catch (_) {}
+
+        window.location.href = mailtoUrl;
+    }
+
+    function renderizarHistorialAvisos() {
+        const cont = document.getElementById("contenedorHistorialAvisos");
+        const badgeCount = document.getElementById("badgeContadorAvisosHistorial");
+        if (!cont) return;
+
+        const lista = (configMantenimientoActual && Array.isArray(configMantenimientoActual.historialAvisos)) 
+            ? configMantenimientoActual.historialAvisos 
+            : [];
+
+        if (badgeCount) badgeCount.textContent = `${lista.length} avisos`;
+
+        if (lista.length === 0) {
+            cont.innerHTML = `
+                <div style="font-size:12px; color:#94a3b8; padding:10px 0; text-align:center;">
+                    Aún no se han enviado avisos al cliente desde este módulo.
+                </div>
+            `;
+            return;
+        }
+
+        cont.innerHTML = lista.map(item => {
+            const esWsp = item.canal === "whatsapp";
+            const icono = esWsp ? "📲" : "✉️";
+            const canalNombre = esWsp ? "WhatsApp" : "Correo Electrónico";
+            const color = esWsp ? "#16a34a" : "#2563eb";
+            const bg = esWsp ? "#f0fdf4" : "#eff6ff";
+
+            return `
+                <div style="background:${bg}; border:1px solid ${color}33; border-radius:8px; padding:10px 12px; font-size:12px; display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <span style="font-weight:700; color:${color}; margin-right:6px;">${icono} ${canalNombre}</span>
+                        <span style="color:#334155; font-weight:600;">Destino: ${item.destinatario || 'Cliente'}</span>
+                    </div>
+                    <div style="color:#64748b; font-size:11px;">
+                        ${item.fechaEnvio || ''} ${item.horaEnvio || ''}
+                    </div>
+                </div>
+            `;
+        }).join("");
+    }
+
+    // Vincular funciones del módulo de mantenimiento a window
+    window.cargarModuloVentanaMantenimiento = cargarModuloVentanaMantenimiento;
+    window.actualizarUIVentanaMantenimiento = actualizarUIVentanaMantenimiento;
+    window.actualizarSeleccionAudienciaUI = actualizarSeleccionAudienciaUI;
+    window.toggleVentanaMantenimientoPrincipal = toggleVentanaMantenimientoPrincipal;
+    window.guardarAjustesVentanaMantenimiento = guardarAjustesVentanaMantenimiento;
+    window.renderizarTablaCalendario = renderizarTablaCalendario;
+    window.abrirModalNuevoEventoMantenimiento = abrirModalNuevoEventoMantenimiento;
+    window.cerrarModalNuevoEventoMantenimiento = cerrarModalNuevoEventoMantenimiento;
+    window.guardarNuevoEventoCalendario = guardarNuevoEventoCalendario;
+    window.eliminarEventoCalendario = eliminarEventoCalendario;
+    window.iniciarMantenimientoDesdeCalendario = iniciarMantenimientoDesdeCalendario;
+    window.cargarEventoEnAviso = cargarEventoEnAviso;
+    window.generarTextoMensajeAviso = generarTextoMensajeAviso;
+    window.regenerarMensajeAvisoCliente = regenerarMensajeAvisoCliente;
+    window.enviarMensajeWhatsappCliente = enviarMensajeWhatsappCliente;
+    window.copiarMensajeWhatsappPortapapeles = copiarMensajeWhatsappPortapapeles;
+    window.enviarMensajeEmailCliente = enviarMensajeEmailCliente;
+    window.renderizarHistorialAvisos = renderizarHistorialAvisos;
+
+    // Si el usuario logueado es admin, precargar configuración de mantenimiento
+    if ((sessionStorage.getItem("usuarioLogueado") || "").toLowerCase().trim() === "admin") {
+        cargarModuloVentanaMantenimiento();
+    }
+
     // Sondeo de sincronización periódica cada 15 segundos para mantener todos los dispositivos (computador y celular) alineados en tiempo real
-    setInterval(() => {
+    setInterval(async () => {
         sincronizarConUltimoRespaldoNube();
+
+        // Si es cliente u operador, vigilar si se activó el mantenimiento en vivo
+        const uActual = (sessionStorage.getItem("usuarioLogueado") || "").toLowerCase().trim();
+        if (uActual && uActual !== "admin") {
+            try {
+                const resMant = await fetch("/api/mantenimiento/config");
+                if (resMant.ok) {
+                    const dataMant = await resMant.json();
+                    if (dataMant.mantenimientoActivo) {
+                        sessionStorage.clear();
+                        window.location.replace("/login.html?mantenimiento=1");
+                    }
+                }
+            } catch (_) {}
+        }
     }, 15000);
 
     // Event listener para efecto sticky con elevación suave en el título principal / topbar
