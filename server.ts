@@ -349,18 +349,25 @@ app.post("/api/login", async (req, res) => {
 // Obtener usuarios (Solo admin)
 app.get("/api/usuarios", verificarAdmin, (req, res) => {
     try {
+        const usuarioHeader = String(req.headers["x-usuario"] || (req as any).usuario || "").toLowerCase().trim();
+        const esAdminGeneral = (usuarioHeader === "admin");
         const usuarios = leerUsuarios();
         if (!usuarios) {
             return res.status(500).json({ mensaje: "Error al leer usuarios." });
         }
 
-        const usuariosSeguros = usuarios.map(u => ({
-            usuario: u.usuario,
-            nombre: u.nombre,
-            rol: u.rol,
-            avatar: u.avatar || (u.rol === "admin" ? "avatar-admin" : "avatar-mecanico"),
-            estado: u.usuario.toLowerCase() === "admin" ? "activo" : (u.estado || "activo")
-        }));
+        const usuariosSeguros = usuarios.map((u: any) => {
+            const uLower = String(u.usuario || "").toLowerCase().trim();
+            const passVisible = u.password_plana || (!String(u.password || "").startsWith("$2") ? u.password : (uLower === "admin" ? "admin123" : "1234"));
+            return {
+                usuario: u.usuario,
+                nombre: u.nombre,
+                rol: u.rol,
+                avatar: u.avatar || (u.rol === "admin" ? "avatar-admin" : "avatar-mecanico"),
+                estado: uLower === "admin" ? "activo" : (u.estado || "activo"),
+                ...(esAdminGeneral ? { password_visible: passVisible } : {})
+            };
+        });
 
         res.json(usuariosSeguros);
     } catch (error) {
@@ -407,6 +414,7 @@ app.post("/api/usuarios", verificarAdmin, async (req, res) => {
         usuarios.push({
             usuario: usuario.trim(),
             password: passwordHash,
+            password_plana: String(password).trim(),
             nombre: nombre.trim(),
             rol: rol,
             avatar: avatarAsignado,
@@ -544,6 +552,7 @@ app.patch("/api/usuarios/:usuario/password", verificarAdmin, async (req, res) =>
         }
 
         usuarios[indice].password = await bcrypt.hash(nuevaPassword, 10);
+        usuarios[indice].password_plana = String(nuevaPassword).trim();
         guardarUsuarios(usuarios);
 
         res.json({ mensaje: "Contraseña cambiada correctamente." });
