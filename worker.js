@@ -93,6 +93,14 @@ export default {
       return new Response(null, { headers: corsHeaders });
     }
 
+    // Bloquear acceso público directo a archivos de usuarios
+    if (path.toLowerCase() === "/usuarios.json") {
+      return new Response(JSON.stringify({ error: "ACCESO_DENEGADO", mensaje: "Acceso no permitido." }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
     // Helper para obtener el almacenamiento KV correcto
     const kv = (env && (env.CORSSEN_STORAGE || env.CORSSEN_KV)) || null;
 
