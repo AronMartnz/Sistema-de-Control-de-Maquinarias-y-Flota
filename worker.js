@@ -37,6 +37,43 @@ let GLOBAL_CONFIG_SERVICIO = {
   modificadoPor: "admin"
 };
 
+let GLOBAL_CONFIG_MANTENIMIENTO = {
+  mantenimientoActivo: false,
+  titulo: "Mantenimiento y Corrección de Errores del Sistema",
+  motivo: "Mantenimiento preventivo, optimización de base de datos y corrección de incidencias",
+  fechaInicio: "2026-09-30",
+  horaInicio: "22:00",
+  fechaFinEstimada: "2026-10-01",
+  horaFinEstimada: "02:00",
+  duracionEstimada: "4 horas",
+  mensajePersonalizado: "La plataforma se encuentra temporalmente fuera de servicio por labores programadas de mantenimiento y optimización técnica ejecutadas por el Administrador General. Rogamos no intentar acceder durante este periodo para resguardar la integridad de los datos.",
+  audienciaBloqueo: "todos_excepto_admin",
+  usuariosBloqueados: ["daniel", "operador"],
+  excepcionAdmin: "admin",
+  clienteNotificacion: {
+    nombre: "Daniel Corssen",
+    empresa: "Corssen Logística y Maquinarias",
+    email: "contacto@corssen.cl",
+    whatsapp: "+56912345678"
+  },
+  calendario: [
+    {
+      id: "MNT-20260930",
+      titulo: "Optimización de Servidor y Corrección de Errores",
+      tipo: "PREVENTIVO_Y_CORRECTIVO",
+      fecha: "2026-09-30",
+      hora: "22:00",
+      duracion: "4 horas",
+      estado: "PROGRAMADO",
+      motivo: "Mantenimiento preventivo de software y respaldos de seguridad",
+      notificadoEmail: false,
+      notificadoWhatsapp: false,
+      creadoEn: "2026-09-29T10:45:00Z"
+    }
+  ],
+  historialAvisos: []
+};
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -108,6 +145,29 @@ export default {
       if (kv) {
         try {
           await kv.put("config_servicio", JSON.stringify(nuevaCfg));
+        } catch (_) {}
+      }
+    }
+
+    // Funciones auxiliares para configuración de ventana de mantenimiento y alertas
+    async function obtenerConfigMantenimiento() {
+      if (kv) {
+        try {
+          const stored = await kv.get("config_mantenimiento", "json");
+          if (stored && typeof stored.mantenimientoActivo === "boolean") {
+            GLOBAL_CONFIG_MANTENIMIENTO = { ...GLOBAL_CONFIG_MANTENIMIENTO, ...stored };
+            return GLOBAL_CONFIG_MANTENIMIENTO;
+          }
+        } catch (_) {}
+      }
+      return GLOBAL_CONFIG_MANTENIMIENTO;
+    }
+
+    async function guardarConfigMantenimientoWorker(nuevaCfg) {
+      GLOBAL_CONFIG_MANTENIMIENTO = nuevaCfg;
+      if (kv) {
+        try {
+          await kv.put("config_mantenimiento", JSON.stringify(nuevaCfg));
         } catch (_) {}
       }
     }
@@ -224,6 +284,197 @@ export default {
       }
     }
 
+    // ========================================================
+    // API VENTANA DE MANTENIMIENTO, CALENDARIO Y ALERTAS (EXCLUSIVO ADMIN GENERAL)
+    // ========================================================
+    // GET /api/mantenimiento/config
+    if (path === "/api/mantenimiento/config" && request.method === "GET") {
+      const userHeader = (request.headers.get("x-usuario") || "").toLowerCase().trim();
+      const cfg = await obtenerConfigMantenimiento();
+
+      // Si es el Administrador General 'admin', entrega la configuración completa con calendario y contactos
+      if (userHeader === "admin") {
+        return new Response(JSON.stringify(cfg), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+
+      // Si es cliente/operador o público, entrega solo estado del mantenimiento y horarios
+      return new Response(JSON.stringify({
+        mantenimientoActivo: !!cfg.mantenimientoActivo,
+        titulo: cfg.titulo || "Mantenimiento del Sistema",
+        motivo: cfg.motivo || "Labores técnicas de optimización",
+        fechaInicio: cfg.fechaInicio || "",
+        horaInicio: cfg.horaInicio || "",
+        fechaFinEstimada: cfg.fechaFinEstimada || "",
+        horaFinEstimada: cfg.horaFinEstimada || "",
+        duracionEstimada: cfg.duracionEstimada || "",
+        mensajePersonalizado: cfg.mensajePersonalizado || ""
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
+    // POST /api/mantenimiento/config (Solo Admin General)
+    if (path === "/api/mantenimiento/config" && request.method === "POST") {
+      const userHeader = (request.headers.get("x-usuario") || "").toLowerCase().trim();
+      if (userHeader !== "admin") {
+        return new Response(JSON.stringify({
+          error: "NO_AUTORIZADO",
+          mensaje: "Acceso denegado: Este módulo de control es exclusivo para el Administrador General (admin)."
+        }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+
+      try {
+        const body = await request.json();
+        const cfgActual = await obtenerConfigMantenimiento();
+        const nuevaCfg = {
+          ...cfgActual,
+          ...body,
+          fechaModificacion: new Date().toISOString(),
+          modificadoPor: "admin"
+        };
+        await guardarConfigMantenimientoWorker(nuevaCfg);
+
+        return new Response(JSON.stringify({
+          ok: true,
+          mensaje: nuevaCfg.mantenimientoActivo 
+            ? "Ventana de mantenimiento ACTIVADA. Las conexiones de clientes y operadores están restringidas." 
+            : "Ventana de mantenimiento FINALIZADA. Plataforma operativa para todos los usuarios.",
+          config: nuevaCfg
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      } catch (err) {
+        return new Response(JSON.stringify({ error: err.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+    }
+
+    // POST /api/mantenimiento/calendario (Agregar o actualizar evento en calendario)
+    if (path === "/api/mantenimiento/calendario" && request.method === "POST") {
+      const userHeader = (request.headers.get("x-usuario") || "").toLowerCase().trim();
+      if (userHeader !== "admin") {
+        return new Response(JSON.stringify({ error: "NO_AUTORIZADO" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+
+      try {
+        const body = await request.json();
+        const cfg = await obtenerConfigMantenimiento();
+        if (!Array.isArray(cfg.calendario)) cfg.calendario = [];
+
+        const eventoId = body.id || ("MNT-" + Date.now());
+        const evento = {
+          id: eventoId,
+          titulo: body.titulo || "Mantenimiento Programado",
+          tipo: body.tipo || "PREVENTIVO",
+          fecha: body.fecha || new Date().toISOString().split("T")[0],
+          hora: body.hora || "22:00",
+          duracion: body.duracion || "2 horas",
+          estado: body.estado || "PROGRAMADO",
+          motivo: body.motivo || "Optimización técnica y mantención",
+          notificadoEmail: !!body.notificadoEmail,
+          notificadoWhatsapp: !!body.notificadoWhatsapp,
+          creadoEn: body.creadoEn || new Date().toISOString()
+        };
+
+        const idx = cfg.calendario.findIndex(e => e.id === eventoId);
+        if (idx >= 0) {
+          cfg.calendario[idx] = { ...cfg.calendario[idx], ...evento };
+        } else {
+          cfg.calendario.unshift(evento);
+        }
+
+        await guardarConfigMantenimientoWorker(cfg);
+        return new Response(JSON.stringify({ ok: true, evento, calendario: cfg.calendario }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      } catch (err) {
+        return new Response(JSON.stringify({ error: err.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+    }
+
+    // DELETE /api/mantenimiento/calendario/:id (Eliminar evento)
+    if (path.startsWith("/api/mantenimiento/calendario/") && request.method === "DELETE") {
+      const userHeader = (request.headers.get("x-usuario") || "").toLowerCase().trim();
+      if (userHeader !== "admin") {
+        return new Response(JSON.stringify({ error: "NO_AUTORIZADO" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+
+      const idEvento = path.split("/")[4];
+      const cfg = await obtenerConfigMantenimiento();
+      if (Array.isArray(cfg.calendario)) {
+        cfg.calendario = cfg.calendario.filter(e => e.id !== idEvento);
+        await guardarConfigMantenimientoWorker(cfg);
+      }
+      return new Response(JSON.stringify({ ok: true, mensaje: "Evento eliminado", calendario: cfg.calendario }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
+    // POST /api/mantenimiento/notificar (Registrar aviso WhatsApp o Email)
+    if (path === "/api/mantenimiento/notificar" && request.method === "POST") {
+      const userHeader = (request.headers.get("x-usuario") || "").toLowerCase().trim();
+      if (userHeader !== "admin") {
+        return new Response(JSON.stringify({ error: "NO_AUTORIZADO" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+
+      try {
+        const body = await request.json();
+        const cfg = await obtenerConfigMantenimiento();
+        if (!Array.isArray(cfg.historialAvisos)) cfg.historialAvisos = [];
+
+        const registroAviso = {
+          id: "NOTIF-" + Date.now(),
+          canal: body.canal || "whatsapp",
+          destinatario: body.destinatario || "",
+          mensaje: body.mensaje || "",
+          fechaEnvio: new Date().toLocaleDateString("es-CL"),
+          horaEnvio: new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" }),
+          timestamp: Date.now(),
+          eventoId: body.eventoId || null
+        };
+
+        cfg.historialAvisos.unshift(registroAviso);
+        if (cfg.historialAvisos.length > 50) cfg.historialAvisos = cfg.historialAvisos.slice(0, 50);
+
+        if (body.eventoId && Array.isArray(cfg.calendario)) {
+          const ev = cfg.calendario.find(e => e.id === body.eventoId);
+          if (ev) {
+            if (body.canal === "whatsapp") ev.notificadoWhatsapp = true;
+            if (body.canal === "email") ev.notificadoEmail = true;
+          }
+        }
+
+        await guardarConfigMantenimientoWorker(cfg);
+        return new Response(JSON.stringify({ ok: true, mensaje: "Aviso registrado exitosamente", registro: registroAviso }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      } catch (err) {
+        return new Response(JSON.stringify({ error: err.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+    }
+
     // API Login
     if (path === "/api/login" && request.method === "POST") {
       try {
@@ -249,9 +500,33 @@ export default {
           const esSuperAdmin = (uNorm === "admin");
           const configServicio = await obtenerConfigServicio();
 
-          // VALIDACIÓN DE SUSPENSIÓN POR CUOTA MENSUAL (CLIENTES Y OPERADORES, INCLUYENDO A DANIEL)
+          // VALIDACIÓN DE SUSPENSIÓN POR CUOTA MENSUAL O VENTANA DE MANTENIMIENTO ACTIVA
           if (!esSuperAdmin) {
-            // 1. Suspensión global de servicio
+            // 0. Validación de Ventana de Mantenimiento Activa (Exclusivo: solo 'admin' puede ingresar)
+            const configMantenimiento = await obtenerConfigMantenimiento();
+            if (configMantenimiento && configMantenimiento.mantenimientoActivo) {
+              const bloquearTodos = configMantenimiento.audienciaBloqueo === "todos_excepto_admin";
+              const enListaBloqueados = Array.isArray(configMantenimiento.usuariosBloqueados) && 
+                configMantenimiento.usuariosBloqueados.some(u => u.toLowerCase() === uNorm);
+
+              if (bloquearTodos || enListaBloqueados) {
+                return new Response(JSON.stringify({
+                  error: "MANTENIMIENTO_ACTIVO",
+                  mantenimiento: true,
+                  suspendido: true,
+                  titulo: configMantenimiento.titulo || "Ventana de Mantenimiento en Progreso",
+                  mensaje: configMantenimiento.mensajePersonalizado || "La plataforma se encuentra temporalmente fuera de servicio por labores programadas de mantenimiento y optimización técnica.",
+                  motivo: configMantenimiento.motivo || "Trabajos técnicos y optimización programada",
+                  fechaFinEstimada: configMantenimiento.fechaFinEstimada || "",
+                  horaFinEstimada: configMantenimiento.horaFinEstimada || ""
+                }), {
+                  status: 403,
+                  headers: { ...corsHeaders, "Content-Type": "application/json" }
+                });
+              }
+            }
+
+            // 1. Suspensión global de servicio por cuota mensual
             if (configServicio.estadoServicio === "suspendido") {
               return new Response(JSON.stringify({
                 error: "SERVICIO_SUSPENDIDO",
@@ -939,6 +1214,71 @@ export default {
       });
     }
 
+    // API Backup - Estado y Diagnóstico (/api/backup/estado)
+    if (path === "/api/backup/estado" && request.method === "GET") {
+      let ultimo = null;
+      let total = 0;
+      if (env && env.DB) {
+        try {
+          const row = await env.DB.prepare("SELECT id, timestamp, fecha, hora, motivo, tipo, usuario, resumen_json FROM corssen_backups ORDER BY timestamp DESC LIMIT 1").first();
+          if (row) {
+            ultimo = {
+              ...row,
+              resumen: typeof row.resumen_json === "string" ? JSON.parse(row.resumen_json) : (row.resumen_json || {})
+            };
+          }
+          const countRow = await env.DB.prepare("SELECT COUNT(*) as total FROM corssen_backups").first();
+          if (countRow) total = countRow.total;
+        } catch (_) {}
+      }
+      if (!ultimo && kv) {
+        try {
+          const uKV = await kv.get("corssen_backup_ultimo", "json");
+          if (uKV) {
+            ultimo = {
+              id: uKV.id,
+              timestamp: uKV.timestamp,
+              fecha: uKV.fecha,
+              hora: uKV.hora,
+              motivo: uKV.motivo,
+              tipo: uKV.tipo,
+              usuario: uKV.usuario,
+              resumen: uKV.resumen || {}
+            };
+          }
+          const rawHist = await kv.get("corssen_backups_historial", "json");
+          if (rawHist && Array.isArray(rawHist)) total = rawHist.length;
+        } catch (_) {}
+      }
+
+      return new Response(JSON.stringify({
+        estado: "ACTIVO",
+        servicios: {
+          d1_sql: !!(env && env.DB),
+          kv_storage: !!kv,
+          cron_triggers: true
+        },
+        cron_configuracion: {
+          frecuencia: "Cada hora (0 * * * *)",
+          descripcion: "Disparado automáticamente por Cloudflare Cron Triggers"
+        },
+        ultimo_respaldo: ultimo,
+        total_respaldos_guardados: total
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
+    // API Backup - Ejecución manual de prueba de Cron (/api/backup/cron-ejecutar)
+    if (path === "/api/backup/cron-ejecutar" && request.method === "POST") {
+      const resultado = await ejecutarRespaldoCronAutomatico(env);
+      return new Response(JSON.stringify(resultado), {
+        status: resultado.ok ? 200 : 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
     // API Backup - Obtener Respaldo Específico (/api/backup/obtener/:id)
     if (path.startsWith("/api/backup/obtener/") && request.method === "GET") {
       const bId = path.split("/")[4];
@@ -1093,40 +1433,120 @@ export default {
 
   // Manejador para Cron Triggers automáticos en Cloudflare
   async scheduled(event, env, ctx) {
-    const kv = (env && (env.CORSSEN_STORAGE || env.CORSSEN_KV)) || null;
-    if (kv) {
-      try {
-        const timestamp = Date.now();
-        const fecha = new Date().toLocaleDateString("es-CL");
-        const hora = new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
-        const backupId = "SNP-CRON-" + timestamp;
-
-        const ultimo = await kv.get("corssen_backup_ultimo", "json");
-        if (ultimo && ultimo.data) {
-          const snapshotMeta = {
-            id: backupId,
-            fecha: fecha,
-            hora: hora,
-            timestamp: timestamp,
-            motivo: `Respaldo Automático Programado (Cron)`,
-            tipo: "CRON_AUTOMATICO",
-            usuario: "Cloudflare Cron",
-            resumen: ultimo.resumen || {},
-            origen: "Cloudflare Worker"
-          };
-          await kv.put(`backup_${backupId}`, JSON.stringify({ ...snapshotMeta, data: ultimo.data }));
-          
-          let historial = [];
-          const rawHist = await kv.get("corssen_backups_historial", "json");
-          if (rawHist && Array.isArray(rawHist)) historial = rawHist;
-          historial.unshift(snapshotMeta);
-          if (historial.length > 30) historial = historial.slice(0, 30);
-          await kv.put("corssen_backups_historial", JSON.stringify(historial));
-        }
-      } catch (err) {
-        console.error("Error en scheduled cron backup:", err);
-      }
+    if (ctx && ctx.waitUntil) {
+      ctx.waitUntil(ejecutarRespaldoCronAutomatico(env));
+    } else {
+      await ejecutarRespaldoCronAutomatico(env);
     }
   }
 };
+
+// Función auxiliar para ejecutar el respaldo automático programado en Cloudflare D1 y KV
+async function ejecutarRespaldoCronAutomatico(env) {
+  const kv = (env && (env.CORSSEN_STORAGE || env.CORSSEN_KV)) || null;
+  const db = (env && env.DB) || null;
+  
+  try {
+    const timestamp = Date.now();
+    const fecha = new Date().toLocaleDateString("es-CL");
+    const hora = new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    const backupId = "SNP-CRON-" + timestamp;
+
+    let ultimoData = null;
+    let ultimoResumen = {};
+
+    // 1. Obtener último estado desde KV
+    if (kv) {
+      try {
+        const ultimoKV = await kv.get("corssen_backup_ultimo", "json");
+        if (ultimoKV && ultimoKV.data) {
+          ultimoData = ultimoKV.data;
+          ultimoResumen = ultimoKV.resumen || {};
+        }
+      } catch (eKV) {
+        console.warn("Error leyendo ultimo backup en KV:", eKV);
+      }
+    }
+
+    // 2. Si no estaba en KV, intentar desde D1
+    if (!ultimoData && db) {
+      try {
+        const row = await db.prepare("SELECT data_json, resumen_json FROM corssen_backups ORDER BY timestamp DESC LIMIT 1").first();
+        if (row && row.data_json) {
+          ultimoData = typeof row.data_json === "string" ? JSON.parse(row.data_json) : row.data_json;
+          ultimoResumen = row.resumen_json ? (typeof row.resumen_json === "string" ? JSON.parse(row.resumen_json) : row.resumen_json) : {};
+        }
+      } catch (eD1) {
+        console.warn("Error leyendo ultimo backup en D1:", eD1);
+      }
+    }
+
+    if (!ultimoData) {
+      ultimoData = {
+        corssen_programa_v2: [],
+        corssen_stock_v2: [],
+        flota_vehiculos_v3: [],
+        flota_maquinarias_v3: [],
+        flota_mantenciones_v3: []
+      };
+    }
+
+    const snapshotMeta = {
+      id: backupId,
+      fecha: fecha,
+      hora: hora,
+      timestamp: timestamp,
+      motivo: "Respaldo Automático Programado (Cloudflare Cron)",
+      tipo: "CRON_AUTOMATICO",
+      usuario: "Cloudflare Cron Trigger",
+      resumen: ultimoResumen,
+      origen: "Cloudflare D1 & KV"
+    };
+
+    // Guardar en D1
+    if (db) {
+      try {
+        await db.prepare(`
+          INSERT OR REPLACE INTO corssen_backups (id, timestamp, fecha, hora, motivo, tipo, usuario, resumen_json, data_json, creado_en)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        `).bind(
+          backupId,
+          timestamp,
+          fecha,
+          hora,
+          snapshotMeta.motivo,
+          snapshotMeta.tipo,
+          snapshotMeta.usuario,
+          JSON.stringify(snapshotMeta.resumen),
+          JSON.stringify(ultimoData)
+        ).run();
+      } catch (eD1) {
+        console.warn("Error guardando cron backup en D1:", eD1);
+      }
+    }
+
+    // Guardar en KV
+    if (kv) {
+      try {
+        await kv.put(`backup_${backupId}`, JSON.stringify({ ...snapshotMeta, data: ultimoData }));
+        await kv.put("corssen_backup_ultimo", JSON.stringify({ ...snapshotMeta, data: ultimoData }));
+
+        let historial = [];
+        const rawHist = await kv.get("corssen_backups_historial", "json");
+        if (rawHist && Array.isArray(rawHist)) historial = rawHist;
+        historial.unshift(snapshotMeta);
+        if (historial.length > 30) historial = historial.slice(0, 30);
+        await kv.put("corssen_backups_historial", JSON.stringify(historial));
+      } catch (eKV) {
+        console.warn("Error guardando cron backup en KV:", eKV);
+      }
+    }
+
+    return { ok: true, id: backupId, snapshot: snapshotMeta };
+  } catch (err) {
+    console.error("Error en scheduled cron backup:", err);
+    return { ok: false, error: err.message };
+  }
+}
+
 
