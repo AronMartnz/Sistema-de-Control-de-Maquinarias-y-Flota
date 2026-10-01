@@ -9,3 +9,5 @@ coverage/
 .env*
 !.env.example
 .wrangler/
+bun.lock*
+package-lock.json

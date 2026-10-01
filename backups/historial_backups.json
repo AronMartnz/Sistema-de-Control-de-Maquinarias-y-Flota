@@ -1,5 +1,25 @@
 [
   {
+    "id": "SNP-1790885363995-681",
+    "fecha": "01-10-2026",
+    "hora": "05:09:23 p. m.",
+    "timestamp": 1790885363995,
+    "motivo": "Sincronización de cambios pendientes",
+    "tipo": "AUTOMATICO",
+    "usuario": "Administrador General",
+    "resumen": {
+      "totalPrograma": 50,
+      "totalVehiculos": 7,
+      "totalMaquinarias": 8,
+      "totalMantenciones": 4,
+      "totalStock": 32,
+      "totalCargas": 3,
+      "combustibleActual": 400,
+      "aceiteActual": 367
+    },
+    "origen": "Servidor Node"
+  },
+  {
     "id": "SNP-1790885150387-321",
     "fecha": "01-10-2026",
     "hora": "05:05:50 p. m.",
@@ -416,16 +436,5 @@
       "aceiteActual": 367
     },
     "origen": "Servidor Node"
-  },
-  {
-    "id": "SNP-CRON-1790706385212",
-    "fecha": "29-09-2026",
-    "hora": "06:26:25 p. m.",
-    "timestamp": 1790706385212,
-    "motivo": "Respaldo Automático Programado (Cloudflare Cron)",
-    "tipo": "CRON_AUTOMATICO",
-    "usuario": "Cloudflare Cron Trigger",
-    "resumen": {},
-    "origen": "Servidor Node & Cloudflare"
   }
 ]
