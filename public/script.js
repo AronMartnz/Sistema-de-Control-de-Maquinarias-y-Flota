@@ -9499,7 +9499,7 @@ async function sincronizarConUltimoRespaldoNube(forzarRecarga = false) {
 
             const elEstado = document.querySelector(".estado-sistema");
             if (elEstado) {
-                elEstado.innerHTML = `<span class="estado-punto" style="background:#10b981;"></span> Sincronizado con Nube`;
+                elEstado.innerHTML = `<span class="estado-punto" style="background:#10b981;"></span> Sincronizado con ServiTec Pro`;
             }
 
             // Reconciliar adicionalmente con el registro individual de programa para evitar sobreescritura de estados recién editados
