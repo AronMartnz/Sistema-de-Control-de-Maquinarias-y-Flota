@@ -1,0 +1,7 @@
+_worker.js
+worker.js
+wrangler.toml
+package.json
+package-lock.json
+*.zip
+*.tar.gz

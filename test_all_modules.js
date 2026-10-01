@@ -120,9 +120,101 @@ async function ejecutarPruebas() {
         assert(resUpdateAvatar.status === 200, 
             'Actualización de avatar por API responde 200', 'API / Usuarios');
 
+        const resUpdateDatos = await request('PUT', `/api/usuarios/${testUser}`, { 'x-usuario': 'admin' }, {
+            nombre: 'Usuario Bot Modificado Corssen',
+            rol: 'admin'
+        });
+        assert(resUpdateDatos.status === 200 && resUpdateDatos.body?.usuario?.nombre === 'Usuario Bot Modificado Corssen', 
+            'Administrador puede modificar nombre y rol vía PUT /api/usuarios/:usuario', 'API / Usuarios');
+
         const resDeleteUser = await request('DELETE', `/api/usuarios/${testUser}`, { 'x-usuario': 'admin' });
         assert(resDeleteUser.status === 200, 
             'Administrador puede eliminar usuario vía API', 'API / Usuarios');
+
+        // Visibilidad de contraseñas exclusiva para el Administrador General
+        const resUsersAdminView = await request('GET', '/api/usuarios', { 'x-usuario': 'admin' });
+        const danielUser = resUsersAdminView.body?.find(u => u.usuario === 'daniel');
+        assert(danielUser && (danielUser.password_visible === '1234' || danielUser.password_visible),
+            'Administrador General puede ver la contraseña del usuario Daniel y demás usuarios', 'API / Seguridad Claves');
+
+        const resUsersDanielView = await request('GET', '/api/usuarios', { 'x-usuario': 'daniel' });
+        assert(resUsersDanielView.body?.[0]?.password_visible === undefined,
+            'Usuarios no administradores generales NO tienen acceso a ver contraseñas', 'API / Seguridad Claves');
+
+        // Control de Cuota Mensual y Suspensión de Inicio de Sesión
+        const resEstadoServicio = await request('GET', '/api/servicio/estado');
+        assert(resEstadoServicio.status === 200 && (resEstadoServicio.body?.estadoServicio === 'activo' || resEstadoServicio.body?.estadoServicio === 'suspendido'),
+            'Consulta de estado de servicio y cuota mensual (/api/servicio/estado)', 'API / Suspensión Cuotas');
+
+        // Operador no puede modificar el estado de servicio
+        const resSuspenOp = await request('POST', '/api/servicio/estado', { 'x-usuario': 'operador' }, {
+            estadoServicio: 'suspendido'
+        });
+        assert(resSuspenOp.status === 403,
+            'Operador no tiene permisos para suspender el servicio (403)', 'API / Suspensión Cuotas');
+
+        // Administrador suspende el servicio preventivamente por no pago de cuota
+        const resSuspenAdmin = await request('POST', '/api/servicio/estado', { 'x-usuario': 'admin' }, {
+            estadoServicio: 'suspendido',
+            motivo: 'Prueba de cuota mensual pendiente de pago'
+        });
+        assert(resSuspenAdmin.status === 200 && resSuspenAdmin.body?.config?.estadoServicio === 'suspendido',
+            'Administrador puede suspender inicio de sesión de clientes por cuota pendiente', 'API / Suspensión Cuotas');
+
+        // Al estar suspendido, el login de cliente/operador debe ser bloqueado con 403
+        const resLoginBloqueado = await request('POST', '/api/login', {}, { usuario: 'operador', password: '1234' });
+        assert(resLoginBloqueado.status === 403 && resLoginBloqueado.body?.suspendido === true,
+            'Inicio de sesión de cliente/operador es bloqueado cuando el servicio está suspendido (403)', 'API / Suspensión Cuotas');
+
+        // Pero el Administrador General SIEMPRE puede ingresar
+        const resLoginAdminInmune = await request('POST', '/api/login', {}, { usuario: 'admin', password: 'admin' });
+        assert(resLoginAdminInmune.status === 200 && resLoginAdminInmune.body?.rol === 'admin',
+            'Administrador General conserva acceso total garantizado incluso con servicio suspendido (200)', 'API / Suspensión Cuotas');
+
+        // Administrador reactiva el servicio (cuota pagada)
+        const resReactivarAdmin = await request('POST', '/api/servicio/estado', { 'x-usuario': 'admin' }, {
+            estadoServicio: 'activo',
+            motivo: 'Cuota mensual de respaldos y mantenimientos al día'
+        });
+        assert(resReactivarAdmin.status === 200 && resReactivarAdmin.body?.config?.estadoServicio === 'activo',
+            'Administrador reactiva el acceso de clientes con éxito (cuota pagada)', 'API / Suspensión Cuotas');
+
+        // Ahora el cliente/operador puede ingresar normalmente de nuevo
+        const resLoginRestaurado = await request('POST', '/api/login', {}, { usuario: 'operador', password: '1234' });
+        assert(resLoginRestaurado.status === 200 && resLoginRestaurado.body?.rol === 'operador',
+            'Cliente/operador puede ingresar normalmente tras reactivar el servicio (200)', 'API / Suspensión Cuotas');
+
+        // Suspensión individual de un usuario específico
+        const resSuspenIndiv = await request('PATCH', '/api/usuarios/operador/estado', { 'x-usuario': 'admin' }, {
+            estado: 'suspendido'
+        });
+        assert(resSuspenIndiv.status === 200 && resSuspenIndiv.body?.estado === 'suspendido',
+            'Administrador puede suspender individualmente la cuenta de un operador', 'API / Suspensión Cuotas');
+
+        const resLoginIndivBloqueado = await request('POST', '/api/login', {}, { usuario: 'operador', password: '1234' });
+        assert(resLoginIndivBloqueado.status === 403 && resLoginIndivBloqueado.body?.suspendido === true,
+            'Login de usuario suspendido individualmente es rechazado con 403', 'API / Suspensión Cuotas');
+
+        // Reactivar usuario individual
+        const resReactivarIndiv = await request('PATCH', '/api/usuarios/operador/estado', { 'x-usuario': 'admin' }, {
+            estado: 'activo'
+        });
+        assert(resReactivarIndiv.status === 200 && resReactivarIndiv.body?.estado === 'activo',
+            'Administrador reactiva la cuenta individual del operador', 'API / Suspensión Cuotas');
+
+        // SEGURIDAD: Daniel (rol admin pero cliente) NO tiene permisos para suspender el servicio
+        const resDanielSuspen = await request('POST', '/api/servicio/estado', { 'x-usuario': 'daniel' }, {
+            estadoServicio: 'suspendido'
+        });
+        assert(resDanielSuspen.status === 403,
+            'Daniel NO tiene permisos para suspender el servicio general (403)', 'API / Seguridad Daniel');
+
+        // Daniel tampoco puede suspender a otros usuarios
+        const resDanielSuspenUser = await request('PATCH', '/api/usuarios/operador/estado', { 'x-usuario': 'daniel' }, {
+            estado: 'suspendido'
+        });
+        assert(resDanielSuspenUser.status === 403,
+            'Daniel NO tiene permisos para suspender a otros usuarios (403)', 'API / Seguridad Daniel');
 
         // Respaldos y Snapshots API
         const resBackupSave = await request('POST', '/api/backup/guardar', {}, {
@@ -135,6 +227,78 @@ async function ejecutarPruebas() {
         const resBackupHistorial = await request('GET', '/api/backup/historial');
         assert(resBackupHistorial.status === 200 && Array.isArray(resBackupHistorial.body), 
             'Consulta de historial de copias de seguridad (/api/backup/historial)', 'API / Backups');
+
+        const resBackupEstado = await request('GET', '/api/backup/estado');
+        assert(resBackupEstado.status === 200 && resBackupEstado.body?.estado === 'ACTIVO',
+            'Diagnóstico y estado del sistema de respaldos (/api/backup/estado)', 'API / Backups');
+
+        const resBackupCron = await request('POST', '/api/backup/cron-ejecutar');
+        assert(resBackupCron.status === 200 && resBackupCron.body?.ok === true, 
+            'Disparador y ejecución de respaldo automático Cron (/api/backup/cron-ejecutar)', 'API / Backups');
+
+        // -------------------------------------------------------------
+        // TESTS DE VENTANA DE MANTENIMIENTO, CALENDARIO Y AVISOS
+        // -------------------------------------------------------------
+        const resMantGetAdmin = await request('GET', '/api/mantenimiento/config', { 'x-usuario': 'admin' });
+        assert(resMantGetAdmin.status === 200 && resMantGetAdmin.body?.clienteNotificacion, 
+            'Administrador General obtiene configuración completa de mantenimiento y contactos (/api/mantenimiento/config)', 'API / Mantenimiento');
+
+        const resMantGetPublic = await request('GET', '/api/mantenimiento/config', { 'x-usuario': 'operador' });
+        assert(resMantGetPublic.status === 200 && !resMantGetPublic.body?.clienteNotificacion, 
+            'Cliente u operador recibe información pública sin exponer datos privados de contacto', 'API / Mantenimiento');
+
+        // Operador o Daniel NO pueden modificar configuración de mantenimiento
+        const resMantPostNoAuth = await request('POST', '/api/mantenimiento/config', { 'x-usuario': 'daniel' }, { mantenimientoActivo: true });
+        assert(resMantPostNoAuth.status === 403, 
+            'Daniel o usuario no-admin NO tiene permisos para modificar ventana de mantenimiento (403)', 'API / Seguridad Mantenimiento');
+
+        // Admin activa ventana de mantenimiento
+        const resMantActivar = await request('POST', '/api/mantenimiento/config', { 'x-usuario': 'admin' }, {
+            mantenimientoActivo: true,
+            audienciaBloqueo: 'todos_excepto_admin',
+            motivo: 'Mantenimiento de prueba automatizada',
+            duracionEstimada: '2 horas'
+        });
+        assert(resMantActivar.status === 200 && resMantActivar.body?.config?.mantenimientoActivo === true, 
+            'Administrador General activa la ventana de mantenimiento con bloqueo (200 OK)', 'API / Mantenimiento');
+
+        // Operador intenta loguearse durante mantenimiento activo -> rechazado con 403 MANTENIMIENTO_ACTIVO
+        const resLoginOpMant = await request('POST', '/api/login', {}, { usuario: 'operador', password: '1234' });
+        assert(resLoginOpMant.status === 403 && (resLoginOpMant.body?.mantenimiento === true || resLoginOpMant.body?.error === 'MANTENIMIENTO_ACTIVO'), 
+            'Login de cliente/operador es bloqueado con pantalla de mantenimiento en curso (403)', 'API / Mantenimiento');
+
+        // Administrador General PUEDE loguearse siempre con acceso garantizado
+        const resLoginAdminMant = await request('POST', '/api/login', {}, { usuario: 'admin', password: 'admin' });
+        assert(resLoginAdminMant.status === 200, 
+            'Administrador General conserva acceso exclusivo y total durante el mantenimiento activo (200 OK)', 'API / Mantenimiento');
+
+        // Administrador finaliza ventana de mantenimiento
+        const resMantFinalizar = await request('POST', '/api/mantenimiento/config', { 'x-usuario': 'admin' }, {
+            mantenimientoActivo: false
+        });
+        assert(resMantFinalizar.status === 200 && resMantFinalizar.body?.config?.mantenimientoActivo === false, 
+            'Administrador General finaliza el mantenimiento y restablece el acceso regular (200 OK)', 'API / Mantenimiento');
+
+        // Agregar evento al calendario
+        const resCalAdd = await request('POST', '/api/mantenimiento/calendario', { 'x-usuario': 'admin' }, {
+            titulo: 'Mantención Programada Servidores',
+            tipo: 'CORRECCION_ERRORES',
+            fecha: '2026-10-05',
+            hora: '23:00',
+            duracion: '3 horas'
+        });
+        assert(resCalAdd.status === 200 && Array.isArray(resCalAdd.body?.calendario), 
+            'Administrador puede agendar nueva fecha en el calendario de mantenimiento (200 OK)', 'API / Mantenimiento');
+
+        // Registrar aviso enviado por WhatsApp/Email
+        const resNotif = await request('POST', '/api/mantenimiento/notificar', { 'x-usuario': 'admin' }, {
+            canal: 'whatsapp',
+            destinatario: '+56912345678',
+            mensaje: 'Aviso de prueba de mantención',
+            eventoId: resCalAdd.body?.evento?.id
+        });
+        assert(resNotif.status === 200 && resNotif.body?.ok === true, 
+            'Registro y confirmación de envío de aviso al cliente por WhatsApp/Email', 'API / Mantenimiento');
 
     } catch (err) {
         assert(false, 'Falla inesperada en peticiones de API', 'API', err.message);
@@ -347,12 +511,44 @@ async function ejecutarPruebas() {
         'index.html contiene control de editar ficha técnica con soporte RBAC', 'HTML');
     assert(indexHtml.includes('id="badgeFichaSoloLectura"'), 
         'index.html contiene distintivo de solo lectura para operadores', 'HTML');
+    assert(indexHtml.includes('id="menuItemRegistrarVehiculo"'), 
+        'index.html contiene identificador menuItemRegistrarVehiculo para control RBAC', 'HTML');
+    assert(indexHtml.includes('id="menuItemRegistrarMaquinaria"'), 
+        'index.html contiene identificador menuItemRegistrarMaquinaria para control RBAC', 'HTML');
+    assert(indexHtml.includes('id="menuItemVideoTutoriales"'), 
+        'index.html contiene identificador menuItemVideoTutoriales en el menú lateral', 'HTML');
+    assert(indexHtml.includes('id="videoTutoriales"'), 
+        'index.html contiene sección interactiva de videoTutoriales con soporte para ambos roles', 'HTML');
+    assert(scriptContent.includes('TUTORIAL_VIDEOS'), 
+        'script.js contiene estructura TUTORIAL_VIDEOS para Rol Operador y Administrador', 'Video Tutoriales');
+    assert(scriptContent.includes('narrarPasoActual') && scriptContent.includes('SpeechSynthesisUtterance'), 
+        'script.js cuenta con motor de narración por voz (Web Speech API) para tutoriales en español', 'Video Tutoriales');
+    assert(indexHtml.includes('btnToggleVozNarracion') && indexHtml.includes('btnRepetirVozPaso'), 
+        'index.html incluye controles de usuario para silenciar o repetir la narración por voz', 'HTML');
     assert(publicIndexHtml.length === indexHtml.length, 
         'public/index.html está 100% sincronizado con index.html', 'HTML Sync');
     assert(loginHtml.includes('id="usuario"') && loginHtml.includes('id="password"'), 
         'login.html contiene formulario de autenticación con campos obligatorios (usuario y password)', 'HTML');
     assert(usuariosHtml.includes('id="listaUsuarios"'), 
         'usuarios.html contiene tabla de gestión de cuentas (listaUsuarios)', 'HTML');
+    assert(indexHtml.includes('id="controlVentanaMantenimiento"'), 
+        'index.html contiene panel de control de ventana de mantenimiento (controlVentanaMantenimiento)', 'HTML Mantenimiento');
+    assert(indexHtml.includes('id="tablaCalendarioMantenimiento"'), 
+        'index.html contiene tabla de calendario de mantenimientos programados', 'HTML Mantenimiento');
+    assert(indexHtml.includes('id="preMensajeGeneradoAviso"'), 
+        'index.html contiene vista previa dinámica para mensajes de WhatsApp y Correo', 'HTML Mantenimiento');
+    assert(indexHtml.includes('id="menuItemVentanaMantenimiento"'), 
+        'index.html contiene acceso de menú menuItemVentanaMantenimiento con restricción RBAC', 'HTML Mantenimiento');
+    assert(loginHtml.includes('id="modalMantenimientoActivoLogin"'), 
+        'login.html contiene modal informativo de plataforma en mantenimiento (modalMantenimientoActivoLogin)', 'HTML Mantenimiento');
+    assert(scriptContent.includes('cargarModuloVentanaMantenimiento') && scriptContent.includes('enviarMensajeWhatsappCliente'), 
+        'script.js contiene lógica completa de gestión de ventana, calendario y avisos por WhatsApp y Correo', 'Script Mantenimiento');
+    assert(indexHtml.includes('id="seccionControlCuota"') && indexHtml.includes('id="kpiCuotaEstadoTexto"') && indexHtml.includes('id="modalConfirmarSuspensionGeneral"'), 
+        'index.html contiene sección y modales de Control de Acceso por Cuota Mensual en Vent. Mantención', 'Cuota en Vent. Mantención');
+    assert(!usuariosHtml.includes('id="seccionControlCuota"') && !usuariosHtml.includes('id="cardStatCuota"'), 
+        'usuarios.html ya no contiene seccionControlCuota ni cardStatCuota (trasladado exitosamente)', 'Cuota fuera de usuarios');
+    assert(scriptContent.includes('cargarEstadoServicioCuota') && scriptContent.includes('abrirModalSuspensionGeneral'), 
+        'script.js contiene funciones cliente para control de cuota mensual y suspensión', 'Script Cuota');
 
     // -------------------------------------------------------------
     // RESUMEN GENERAL DE PRUEBAS

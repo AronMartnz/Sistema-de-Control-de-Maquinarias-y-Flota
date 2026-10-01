@@ -9963,15 +9963,17 @@ document.addEventListener("DOMContentLoaded", () => {
         const msgError = document.getElementById("msgErrorClaveRespaldos");
         const claveIngresada = input ? input.value.trim() : "";
         const claveReal = obtenerClaveMantenimientoConfigurada();
+        const esAdmin = (sessionStorage.getItem("usuarioLogueado") || "").toLowerCase().trim() === "admin";
 
-        if (claveIngresada === claveReal) {
+        // Permite la clave personalizada, la clave original o la clave admin para evitar bloqueos
+        if (claveIngresada === claveReal || claveIngresada === "corssen2026" || (esAdmin && (claveIngresada === "admin123" || claveIngresada === "1234"))) {
             sessionStorage.setItem("corssen_modulo_respaldos_desbloqueado", "true");
             if (msgError) msgError.style.display = "none";
             if (input) input.value = "";
             sincronizarEstadoVisualModuloRespaldos();
         } else {
             if (msgError) {
-                msgError.textContent = "⚠️ Contraseña de mantención incorrecta. Intente de nuevo.";
+                msgError.textContent = "⚠️ Contraseña de mantención incorrecta. (Recuerde que puede ingresar con corssen2026 o su clave de admin).";
                 msgError.style.display = "block";
             }
         }
@@ -10028,6 +10030,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const msg = document.getElementById("msgErrorCambioClaveMant");
         if (msg) msg.style.display = "none";
         document.getElementById("formCambiarClaveMantenimiento")?.reset();
+        const inputActual = document.getElementById("inputClaveActualMant");
+        if (inputActual) inputActual.placeholder = "Ingrese clave actual (o corssen2026 / admin123)";
         modal.style.display = "flex";
     };
 
@@ -10044,9 +10048,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const msg = document.getElementById("msgErrorCambioClaveMant");
 
         const claveReal = obtenerClaveMantenimientoConfigurada();
-        if (actual !== claveReal) {
+        const esAdmin = (sessionStorage.getItem("usuarioLogueado") || "").toLowerCase().trim() === "admin";
+        if (actual !== claveReal && actual !== "corssen2026" && (!esAdmin || (actual !== "admin123" && actual !== "1234"))) {
             if (msg) {
-                msg.textContent = "⚠️ La contraseña actual ingresada no coincide.";
+                msg.textContent = "⚠️ La contraseña actual ingresada no coincide (recuerde que puede usar corssen2026 o su clave admin).";
                 msg.style.display = "block";
             }
             return;

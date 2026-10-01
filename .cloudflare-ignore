@@ -1,0 +1,2 @@
+# Disable Bun in Cloudflare Pages / Workers build
+CF_PAGES_NO_CACHE=1

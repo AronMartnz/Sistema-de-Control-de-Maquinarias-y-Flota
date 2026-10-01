@@ -7,7 +7,7 @@
         "anio": 2013,
         "motor": "Cummins QSM11",
         "responsable": "Carlos Lasso",
-        "estado": "OPERATIVA",
+        "estado": "Operativo",
         "aceites": [
             {
                 "tipo": "Aceite de Motor",
@@ -145,7 +145,7 @@
         "anio": 2017,
         "motor": "Cummins QSM11",
         "responsable": "Cristian Diaz",
-        "estado": "OPERATIVA",
+        "estado": "Operativo",
         "aceites": [
             {
                 "tipo": "Aceite de Motor",
@@ -279,7 +279,7 @@
         "anio": 2022,
         "motor": "Xinchai 4D35ZG31",
         "responsable": "Alexis Santos",
-        "estado": "OPERATIVA",
+        "estado": "Operativo",
         "aceites": [
             {
                 "tipo": "Aceite de Motor",
@@ -365,7 +365,7 @@
         "anio": 2007,
         "motor": "Komatsu 6D102E",
         "responsable": "Alexis Santos",
-        "estado": "FUERA DE SERVICIO",
+        "estado": "Operativo",
         "aceites": [
             {
                 "tipo": "Aceite de Motor",
@@ -440,7 +440,7 @@
         "anio": 2025,
         "motor": "Xinchai 3E22YG51",
         "responsable": "Alexis Santos",
-        "estado": "OPERATIVA",
+        "estado": "Operativo",
         "aceites": [
             {
                 "tipo": "Aceite de Motor",
@@ -510,7 +510,7 @@
         "anio": 2005,
         "motor": "Cummins QSB 5.9",
         "responsable": "Alexis Santos",
-        "estado": "OPERATIVA",
+        "estado": "Operativo",
         "aceites": [
             {
                 "tipo": "Aceite de Motor",
@@ -609,7 +609,7 @@
         "anio": 1997,
         "motor": "Cummins 6BT 5.9",
         "responsable": "Alexis Santos",
-        "estado": "FUERA DE SERVICIO",
+        "estado": "No Operativo",
         "aceites": [
             {
                 "tipo": "Aceite de Motor",
@@ -662,7 +662,7 @@
         "anio": 1981,
         "motor": "Detroit Diesel / Cummins",
         "responsable": "Alexis Santos",
-        "estado": "FUERA DE SERVICIO",
+        "estado": "No Operativo",
         "aceites": [
             {
                 "tipo": "Aceite de Motor",
@@ -707,7 +707,7 @@
         "anio": 2018,
         "patente": "JWYD-49",
         "responsable": "Andrés Plaza",
-        "estado": "OPERATIVA",
+        "estado": "Operativo",
         "aceites": [
             {
                 "tipo": "Aceite de Motor",
@@ -753,7 +753,7 @@
         "anio": 2017,
         "patente": "JKKV-43",
         "responsable": "Alexis Santos",
-        "estado": "OPERATIVA (CON FALLA)",
+        "estado": "Operativo (con falla)",
         "aceites": [
             {
                 "tipo": "Aceite de Motor",
@@ -793,7 +793,7 @@
         "anio": 2015,
         "patente": "GCLD-31",
         "responsable": "Alexis Santos",
-        "estado": "FUERA DE SERVICIO",
+        "estado": "No Operativo",
         "aceites": [
             {
                 "tipo": "Aceite de Motor",
@@ -832,7 +832,7 @@
         "anio": 2026,
         "patente": "VPFX-76",
         "responsable": "Daniel Mejias",
-        "estado": "OPERATIVA",
+        "estado": "Operativo",
         "aceites": [
             {
                 "tipo": "Aceite de Motor",
@@ -871,7 +871,7 @@
         "anio": 2012,
         "patente": "FL-06",
         "responsable": "Alexis Santos",
-        "estado": "NO OPERATIVO",
+        "estado": "No Operativo",
         "aceites": [
             {
                 "tipo": "Aceite de Motor",
@@ -911,7 +911,7 @@
         "anio": 2008,
         "patente": "MK-51",
         "responsable": "Alexis Santos",
-        "estado": "NO OPERATIVO",
+        "estado": "No Operativo",
         "aceites": [
             {
                 "tipo": "Aceite de Motor",
@@ -950,7 +950,7 @@
         "anio": 2016,
         "patente": "VW-50",
         "responsable": "Alexis Santos",
-        "estado": "OPERATIVO (CON FALLA)",
+        "estado": "Operativo (con falla)",
         "aceites": [
             {
                 "tipo": "Aceite de Motor",

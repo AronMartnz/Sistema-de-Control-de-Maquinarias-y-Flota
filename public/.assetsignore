@@ -1,0 +1,10 @@
+_worker.js
+worker.js
+wrangler.toml
+wrangler.json
+package.json
+package-lock.json
+usuarios.json
+server.ts
+*.zip
+*.tar.gz

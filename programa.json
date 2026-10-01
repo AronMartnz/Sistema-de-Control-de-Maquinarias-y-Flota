@@ -43,13 +43,14 @@
         "equipo": "GRÚA HORQUILLA 7 TON",
         "marca": "KOMATSU",
         "cat": "GRÚAS",
-        "estado": "No Operativo",
-        "prioridad": "Alta",
+        "estado": "Operativo",
+        "prioridad": "Media",
         "horometro": "3890 hrs",
         "frecuencia": "250 horas",
         "prox": "Terminar armado",
         "responsable": "Alexis Santos",
-        "observaciones": "Terminar armado de grúa. Instalar piola de freno de mano y espejo."
+        "observaciones": "Armado finalizado. Operativa.",
+        "actualizado_en": "2026-09-12T17:46:03.856Z"
     },
     {
         "cod": "GHO-03",
@@ -110,11 +111,11 @@
         "cat": "MÓVILES",
         "estado": "Operativo",
         "prioridad": "Media",
-        "horometro": "192467",
+        "horometro": "142.500 km",
         "frecuencia": "10000 kilometros",
-        "prox": "202.467 km",
+        "prox": "150.000 km",
         "responsable": "Andrés Plaza",
-        "observaciones": "Mantención Preventiva 250 Hrs / 10.000 Km (OT-2026-005) ejecutada el 2026-09-10"
+        "observaciones": "Arreglar aire acondicionado."
     },
     {
         "cod": "CAM-02",
@@ -222,16 +223,16 @@
     },
     {
         "cod": "XSL-01",
-        "equipo": "GENERADOR ELÉCTRICO NARANJO",
-        "marca": "AIR MAN",
+        "equipo": "SOLDADORA INVERTER",
+        "marca": "TOYAKI",
         "cat": "AUXILIARES",
-        "estado": "No Operativo",
+        "estado": "Operativo",
         "prioridad": "Baja",
-        "horometro": "1200 hrs",
+        "horometro": "N/A",
         "frecuencia": "Mensual",
-        "prox": "En taller",
+        "prox": "Mensual",
         "responsable": "Alexis Santos",
-        "observaciones": "Cambiar motor."
+        "observaciones": "Cables porta electrodo en orden."
     },
     {
         "cod": "XSL-02",
@@ -414,19 +415,6 @@
         "prox": "Mensual",
         "responsable": "Alexis Santos",
         "observaciones": "Inspección de peldaños OK."
-    },
-    {
-        "cod": "XSL-01",
-        "equipo": "SOLDADORA INVERTER",
-        "marca": "TOYAKI",
-        "cat": "AUXILIARES",
-        "estado": "Operativo",
-        "prioridad": "Baja",
-        "horometro": "N/A",
-        "frecuencia": "Mensual",
-        "prox": "Mensual",
-        "responsable": "Alexis Santos",
-        "observaciones": "Cables porta electrodo en orden."
     },
     {
         "cod": "XDI-01",

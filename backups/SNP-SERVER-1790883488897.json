@@ -1,0 +1,14 @@
+{
+  "id": "SNP-SERVER-1790883488897",
+  "fecha": "01-10-2026",
+  "hora": "07:38:08 p. m.",
+  "timestamp": 1790883488897,
+  "motivo": "Respaldo automático de prueba",
+  "tipo": "AUTOMATICO_SERVIDOR",
+  "usuario": "Sistema Corssen",
+  "resumen": {},
+  "origen": "Servidor Node",
+  "data": {
+    "testTimestamp": 1790883488896
+  }
+}

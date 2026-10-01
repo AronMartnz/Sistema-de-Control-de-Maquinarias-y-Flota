@@ -1,0 +1,2629 @@
+{
+  "id": "SNP-1789233773922-182",
+  "fecha": "12-09-2026",
+  "hora": "02:22:53 p. m.",
+  "timestamp": 1789235163857,
+  "motivo": "Copia Automática Programada",
+  "tipo": "AUTOMATICO",
+  "usuario": "Admin Test",
+  "resumen": {
+    "totalPrograma": 51,
+    "totalVehiculos": 7,
+    "totalMaquinarias": 8,
+    "totalMantenciones": 4,
+    "totalStock": 32,
+    "totalCargas": 3,
+    "combustibleActual": 400,
+    "aceiteActual": 367
+  },
+  "origen": "Servidor Node",
+  "data": {
+    "corssen_programa_v2": [
+      {
+        "cod": "GPC-01",
+        "equipo": "GRÚA PORTA CONTENEDORES",
+        "marca": "TAYLOR",
+        "cat": "GRÚAS",
+        "estado": "Operativo",
+        "prioridad": "Alta",
+        "horometro": "44800 hrs",
+        "frecuencia": "250 horas",
+        "prox": "45050 hrs",
+        "responsable": "Carlos Lasso / Alexis Santos",
+        "observaciones": "Lavado y engrase realizado. Chequeo operatividad OK."
+      },
+      {
+        "cod": "GPC-02",
+        "equipo": "GRÚA PORTA CONTENEDORES",
+        "marca": "HYSTER",
+        "cat": "GRÚAS",
+        "estado": "Operativo",
+        "prioridad": "Alta",
+        "horometro": "28350 hrs",
+        "frecuencia": "250 horas",
+        "prox": "28600 hrs",
+        "responsable": "Cristian Diaz / Alexis Santos",
+        "observaciones": "Cambio aceite motor y filtros realizado. Falta cambio aceite diferencial y transmisión."
+      },
+      {
+        "cod": "GHO-01",
+        "equipo": "GRÚA HORQUILLA 4 TON",
+        "marca": "LIUGONG",
+        "cat": "GRÚAS",
+        "estado": "Operativo",
+        "prioridad": "Alta",
+        "horometro": "1240 hrs",
+        "frecuencia": "250 horas",
+        "prox": "1490 hrs",
+        "responsable": "Alexis Santos",
+        "observaciones": "Arreglar piola de parada de motor. Tapar cables eléctricos cabina."
+      },
+      {
+        "cod": "GHO-02",
+        "equipo": "GRÚA HORQUILLA 7 TON",
+        "marca": "KOMATSU",
+        "cat": "GRÚAS",
+        "estado": "Operativo",
+        "prioridad": "Media",
+        "horometro": "3890 hrs",
+        "frecuencia": "250 horas",
+        "prox": "Terminar armado",
+        "responsable": "Alexis Santos",
+        "observaciones": "Armado finalizado. Operativa."
+      },
+      {
+        "cod": "GHO-03",
+        "equipo": "GRÚA HORQUILLA 3.5 TON",
+        "marca": "LIUGONG",
+        "cat": "GRÚAS",
+        "estado": "Operativo",
+        "prioridad": "Alta",
+        "horometro": "420 hrs",
+        "frecuencia": "250 horas",
+        "prox": "670 hrs",
+        "responsable": "Alexis Santos",
+        "observaciones": "Colocar espejo retrovisor."
+      },
+      {
+        "cod": "GTE-01",
+        "equipo": "GRÚA TELESCÓPICA 60 TON",
+        "marca": "GROVE",
+        "cat": "GRÚAS",
+        "estado": "Operativo",
+        "prioridad": "Alta",
+        "horometro": "5120 hrs",
+        "frecuencia": "250 horas",
+        "prox": "5370 hrs",
+        "responsable": "Alexis Santos",
+        "observaciones": "Arreglar alarma de retroceso. Revisar flexibles de pedal en cabina."
+      },
+      {
+        "cod": "GTE-02",
+        "equipo": "GRÚA TELESCÓPICA 35 TON",
+        "marca": "GROVE",
+        "cat": "GRÚAS",
+        "estado": "No Operativo",
+        "prioridad": "Media",
+        "horometro": "6400 hrs",
+        "frecuencia": "250 horas",
+        "prox": "En reparación",
+        "responsable": "Alexis Santos",
+        "observaciones": "Arreglar cables cortados (no bajan patas de levante). Freno de parqueo bloqueado."
+      },
+      {
+        "cod": "GTE-03",
+        "equipo": "GRÚA TELESCÓPICA 15 TON",
+        "marca": "GROVE",
+        "cat": "GRÚAS",
+        "estado": "No Operativo",
+        "prioridad": "Media",
+        "horometro": "7800 hrs",
+        "frecuencia": "250 horas",
+        "prox": "En taller",
+        "responsable": "Alexis Santos",
+        "observaciones": "Instalar la transmisión."
+      },
+      {
+        "cod": "CAM-01",
+        "equipo": "CAMIONETA NISSAN NP300 (JWYD-49)",
+        "marca": "NISSAN",
+        "cat": "MÓVILES",
+        "estado": "Operativo",
+        "prioridad": "Media",
+        "horometro": "142.500 km",
+        "frecuencia": "10000 kilometros",
+        "prox": "150.000 km",
+        "responsable": "Andrés Plaza",
+        "observaciones": "Arreglar aire acondicionado."
+      },
+      {
+        "cod": "CAM-02",
+        "equipo": "CAMIONETA VOLKSWAGEN (JKKV-43)",
+        "marca": "VOLKSWAGEN",
+        "cat": "MÓVILES",
+        "estado": "Operativo (con falla)",
+        "prioridad": "Media",
+        "horometro": "98.200 km",
+        "frecuencia": "10000 kilometros",
+        "prox": "100.000 km",
+        "responsable": "Alexis Santos",
+        "observaciones": "Instalar nuevo parachoques, desabollar y pintar capó."
+      },
+      {
+        "cod": "CAM-03",
+        "equipo": "CAMIONETA NISSAN NAVARA (GCLD-31)",
+        "marca": "NISSAN",
+        "cat": "MÓVILES",
+        "estado": "No Operativo",
+        "prioridad": "Baja",
+        "horometro": "210.000 km",
+        "frecuencia": "10000 kilometros",
+        "prox": "Fuera de servicio",
+        "responsable": "Alexis Santos",
+        "observaciones": "Revisión general en taller."
+      },
+      {
+        "cod": "CAM-04",
+        "equipo": "CAMIONETA MAXUS (VPFX-76)",
+        "marca": "MAXUS",
+        "cat": "MÓVILES",
+        "estado": "Operativo",
+        "prioridad": "Baja",
+        "horometro": "18.400 km",
+        "frecuencia": "10000 kilometros",
+        "prox": "20.000 km",
+        "responsable": "Daniel Mejias",
+        "observaciones": "Operativa sin observaciones pendientes."
+      },
+      {
+        "cod": "CMN-01",
+        "equipo": "CAMIÓN FREIGHTLINER 06",
+        "marca": "FREIGHTLINER",
+        "cat": "MÓVILES",
+        "estado": "No Operativo",
+        "prioridad": "Media",
+        "horometro": "415.000 km",
+        "frecuencia": "10000 kilometros",
+        "prox": "En taller",
+        "responsable": "Alexis Santos",
+        "observaciones": "Arreglar motor de arranque. Instalar solenoide 12V de la bomba."
+      },
+      {
+        "cod": "CMN-02",
+        "equipo": "CAMIÓN MACK 51",
+        "marca": "MACK",
+        "cat": "MÓVILES",
+        "estado": "No Operativo",
+        "prioridad": "Baja",
+        "horometro": "520.000 km",
+        "frecuencia": "10000 kilometros",
+        "prox": "Revisión",
+        "responsable": "Alexis Santos",
+        "observaciones": "Mantención mayor pendiente."
+      },
+      {
+        "cod": "CMN-03",
+        "equipo": "CAMIÓN VOLKSWAGEN 50",
+        "marca": "VOLKSWAGEN",
+        "cat": "MÓVILES",
+        "estado": "Operativo (con falla)",
+        "prioridad": "Media",
+        "horometro": "60.626,6 km",
+        "frecuencia": "10000 kilometros",
+        "prox": "70.000 km",
+        "responsable": "Alexis Santos",
+        "observaciones": "Arreglar fuga agua radiador."
+      },
+      {
+        "cod": "XFV-01",
+        "equipo": "PLANTA FOTOVOLTAICA (PANELES, INVERSOR, BATERIAS)",
+        "marca": "EPEVER",
+        "cat": "AUXILIARES",
+        "estado": "Operativo",
+        "prioridad": "Baja",
+        "horometro": "N/A",
+        "frecuencia": "Mensual",
+        "prox": "31-08-2026",
+        "responsable": "Ruben Ramirez",
+        "observaciones": "Limpiar placas solares y aspirar polvo del inversor."
+      },
+      {
+        "cod": "XGE-01",
+        "equipo": "GENERADOR ELÉCTRICO NEGRO",
+        "marca": "HYUNDAI",
+        "cat": "AUXILIARES",
+        "estado": "No Operativo",
+        "prioridad": "Media",
+        "horometro": "450 hrs",
+        "frecuencia": "200 horas",
+        "prox": "En taller",
+        "responsable": "Alexis Santos",
+        "observaciones": "Cambiar tarjeta electrónica del generador."
+      },
+      {
+        "cod": "XSL-01",
+        "equipo": "GENERADOR ELÉCTRICO NARANJO",
+        "marca": "AIR MAN",
+        "cat": "AUXILIARES",
+        "estado": "No Operativo",
+        "prioridad": "Baja",
+        "horometro": "1200 hrs",
+        "frecuencia": "Mensual",
+        "prox": "En taller",
+        "responsable": "Alexis Santos",
+        "observaciones": "Cambiar motor."
+      },
+      {
+        "cod": "XSL-02",
+        "equipo": "SOLDADORA / GENERADOR AUTÓNOMA AMARILLO",
+        "marca": "LINCOLN",
+        "cat": "AUXILIARES",
+        "estado": "No Operativo",
+        "prioridad": "Media",
+        "horometro": "890 hrs",
+        "frecuencia": "Mensual",
+        "prox": "En revisión",
+        "responsable": "Alexis Santos",
+        "observaciones": "Cambiar generador (revisar cuál tiene puesto)."
+      },
+      {
+        "cod": "XCO-01",
+        "equipo": "COMPRESOR AUTÓNOMO",
+        "marca": "KRAFTER",
+        "cat": "AUXILIARES",
+        "estado": "No Operativo",
+        "prioridad": "Media",
+        "horometro": "320 hrs",
+        "frecuencia": "200 horas",
+        "prox": "En taller",
+        "responsable": "Alexis Santos",
+        "observaciones": "Cambiar motor."
+      },
+      {
+        "cod": "XHI-01",
+        "equipo": "HIDROLAVADORA",
+        "marca": "BN 18",
+        "cat": "AUXILIARES",
+        "estado": "Operativo",
+        "prioridad": "Baja",
+        "horometro": "150 hrs",
+        "frecuencia": "200 horas",
+        "prox": "200 hrs",
+        "responsable": "Alexis Santos",
+        "observaciones": "Operativo en taller."
+      },
+      {
+        "cod": "XLU-01",
+        "equipo": "LUMINARIA TORRE",
+        "marca": "ATLAS COPCO",
+        "cat": "AUXILIARES",
+        "estado": "Operativo",
+        "prioridad": "Media",
+        "horometro": "6387 hrs",
+        "frecuencia": "200 horas",
+        "prox": "6587 hrs",
+        "responsable": "Alexis Santos",
+        "observaciones": "Revisión periódica focos y cableado."
+      },
+      {
+        "cod": "XOX-01",
+        "equipo": "EQUIPO OXICORTE COMPLETO",
+        "marca": "GENÉRICO",
+        "cat": "AUXILIARES",
+        "estado": "Operativo",
+        "prioridad": "Baja",
+        "horometro": "N/A",
+        "frecuencia": "Mensual",
+        "prox": "Mensual",
+        "responsable": "Alexis Santos",
+        "observaciones": "Válvulas antiretroceso revisadas."
+      },
+      {
+        "cod": "XAS-01",
+        "equipo": "ASPIRADORA MULTIUSO",
+        "marca": "KÄRCHER",
+        "cat": "AUXILIARES",
+        "estado": "Se encuentra?",
+        "prioridad": "Baja",
+        "horometro": "N/A",
+        "frecuencia": "Mensual",
+        "prox": "Ubicar",
+        "responsable": "Alexis Santos",
+        "observaciones": "Pendiente de inventario."
+      },
+      {
+        "cod": "XEA-01",
+        "equipo": "ESMERIL ANGULAR",
+        "marca": "TOYAKI",
+        "cat": "AUXILIARES",
+        "estado": "Operativo",
+        "prioridad": "Baja",
+        "horometro": "N/A",
+        "frecuencia": "Mensual",
+        "prox": "Mensual",
+        "responsable": "Alexis Santos",
+        "observaciones": "Disco de corte y protección OK."
+      },
+      {
+        "cod": "XPN-01",
+        "equipo": "PISTOLA NEUMÁTICA IMPACTO 3/4'",
+        "marca": "INGCO",
+        "cat": "AUXILIARES",
+        "estado": "Operativo",
+        "prioridad": "Baja",
+        "horometro": "N/A",
+        "frecuencia": "Mensual",
+        "prox": "Mensual",
+        "responsable": "Alexis Santos",
+        "observaciones": "Lubricación neumática al día."
+      },
+      {
+        "cod": "XPE-01",
+        "equipo": "PISTOLA ELÉCTRICA IMPACTO 1/2'",
+        "marca": "GENÉRICO",
+        "cat": "AUXILIARES",
+        "estado": "Se encuentra?",
+        "prioridad": "Baja",
+        "horometro": "N/A",
+        "frecuencia": "Mensual",
+        "prox": "Ubicar",
+        "responsable": "Alexis Santos",
+        "observaciones": "Verificar en pañol."
+      },
+      {
+        "cod": "XPE-02",
+        "equipo": "PISTOLA ELÉCTRICA IMPACTO 3/4'",
+        "marca": "INGCO",
+        "cat": "AUXILIARES",
+        "estado": "Operativo",
+        "prioridad": "Baja",
+        "horometro": "N/A",
+        "frecuencia": "Mensual",
+        "prox": "Mensual",
+        "responsable": "Alexis Santos",
+        "observaciones": "Operativa."
+      },
+      {
+        "cod": "XGR-01",
+        "equipo": "GRASERA NEUMÁTICA",
+        "marca": "FERTON",
+        "cat": "AUXILIARES",
+        "estado": "Operativo",
+        "prioridad": "Baja",
+        "horometro": "N/A",
+        "frecuencia": "Mensual",
+        "prox": "Mensual",
+        "responsable": "Alexis Santos",
+        "observaciones": "Operativa."
+      },
+      {
+        "cod": "XCB-01",
+        "equipo": "CARGADOR DE BATERÍA",
+        "marca": "GENÉRICO",
+        "cat": "AUXILIARES",
+        "estado": "Operativo",
+        "prioridad": "Baja",
+        "horometro": "N/A",
+        "frecuencia": "Mensual",
+        "prox": "Mensual",
+        "responsable": "Alexis Santos",
+        "observaciones": "Cables y pinzas en buen estado."
+      },
+      {
+        "cod": "XSN-01",
+        "equipo": "SCANNER PARA MOTOR",
+        "marca": "LAUNCH",
+        "cat": "AUXILIARES",
+        "estado": "Operativo",
+        "prioridad": "Baja",
+        "horometro": "N/A",
+        "frecuencia": "Mensual",
+        "prox": "Mensual",
+        "responsable": "Alexis Santos",
+        "observaciones": "Software actualizado."
+      },
+      {
+        "cod": "XSC-04",
+        "equipo": "ESCALERA AUTOAPOYANTE",
+        "marca": "PRODALUM",
+        "cat": "AUXILIARES",
+        "estado": "Operativo",
+        "prioridad": "Baja",
+        "horometro": "N/A",
+        "frecuencia": "Mensual",
+        "prox": "Mensual",
+        "responsable": "Alexis Santos",
+        "observaciones": "Inspección de peldaños OK."
+      },
+      {
+        "cod": "XSL-01",
+        "equipo": "SOLDADORA INVERTER",
+        "marca": "TOYAKI",
+        "cat": "AUXILIARES",
+        "estado": "Operativo",
+        "prioridad": "Baja",
+        "horometro": "N/A",
+        "frecuencia": "Mensual",
+        "prox": "Mensual",
+        "responsable": "Alexis Santos",
+        "observaciones": "Cables porta electrodo en orden."
+      },
+      {
+        "cod": "XDI-01",
+        "equipo": "ESTANQUE METÁLICO DIÉSEL (420 LTS) C/ SURTIDOR",
+        "marca": "CORSSEN",
+        "cat": "AUXILIARES",
+        "estado": "Operativo",
+        "prioridad": "Baja",
+        "horometro": "N/A",
+        "frecuencia": "Mensual",
+        "prox": "Mensual",
+        "responsable": "Alexis Santos",
+        "observaciones": "Bomba y pistola contadora funcionando."
+      },
+      {
+        "cod": "XGT-01",
+        "equipo": "GATA HIDRÁULICA 50 TON",
+        "marca": "GENÉRICA",
+        "cat": "AUXILIARES",
+        "estado": "Operativo",
+        "prioridad": "Baja",
+        "horometro": "N/A",
+        "frecuencia": "Mensual",
+        "prox": "Mensual",
+        "responsable": "Alexis Santos",
+        "observaciones": "Nivel de aceite hidráulico verificado."
+      },
+      {
+        "cod": "XES-00",
+        "equipo": "ESLINGAS (4, 8 Y 10M - 11 TON / 8 TON)",
+        "marca": "STRONG LION",
+        "cat": "AUXILIARES",
+        "estado": "Operativo",
+        "prioridad": "Baja",
+        "horometro": "N/A",
+        "frecuencia": "Mensual",
+        "prox": "Mensual",
+        "responsable": "Miguel Huerta",
+        "observaciones": "Inspección de desgaste conforme a norma."
+      },
+      {
+        "cod": "XGL-00",
+        "equipo": "GRILLETES (1'' Y 1 3/4'')",
+        "marca": "PRO BLUE",
+        "cat": "AUXILIARES",
+        "estado": "Operativo",
+        "prioridad": "Baja",
+        "horometro": "N/A",
+        "frecuencia": "Mensual",
+        "prox": "Mensual",
+        "responsable": "Miguel Huerta",
+        "observaciones": "Pernos pasadores engrasados."
+      },
+      {
+        "cod": "XIK-00",
+        "equipo": "INTERLOCKS CONTAINER (50 UN.)",
+        "marca": "SCLASH",
+        "cat": "AUXILIARES",
+        "estado": "Operativo",
+        "prioridad": "Baja",
+        "horometro": "N/A",
+        "frecuencia": "Mensual",
+        "prox": "Mensual",
+        "responsable": "Miguel Huerta",
+        "observaciones": "50 unidades contadas en pañol."
+      },
+      {
+        "cod": "XCD-01",
+        "equipo": "CADENAS PARA IZAJE (3/4, 5/8 PULG)",
+        "marca": "GENÉRICA",
+        "cat": "AUXILIARES",
+        "estado": "Operativo",
+        "prioridad": "Baja",
+        "horometro": "N/A",
+        "frecuencia": "Mensual",
+        "prox": "Mensual",
+        "responsable": "Miguel Huerta",
+        "observaciones": "Certificación vigente."
+      },
+      {
+        "cod": "XCD-02",
+        "equipo": "CADENA DE CARGA",
+        "marca": "COLUMBUS",
+        "cat": "AUXILIARES",
+        "estado": "Operativo",
+        "prioridad": "Baja",
+        "horometro": "N/A",
+        "frecuencia": "Mensual",
+        "prox": "Mensual",
+        "responsable": "Miguel Huerta",
+        "observaciones": "Operativa."
+      },
+      {
+        "cod": "XRD-00",
+        "equipo": "RADIOS PORTÁTILES COMUNICACIÓN",
+        "marca": "PHILCO",
+        "cat": "AUXILIARES",
+        "estado": "Operativo",
+        "prioridad": "Baja",
+        "horometro": "N/A",
+        "frecuencia": "Mensual",
+        "prox": "Mensual",
+        "responsable": "Otros",
+        "observaciones": "Baterías cargadas."
+      },
+      {
+        "cod": "XPC-01",
+        "equipo": "NOTEBOOK DELL INSPIRON",
+        "marca": "DELL",
+        "cat": "AUXILIARES",
+        "estado": "Operativo",
+        "prioridad": "Baja",
+        "horometro": "N/A",
+        "frecuencia": "Mensual",
+        "prox": "Mensual",
+        "responsable": "Daniel Mejias",
+        "observaciones": "Operativo en oficina."
+      },
+      {
+        "cod": "XPC-02",
+        "equipo": "NOTEBOOK ASUS VIVOBOOK GO 14",
+        "marca": "ASUS",
+        "cat": "AUXILIARES",
+        "estado": "Operativo",
+        "prioridad": "Baja",
+        "horometro": "N/A",
+        "frecuencia": "Mensual",
+        "prox": "Mensual",
+        "responsable": "Ruben Ramirez",
+        "observaciones": "Operativo en terreno."
+      },
+      {
+        "cod": "XPC-03",
+        "equipo": "IMPRESORA SMARTTANK",
+        "marca": "HP",
+        "cat": "AUXILIARES",
+        "estado": "Operativo",
+        "prioridad": "Baja",
+        "horometro": "N/A",
+        "frecuencia": "Mensual",
+        "prox": "Mensual",
+        "responsable": "Daniel Mejias",
+        "observaciones": "Nivel de tinta OK."
+      },
+      {
+        "cod": "XPC-04",
+        "equipo": "TABLET REDMI PAD SE 8.7",
+        "marca": "XIAOMI",
+        "cat": "AUXILIARES",
+        "estado": "Operativo",
+        "prioridad": "Baja",
+        "horometro": "N/A",
+        "frecuencia": "Mensual",
+        "prox": "Mensual",
+        "responsable": "Alejandro Morales",
+        "observaciones": "Aplicación de control instalada."
+      },
+      {
+        "cod": "XDR-01",
+        "equipo": "DRONE 4K DOBLE CÁMARA",
+        "marca": "GENÉRICO",
+        "cat": "AUXILIARES",
+        "estado": "Operativo",
+        "prioridad": "Baja",
+        "horometro": "N/A",
+        "frecuencia": "Mensual",
+        "prox": "Mensual",
+        "responsable": "Otros",
+        "observaciones": "Hélices de repuesto en maleta."
+      },
+      {
+        "cod": "MPG-01",
+        "equipo": "PANGA BUCANERO",
+        "marca": "BUCANERO",
+        "cat": "MARÍTIMO",
+        "estado": "Operativo",
+        "prioridad": "Baja",
+        "horometro": "N/A",
+        "frecuencia": "n/a",
+        "prox": "Anual",
+        "responsable": "Alexis Santos",
+        "observaciones": "Casco sin filtraciones."
+      },
+      {
+        "cod": "MBO-01",
+        "equipo": "BOTE DE FIBRA",
+        "marca": "GENÉRICO",
+        "cat": "MARÍTIMO",
+        "estado": "Operativo",
+        "prioridad": "Baja",
+        "horometro": "N/A",
+        "frecuencia": "n/a",
+        "prox": "Anual",
+        "responsable": "Alexis Santos",
+        "observaciones": "Operativo para faenas de muelle."
+      },
+      {
+        "cod": "MWN-01",
+        "equipo": "WINCHE DE BALSA",
+        "marca": "GENÉRICO",
+        "cat": "MARÍTIMO",
+        "estado": "Operativo",
+        "prioridad": "Baja",
+        "horometro": "N/A",
+        "frecuencia": "Mensual",
+        "prox": "Mensual",
+        "responsable": "Alexis Santos",
+        "observaciones": "Engrase de piñón efectuado."
+      },
+      {
+        "cod": "MMW-01",
+        "equipo": "MOTOR WINCHE BALSA",
+        "marca": "DEUTZ",
+        "cat": "MARÍTIMO",
+        "estado": "No Operativo",
+        "prioridad": "Baja",
+        "horometro": "N/A",
+        "frecuencia": "Mensual",
+        "prox": "En taller",
+        "responsable": "Alexis Santos",
+        "observaciones": "Falta rodamiento ventilador, cambiar chapa de contacto."
+      },
+      {
+        "cod": "MAN-01",
+        "equipo": "3 ANCLAS DE 2 TON Y 1 ANCLA DE 6 TON",
+        "marca": "VICINAY",
+        "cat": "MARÍTIMO",
+        "estado": "Operativo",
+        "prioridad": "Baja",
+        "horometro": "N/A",
+        "frecuencia": "Anual",
+        "prox": "Anual",
+        "responsable": "Miguel Huerta",
+        "observaciones": "Inspección de grilletes y cadenas."
+      }
+    ],
+    "corssen_stock_v2": [
+      {
+        "detalle": "Aceite de Motor",
+        "categoria": "ACEITE",
+        "marca": "VALVOLINE",
+        "modelo": "SAE 15W40 CI-4",
+        "medida": "BALDE 19 LTS",
+        "stock": 1,
+        "stockMin": 3,
+        "proveedor": "LUVAL",
+        "compatible": "Todos los equipos",
+        "costo": 55000
+      },
+      {
+        "detalle": "Aceite Transmisión",
+        "categoria": "ACEITE",
+        "marca": "VALVOLINE",
+        "modelo": "ATF Dexron III",
+        "medida": "BALDE 19 LTS",
+        "stock": 3,
+        "stockMin": 4,
+        "proveedor": "LUVAL",
+        "compatible": "Porta Taylor y Hyster",
+        "costo": 60000
+      },
+      {
+        "detalle": "Aceite Diferencial, cubos ruedas y rotador",
+        "categoria": "ACEITE",
+        "marca": "VALVOLINE",
+        "modelo": "SAE 80W90 GL-5",
+        "medida": "BALDE 19 LTS",
+        "stock": 3,
+        "stockMin": 4,
+        "proveedor": "LUVAL",
+        "compatible": "Porta Taylor y Hyster",
+        "costo": 60000
+      },
+      {
+        "detalle": "Refrigerante (no aceite)",
+        "categoria": "REFRIGERANTE",
+        "marca": "VALVOLINE",
+        "modelo": "Coolan extender life 50%",
+        "medida": "BALDE 19 LTS",
+        "stock": 1,
+        "stockMin": 3,
+        "proveedor": "LUVAL",
+        "compatible": "Porta Taylor y Hyster",
+        "costo": 60000
+      },
+      {
+        "detalle": "Aceite de motor",
+        "categoria": "FILTRO",
+        "marca": "Fleetguard",
+        "modelo": "LF 9001",
+        "medida": "UNIDAD",
+        "stock": 1,
+        "stockMin": 2,
+        "proveedor": "ADASME",
+        "compatible": "Porta Taylor",
+        "costo": 35000
+      },
+      {
+        "detalle": "Aceite de motor",
+        "categoria": "FILTRO",
+        "marca": "Baldwin",
+        "modelo": "BD50000",
+        "medida": "UNIDAD",
+        "stock": 1,
+        "stockMin": 2,
+        "proveedor": "ADASME",
+        "compatible": "Porta Taylor y Hyster",
+        "costo": 45000
+      },
+      {
+        "detalle": "Combustible (separador de agua)",
+        "categoria": "FILTRO",
+        "marca": "Tecfil",
+        "modelo": "PSC289",
+        "medida": "UNIDAD",
+        "stock": 1,
+        "stockMin": 2,
+        "proveedor": "ADASME",
+        "compatible": "Porta Taylor",
+        "costo": 28000
+      },
+      {
+        "detalle": "Combustible (separador de agua)",
+        "categoria": "FILTRO",
+        "marca": "Baldwin",
+        "modelo": "BF1259",
+        "medida": "UNIDAD",
+        "stock": 1,
+        "stockMin": 2,
+        "proveedor": "ADASME",
+        "compatible": "Porta Taylor y Hyster",
+        "costo": 32000
+      },
+      {
+        "detalle": "Combustible (separador de agua y combustible)",
+        "categoria": "FILTRO",
+        "marca": "Fleetguard",
+        "modelo": "FS 1015",
+        "medida": "UNIDAD",
+        "stock": 1,
+        "stockMin": 2,
+        "proveedor": "ADASME",
+        "compatible": "Porta Taylor",
+        "costo": 38000
+      },
+      {
+        "detalle": "Combustible",
+        "categoria": "FILTRO",
+        "marca": "Baldwin",
+        "modelo": "BF1293-SPS",
+        "medida": "UNIDAD",
+        "stock": 1,
+        "stockMin": 2,
+        "proveedor": "ADASME",
+        "compatible": "Porta Hyster",
+        "costo": 34000
+      },
+      {
+        "detalle": "Hidráulico retorno desahogo",
+        "categoria": "FILTRO",
+        "marca": "Baldwin",
+        "modelo": "BT8853-MPG",
+        "medida": "UNIDAD",
+        "stock": 0,
+        "stockMin": 2,
+        "proveedor": "ADASME",
+        "compatible": "Porta Taylor",
+        "costo": 52000
+      },
+      {
+        "detalle": "Hidráulico transmisión",
+        "categoria": "FILTRO",
+        "marca": "Baldwin",
+        "modelo": "BT8851-MPG",
+        "medida": "UNIDAD",
+        "stock": 0,
+        "stockMin": 2,
+        "proveedor": "ADASME",
+        "compatible": "Porta Taylor",
+        "costo": 48000
+      },
+      {
+        "detalle": "Hidráulico transmisión",
+        "categoria": "FILTRO",
+        "marca": "Baldwin",
+        "modelo": "BT9400-MPG",
+        "medida": "UNIDAD",
+        "stock": 2,
+        "stockMin": 2,
+        "proveedor": "ADASME",
+        "compatible": "Porta Hyster",
+        "costo": 49000
+      },
+      {
+        "detalle": "Refrigerante del motor",
+        "categoria": "FILTRO",
+        "marca": "Baldwin",
+        "modelo": "BW5075",
+        "medida": "UNIDAD",
+        "stock": 1,
+        "stockMin": 2,
+        "proveedor": "ADASME",
+        "compatible": "Porta Taylor y Hyster",
+        "costo": 25000
+      },
+      {
+        "detalle": "Aire Primario",
+        "categoria": "FILTRO",
+        "marca": "Baldwin",
+        "modelo": "RS4993",
+        "medida": "UNIDAD",
+        "stock": 0,
+        "stockMin": 2,
+        "proveedor": "ADASME",
+        "compatible": "Porta Taylor",
+        "costo": 68000
+      },
+      {
+        "detalle": "Aire Primario",
+        "categoria": "FILTRO",
+        "marca": "Baldwin",
+        "modelo": "RS3870",
+        "medida": "UNIDAD",
+        "stock": 1,
+        "stockMin": 2,
+        "proveedor": "ADASME",
+        "compatible": "Porta Hyster",
+        "costo": 72000
+      },
+      {
+        "detalle": "Aire Secundario",
+        "categoria": "FILTRO",
+        "marca": "Baldwin",
+        "modelo": "RS3871",
+        "medida": "UNIDAD",
+        "stock": 1,
+        "stockMin": 2,
+        "proveedor": "ADASME",
+        "compatible": "Porta Hyster",
+        "costo": 45000
+      },
+      {
+        "detalle": "Grasa Industrial",
+        "categoria": "GRASA",
+        "marca": "VALVOLINE",
+        "modelo": "LITHIUM GREASE EP-2",
+        "medida": "BALDE 19 LTS",
+        "stock": 2,
+        "stockMin": 3,
+        "proveedor": "LUVAL",
+        "compatible": "Todos los equipos",
+        "costo": 65000
+      },
+      {
+        "detalle": "ZUNCHO METÁLICO",
+        "categoria": "ZUNCHO",
+        "marca": "GENÉRICO",
+        "modelo": "3/4 Alta resistencia",
+        "medida": "ROLLO",
+        "stock": 4,
+        "stockMin": 2,
+        "proveedor": "PROVEEDOR LOCAL",
+        "compatible": "Embalaje y Sujeción",
+        "costo": 45000
+      },
+      {
+        "detalle": "ZUNCHO PLÁSTICO",
+        "categoria": "ZUNCHO",
+        "marca": "GENÉRICO",
+        "modelo": "1/2 Reforzado",
+        "medida": "ROLLO",
+        "stock": 6,
+        "stockMin": 2,
+        "proveedor": "PROVEEDOR LOCAL",
+        "compatible": "Embalaje y Sujeción",
+        "costo": 28000
+      },
+      {
+        "detalle": "Motor de arranque",
+        "categoria": "REPUESTO",
+        "marca": "GENÉRICO",
+        "modelo": "Para horquilla 7 ton",
+        "medida": "UNIDAD",
+        "stock": 1,
+        "stockMin": 1,
+        "proveedor": "ADASME",
+        "compatible": "Grúa Horquilla 7T",
+        "costo": 280000
+      },
+      {
+        "detalle": "Alternador",
+        "categoria": "REPUESTO",
+        "marca": "GENÉRICO",
+        "modelo": "Para horquilla 7 ton",
+        "medida": "UNIDAD",
+        "stock": 1,
+        "stockMin": 1,
+        "proveedor": "ADASME",
+        "compatible": "Grúa Horquilla 7T",
+        "costo": 210000
+      },
+      {
+        "detalle": "Motor de arranque",
+        "categoria": "REPUESTO",
+        "marca": "LINCOLN",
+        "modelo": "Soldadora Lincoln",
+        "medida": "UNIDAD",
+        "stock": 1,
+        "stockMin": 1,
+        "proveedor": "DERCO",
+        "compatible": "Soldadora Lincoln",
+        "costo": 195000
+      },
+      {
+        "detalle": "Alternador",
+        "categoria": "REPUESTO",
+        "marca": "GENÉRICO",
+        "modelo": "Para Porta Taylor",
+        "medida": "UNIDAD",
+        "stock": 1,
+        "stockMin": 1,
+        "proveedor": "ADASME",
+        "compatible": "Porta Taylor",
+        "costo": 340000
+      },
+      {
+        "detalle": "Motor de arranque",
+        "categoria": "REPUESTO",
+        "marca": "GENÉRICO",
+        "modelo": "Para Porta Taylor",
+        "medida": "UNIDAD",
+        "stock": 1,
+        "stockMin": 1,
+        "proveedor": "ADASME",
+        "compatible": "Porta Taylor",
+        "costo": 420000
+      },
+      {
+        "detalle": "Turbo Compresor",
+        "categoria": "REPUESTO",
+        "marca": "CUMMINS",
+        "modelo": "Para Porta Taylor",
+        "medida": "UNIDAD",
+        "stock": 1,
+        "stockMin": 1,
+        "proveedor": "CUMMINS CHILE",
+        "compatible": "Porta Taylor",
+        "costo": 890000
+      },
+      {
+        "detalle": "Banco de válvulas transmisión",
+        "categoria": "REPUESTO",
+        "marca": "GENÉRICO",
+        "modelo": "Para Porta Taylor",
+        "medida": "UNIDAD",
+        "stock": 1,
+        "stockMin": 1,
+        "proveedor": "ADASME",
+        "compatible": "Porta Taylor",
+        "costo": 650000
+      },
+      {
+        "detalle": "Correa accesorios motor",
+        "categoria": "REPUESTO",
+        "marca": "CUMMINS",
+        "modelo": "Para Porta Taylor",
+        "medida": "UNIDAD",
+        "stock": 1,
+        "stockMin": 2,
+        "proveedor": "CUMMINS",
+        "compatible": "Porta Taylor",
+        "costo": 45000
+      },
+      {
+        "detalle": "Sensores proximidad spreader",
+        "categoria": "REPUESTO",
+        "marca": "Pepperl+Fuchs",
+        "modelo": "Para Porta Taylor",
+        "medida": "UNIDAD",
+        "stock": 4,
+        "stockMin": 2,
+        "proveedor": "ADASME",
+        "compatible": "Porta Taylor",
+        "costo": 120000
+      },
+      {
+        "detalle": "Sensor temperatura switch estanque",
+        "categoria": "REPUESTO",
+        "marca": "TAYLOR Original",
+        "modelo": "Pieza Nº 2317-026",
+        "medida": "UNIDAD",
+        "stock": 1,
+        "stockMin": 1,
+        "proveedor": "TAYLOR",
+        "compatible": "Porta Taylor",
+        "costo": 95000
+      },
+      {
+        "detalle": "Sensor nivel switch jmpr abajo estanque",
+        "categoria": "REPUESTO",
+        "marca": "TAYLOR Original",
+        "modelo": "Pieza Nº 1 29 2041",
+        "medida": "UNIDAD",
+        "stock": 1,
+        "stockMin": 1,
+        "proveedor": "TAYLOR",
+        "compatible": "Porta Taylor",
+        "costo": 110000
+      },
+      {
+        "detalle": "Solenoide 24V VG20 para spreader",
+        "categoria": "REPUESTO",
+        "marca": "TAYLOR Original",
+        "modelo": "Pieza Nº 5277-90",
+        "medida": "UNIDAD",
+        "stock": 2,
+        "stockMin": 2,
+        "proveedor": "TAYLOR",
+        "compatible": "Porta Taylor",
+        "costo": 180000
+      }
+    ],
+    "corssen_fichas_v2": {
+      "GPC-01": {
+        "nombre": "GRÚA PORTACONTENEDORES TAYLOR",
+        "marca": "TAYLOR",
+        "modelo": "XLC 975",
+        "capacidad": "40 TON",
+        "anio": 2013,
+        "motor": "Cummins QSM11",
+        "responsable": "Carlos Lasso",
+        "estado": "OPERATIVA",
+        "aceites": [
+          {
+            "tipo": "Aceite de Motor",
+            "modelo": "SAE 15W40",
+            "cantidad": "38 Lts",
+            "proveedor": "Luval"
+          },
+          {
+            "tipo": "Aceite Hidráulico",
+            "modelo": "SAE 10W30",
+            "cantidad": "800 Lts",
+            "proveedor": "Luval"
+          },
+          {
+            "tipo": "Aceite Transmisión",
+            "modelo": "Dexron III",
+            "cantidad": "60 Lts",
+            "proveedor": "Luval"
+          },
+          {
+            "tipo": "Aceite Diferencial",
+            "modelo": "SAE 80W90",
+            "cantidad": "75 Lts",
+            "proveedor": "Luval"
+          },
+          {
+            "tipo": "A. cubos ruedas tracción",
+            "modelo": "SAE 80W90",
+            "cantidad": "12 Lts por lado",
+            "proveedor": "Luval"
+          },
+          {
+            "tipo": "A. cubos ruedas dirección",
+            "modelo": "SAE 80W90",
+            "cantidad": "4 Lts por lado",
+            "proveedor": "Luval"
+          },
+          {
+            "tipo": "Refrigerante",
+            "modelo": "Coolan extender life 50%",
+            "cantidad": "20 Lts",
+            "proveedor": "Luval"
+          }
+        ],
+        "filtros": [
+          {
+            "elemento": "Aceite de motor",
+            "alt1": "Baldwin BD50000 (Adasme)",
+            "alt2": "Fleetguard LF 9001",
+            "alt3": "Donaldson P550428",
+            "alt4": "-"
+          },
+          {
+            "elemento": "Combustible (separador agua)",
+            "alt1": "Baldwin BF1259 (Adasme)",
+            "alt2": "Tecfil PSC289",
+            "alt3": "Fleetguard FS1000",
+            "alt4": "-"
+          },
+          {
+            "elemento": "Combustible (agua y comb.)",
+            "alt1": "Parker S-3070 (Adasme)",
+            "alt2": "Fleetguard FS1015",
+            "alt3": "Donaldson P551000",
+            "alt4": "-"
+          },
+          {
+            "elemento": "Hidráulico desahogo",
+            "alt1": "Baldwin BT8853-MPG (Adasme)",
+            "alt2": "Fleetguard HF6518 (Filter.cl)",
+            "alt3": "-",
+            "alt4": "-"
+          },
+          {
+            "elemento": "Aire Primario",
+            "alt1": "Baldwin RS4993 (Adasme)",
+            "alt2": "Fleetguard AF25708M (Beparts.cl)",
+            "alt3": "Donaldson P532503",
+            "alt4": "-"
+          },
+          {
+            "elemento": "Aire Secundario",
+            "alt1": "NO APLICA",
+            "alt2": "NO APLICA",
+            "alt3": "NO APLICA",
+            "alt4": "-"
+          },
+          {
+            "elemento": "Refrigerante del motor",
+            "alt1": "Baldwin BW5075 (Adasme)",
+            "alt2": "Fleetguard WF2075",
+            "alt3": "Donaldson P552075",
+            "alt4": "-"
+          },
+          {
+            "elemento": "Transmisión (usa 2 iguales)",
+            "alt1": "Baldwin BT8851-MPG (Adasme)",
+            "alt2": "Donaldson P164378 (Filter.cl)",
+            "alt3": "-",
+            "alt4": "-"
+          }
+        ],
+        "historial": [
+          {
+            "fecha": "28-05-2023",
+            "horometro": "44.800 hrs",
+            "prox": "45.050 hrs",
+            "descripcion": "Realizado por Terminal San Antonio: Lavado y engrase, chequeo operatividad.",
+            "insumos": "Grasa EP-2"
+          },
+          {
+            "fecha": "22-07-2024",
+            "horometro": "8.340 hrs",
+            "prox": "8.590 hrs",
+            "descripcion": "Chequeo de mandos y niveles de lubricación.",
+            "insumos": "Aceite 15W40"
+          }
+        ],
+        "pendientes": [
+          "Cambio de electroválvula en spreader",
+          "Reemplazar sensor refrigeración motor",
+          "Reemplazar sensor aceite hidráulico inferior estanque",
+          "Reemplazar sensor aceite hidráulico superior estanque",
+          "Cambio de cables en arnés motor",
+          "Revisar luces sobre cabina y spreader",
+          "Cambiar packing de cilindro de dirección derecho y compensación",
+          "Realizar mantención top al motor y pintar grúa"
+        ]
+      },
+      "GPC-02": {
+        "nombre": "GRÚA PORTACONTENEDORES HYSTER",
+        "marca": "HYSTER",
+        "modelo": "RS 46-33 CH (D222)",
+        "capacidad": "46 TON",
+        "anio": 2017,
+        "motor": "Cummins QSM11",
+        "responsable": "Cristian Diaz",
+        "estado": "OPERATIVA",
+        "aceites": [
+          {
+            "tipo": "Aceite de Motor",
+            "modelo": "SAE 15W40",
+            "cantidad": "33 Lts",
+            "proveedor": "Luval"
+          },
+          {
+            "tipo": "Aceite Hidráulico",
+            "modelo": "SAE 10W30",
+            "cantidad": "850 Lts",
+            "proveedor": "Luval"
+          },
+          {
+            "tipo": "Aceite Transmisión",
+            "modelo": "Dexron III",
+            "cantidad": "65 Lts",
+            "proveedor": "Luval"
+          },
+          {
+            "tipo": "Aceite Diferencial",
+            "modelo": "SAE 80W90",
+            "cantidad": "80 Lts",
+            "proveedor": "Luval"
+          },
+          {
+            "tipo": "A. cubos ruedas tracción",
+            "modelo": "SAE 80W90",
+            "cantidad": "12,5 Lts por lado",
+            "proveedor": "Luval"
+          },
+          {
+            "tipo": "A. rotador spreader",
+            "modelo": "SAE 80W90",
+            "cantidad": "8 Lts",
+            "proveedor": "Luval"
+          },
+          {
+            "tipo": "Refrigerante",
+            "modelo": "Coolan extender life 50%",
+            "cantidad": "20 Lts",
+            "proveedor": "Luval"
+          }
+        ],
+        "filtros": [
+          {
+            "elemento": "Aceite de motor",
+            "alt1": "Hyster 4143757",
+            "alt2": "Baldwin BD50000 (Adasme)",
+            "alt3": "Fleetguard LF9001",
+            "alt4": "Donaldson P179353"
+          },
+          {
+            "elemento": "Combustible",
+            "alt1": "Hyster 1553225",
+            "alt2": "Baldwin BF1293-SPS (Adasme)",
+            "alt3": "Fleetguard FS1003/FS19596",
+            "alt4": "Donaldson P551003/P551103"
+          },
+          {
+            "elemento": "Combustible (sep. agua)",
+            "alt1": "Hyster 1515707",
+            "alt2": "Baldwin BF1259 (Adasme)",
+            "alt3": "Fleetguard FS1000",
+            "alt4": "Donaldson P551000"
+          },
+          {
+            "elemento": "Hidráulico retorno",
+            "alt1": "Hyster 8546415",
+            "alt2": "HIFI SH74503 (Adasme)",
+            "alt3": "-",
+            "alt4": "-"
+          },
+          {
+            "elemento": "Aire Primario",
+            "alt1": "Hyster 1456800",
+            "alt2": "Baldwin RS3870 (Adasme)",
+            "alt3": "-",
+            "alt4": "Donaldson P777869"
+          },
+          {
+            "elemento": "Aire Secundario",
+            "alt1": "Hyster 1456804",
+            "alt2": "Baldwin RS3871 (Adasme)",
+            "alt3": "-",
+            "alt4": "MANN CF 850/2"
+          },
+          {
+            "elemento": "Refrigerante motor",
+            "alt1": "Hyster 1513463",
+            "alt2": "Baldwin BW5075 (Adasme)",
+            "alt3": "Fleetguard WF2075",
+            "alt4": "-"
+          },
+          {
+            "elemento": "Transmisión (usa 2 iguales)",
+            "alt1": "Hyster 1556992",
+            "alt2": "Baldwin BT9400-MPG (Adasme)",
+            "alt3": "Fleetguard HF35464 (Filter.cl)",
+            "alt4": "Donaldson P765075"
+          }
+        ],
+        "historial": [
+          {
+            "fecha": "17-03-2026",
+            "horometro": "28.164 hrs",
+            "prox": "28.414 hrs",
+            "descripcion": "Realizado por Tattersall: Cambio aceite motor, cambio filtro aceite, cambio filtro aire.",
+            "insumos": "Aceite 15W40, BD50000, RS3870"
+          },
+          {
+            "fecha": "26-06-2026",
+            "horometro": "28.350 hrs",
+            "prox": "28.600 hrs",
+            "descripcion": "Cambio aceite motor, cambio filtro aceite, cambio filtros combustible. (Falta: filtro aire y cambio aceite transmisión/diferencial).",
+            "insumos": "Aceite 15W40, BD50000, BF1259"
+          }
+        ],
+        "pendientes": [
+          "Reparar cable para mover cabina eléctricamente",
+          "Cambio de filtro aire primario y secundario",
+          "Cambio de aceite transmisión, diferencial y mandos finales",
+          "Cambio de aceite de cubos"
+        ]
+      },
+      "GHO-01": {
+        "nombre": "GRÚA HORQUILLA LIUGONG 4 TON",
+        "marca": "LIUGONG",
+        "modelo": "CPCD40A",
+        "capacidad": "4 TON",
+        "anio": 2022,
+        "motor": "Xinchai 4D35ZG31",
+        "responsable": "Alexis Santos",
+        "estado": "OPERATIVA",
+        "aceites": [
+          {
+            "tipo": "Aceite de Motor",
+            "modelo": "SAE 15W40",
+            "cantidad": "7 Lts",
+            "proveedor": "Luval"
+          },
+          {
+            "tipo": "Aceite Hidráulico",
+            "modelo": "SAE 10W30",
+            "cantidad": "40 Lts",
+            "proveedor": "Luval"
+          },
+          {
+            "tipo": "Aceite Transmisión",
+            "modelo": "Dexron III",
+            "cantidad": "8 Lts",
+            "proveedor": "Luval"
+          },
+          {
+            "tipo": "Aceite Diferencial",
+            "modelo": "SAE 80W90",
+            "cantidad": "8 Lts",
+            "proveedor": "Luval"
+          },
+          {
+            "tipo": "Refrigerante",
+            "modelo": "Coolan extender life 50%",
+            "cantidad": "10 Lts",
+            "proveedor": "Luval"
+          }
+        ],
+        "filtros": [
+          {
+            "elemento": "Aceite de motor",
+            "alt1": "Xinchai Original",
+            "alt2": "Baldwin BD7317",
+            "alt3": "-",
+            "alt4": "-"
+          },
+          {
+            "elemento": "Combustible",
+            "alt1": "Xinchai Original",
+            "alt2": "Baldwin BF7922",
+            "alt3": "-",
+            "alt4": "-"
+          },
+          {
+            "elemento": "Separador de agua",
+            "alt1": "NO APLICA",
+            "alt2": "NO APLICA",
+            "alt3": "-",
+            "alt4": "-"
+          },
+          {
+            "elemento": "Hidráulico retorno",
+            "alt1": "NO APLICA",
+            "alt2": "NO APLICA",
+            "alt3": "-",
+            "alt4": "-"
+          }
+        ],
+        "historial": [
+          {
+            "fecha": "17-03-2026",
+            "horometro": "1.240 hrs",
+            "prox": "1.490 hrs",
+            "descripcion": "Chequeo operacional de torre e hidráulico.",
+            "insumos": "Engrase general"
+          }
+        ],
+        "pendientes": [
+          "Arreglar piola de parada de motor",
+          "Tapar los cables eléctricos de la cabina",
+          "Pintar grúa"
+        ]
+      },
+      "GHO-02": {
+        "nombre": "GRÚA HORQUILLA KOMATSU 7 TON",
+        "marca": "KOMATSU",
+        "modelo": "FD 70-7",
+        "capacidad": "7 TON",
+        "anio": 2007,
+        "motor": "Komatsu 6D102E",
+        "responsable": "Alexis Santos",
+        "estado": "FUERA DE SERVICIO",
+        "aceites": [
+          {
+            "tipo": "Aceite de Motor",
+            "modelo": "SAE 15W40",
+            "cantidad": "14 Lts",
+            "proveedor": "Luval"
+          },
+          {
+            "tipo": "Aceite Hidráulico",
+            "modelo": "SAE 10W30",
+            "cantidad": "65 Lts",
+            "proveedor": "Luval"
+          },
+          {
+            "tipo": "Aceite Transmisión",
+            "modelo": "Dexron III",
+            "cantidad": "15 Lts",
+            "proveedor": "Luval"
+          },
+          {
+            "tipo": "Aceite Diferencial",
+            "modelo": "SAE 80W90",
+            "cantidad": "12 Lts",
+            "proveedor": "Luval"
+          },
+          {
+            "tipo": "Refrigerante",
+            "modelo": "Coolan extender life 50%",
+            "cantidad": "18 Lts",
+            "proveedor": "Luval"
+          }
+        ],
+        "filtros": [
+          {
+            "elemento": "Aceite de motor",
+            "alt1": "Komatsu 600-211-1231",
+            "alt2": "Baldwin B7177",
+            "alt3": "Fleetguard LF3970",
+            "alt4": "Donaldson P550428"
+          },
+          {
+            "elemento": "Combustible",
+            "alt1": "Komatsu 600-311-8293",
+            "alt2": "Baldwin BF7922",
+            "alt3": "Fleetguard FF5612",
+            "alt4": "Donaldson P550880"
+          }
+        ],
+        "historial": [
+          {
+            "fecha": "17-03-2026",
+            "horometro": "3.890 hrs",
+            "prox": "En reparación",
+            "descripcion": "En desarme para ajuste y reemplazo de componentes.",
+            "insumos": "Repuestos en pedido"
+          }
+        ],
+        "pendientes": [
+          "Terminar armado completo de la grúa",
+          "Instalar piola de freno de mano",
+          "Instalar espejo retrovisor",
+          "Colocar bisagras en vidrio trasero",
+          "Mejorar las puertas para que sellen al cerrarlas",
+          "Pintar grúa"
+        ]
+      },
+      "GHO-03": {
+        "nombre": "GRÚA HORQUILLA LIUGONG 3.5 TON",
+        "marca": "LIUGONG",
+        "modelo": "CPCD35E",
+        "capacidad": "3.5 TON",
+        "anio": 2025,
+        "motor": "Xinchai 3E22YG51",
+        "responsable": "Alexis Santos",
+        "estado": "OPERATIVA",
+        "aceites": [
+          {
+            "tipo": "Aceite de Motor",
+            "modelo": "SAE 15W40",
+            "cantidad": "7 Lts",
+            "proveedor": "Luval"
+          },
+          {
+            "tipo": "Aceite Hidráulico",
+            "modelo": "SAE 10W30",
+            "cantidad": "40 Lts",
+            "proveedor": "Luval"
+          },
+          {
+            "tipo": "Aceite Transmisión",
+            "modelo": "Dexron III",
+            "cantidad": "8 Lts",
+            "proveedor": "Luval"
+          },
+          {
+            "tipo": "Aceite Diferencial",
+            "modelo": "SAE 80W90",
+            "cantidad": "8 Lts",
+            "proveedor": "Luval"
+          },
+          {
+            "tipo": "Refrigerante",
+            "modelo": "Coolan extender life 50%",
+            "cantidad": "10 Lts",
+            "proveedor": "Luval"
+          }
+        ],
+        "filtros": [
+          {
+            "elemento": "Aceite de motor",
+            "alt1": "Liugong Original",
+            "alt2": "Baldwin BD7317",
+            "alt3": "-",
+            "alt4": "-"
+          },
+          {
+            "elemento": "Combustible",
+            "alt1": "Liugong Original",
+            "alt2": "Baldwin BF7922",
+            "alt3": "-",
+            "alt4": "-"
+          }
+        ],
+        "historial": [
+          {
+            "fecha": "17-03-2026",
+            "horometro": "420 hrs",
+            "prox": "670 hrs",
+            "descripcion": "Inspección inicial de rodaje y niveles.",
+            "insumos": "OK"
+          }
+        ],
+        "pendientes": [
+          "Colocar espejo lateral izquierdo"
+        ]
+      },
+      "GTE-01": {
+        "nombre": "GRÚA TELESCÓPICA GROVE 60 TON",
+        "marca": "GROVE",
+        "modelo": "RT 700E",
+        "capacidad": "60 TON",
+        "anio": 2005,
+        "motor": "Cummins QSB 5.9",
+        "responsable": "Alexis Santos",
+        "estado": "OPERATIVA",
+        "aceites": [
+          {
+            "tipo": "Aceite de Motor",
+            "modelo": "SAE 15W40",
+            "cantidad": "20 Lts",
+            "proveedor": "Luval"
+          },
+          {
+            "tipo": "Aceite Hidráulico",
+            "modelo": "SAE 10W30",
+            "cantidad": "500 Lts",
+            "proveedor": "Luval"
+          },
+          {
+            "tipo": "Aceite Transmisión",
+            "modelo": "SAE 10W30",
+            "cantidad": "40 Lts",
+            "proveedor": "Luval"
+          },
+          {
+            "tipo": "Aceite Diferencial",
+            "modelo": "SAE 80W90",
+            "cantidad": "60 Lts",
+            "proveedor": "Luval"
+          },
+          {
+            "tipo": "Refrigerante",
+            "modelo": "Coolan extender life 50%",
+            "cantidad": "60 Lts",
+            "proveedor": "Luval"
+          }
+        ],
+        "filtros": [
+          {
+            "elemento": "Aceite de motor",
+            "alt1": "Baldwin B7177",
+            "alt2": "Fleetguard LF3970",
+            "alt3": "Donaldson P550428",
+            "alt4": "-"
+          },
+          {
+            "elemento": "Combustible",
+            "alt1": "Baldwin BF7922",
+            "alt2": "Fleetguard FF5612",
+            "alt3": "Donaldson P550880",
+            "alt4": "-"
+          },
+          {
+            "elemento": "Separador agua comb.",
+            "alt1": "Baldwin BF1385-SPS",
+            "alt2": "Fleetguard FS19732",
+            "alt3": "Donaldson P550848",
+            "alt4": "-"
+          },
+          {
+            "elemento": "Hidráulico desahogo",
+            "alt1": "Baldwin B7024",
+            "alt2": "Fleetguard AF4884",
+            "alt3": "Donaldson P564425",
+            "alt4": "-"
+          },
+          {
+            "elemento": "Aire Primario",
+            "alt1": "Baldwin RS3506",
+            "alt2": "Fleetguard AF25129M",
+            "alt3": "Donaldson P532503",
+            "alt4": "-"
+          },
+          {
+            "elemento": "Transmisión",
+            "alt1": "Baldwin BT8426-MPG",
+            "alt2": "Fleetguard HF28996",
+            "alt3": "Donaldson P174675",
+            "alt4": "-"
+          }
+        ],
+        "historial": [
+          {
+            "fecha": "17-03-2026",
+            "horometro": "5.120 hrs",
+            "prox": "5.370 hrs",
+            "descripcion": "Revisión de cables de izaje y sistema hidráulico de pluma.",
+            "insumos": "Engrase pluma"
+          }
+        ],
+        "pendientes": [
+          "Arreglar alarma de retroceso",
+          "Revisar flexibles de pedal en cabina"
+        ]
+      },
+      "GTE-02": {
+        "nombre": "GRÚA TELESCÓPICA GROVE 35 TON",
+        "marca": "GROVE",
+        "modelo": "RT 635C",
+        "capacidad": "35 TON",
+        "anio": 1997,
+        "motor": "Cummins 6BT 5.9",
+        "responsable": "Alexis Santos",
+        "estado": "FUERA DE SERVICIO",
+        "aceites": [
+          {
+            "tipo": "Aceite de Motor",
+            "modelo": "SAE 15W40",
+            "cantidad": "18 Lts",
+            "proveedor": "Luval"
+          },
+          {
+            "tipo": "Aceite Hidráulico",
+            "modelo": "SAE 10W30",
+            "cantidad": "450 Lts",
+            "proveedor": "Luval"
+          }
+        ],
+        "filtros": [
+          {
+            "elemento": "Aceite de motor",
+            "alt1": "Baldwin B7177",
+            "alt2": "Fleetguard LF3970",
+            "alt3": "Donaldson P550428",
+            "alt4": "-"
+          },
+          {
+            "elemento": "Combustible",
+            "alt1": "Baldwin BF7922",
+            "alt2": "Fleetguard FF5612",
+            "alt3": "Donaldson P550880",
+            "alt4": "-"
+          }
+        ],
+        "historial": [
+          {
+            "fecha": "17-03-2026",
+            "horometro": "6.400 hrs",
+            "prox": "En reparación",
+            "descripcion": "Diagnóstico eléctrico de estabilizadores.",
+            "insumos": "Revisión eléctrica"
+          }
+        ],
+        "pendientes": [
+          "Arreglar cables cortados (no bajan patas de levante)",
+          "Freno de parqueo bloqueado"
+        ]
+      },
+      "GTE-03": {
+        "nombre": "GRÚA TELESCÓPICA GROVE 15 TON",
+        "marca": "GROVE",
+        "modelo": "RT 58B",
+        "capacidad": "15 TON",
+        "anio": 1981,
+        "motor": "Detroit Diesel / Cummins",
+        "responsable": "Alexis Santos",
+        "estado": "FUERA DE SERVICIO",
+        "aceites": [
+          {
+            "tipo": "Aceite de Motor",
+            "modelo": "SAE 15W40",
+            "cantidad": "16 Lts",
+            "proveedor": "Luval"
+          },
+          {
+            "tipo": "Aceite Hidráulico",
+            "modelo": "SAE 10W30",
+            "cantidad": "380 Lts",
+            "proveedor": "Luval"
+          }
+        ],
+        "filtros": [
+          {
+            "elemento": "Aceite de motor",
+            "alt1": "Baldwin B7177",
+            "alt2": "Fleetguard LF3970",
+            "alt3": "-",
+            "alt4": "-"
+          }
+        ],
+        "historial": [
+          {
+            "fecha": "17-03-2026",
+            "horometro": "7.800 hrs",
+            "prox": "En taller",
+            "descripcion": "Desmontaje de caja de transmisión.",
+            "insumos": "Mano de obra taller"
+          }
+        ],
+        "pendientes": [
+          "Instalar la transmisión reparada"
+        ]
+      },
+      "CAM-01": {
+        "nombre": "CAMIONETA NISSAN NP300",
+        "marca": "NISSAN",
+        "modelo": "NP300 4x4",
+        "capacidad": "1 TON",
+        "anio": 2018,
+        "patente": "JWYD-49",
+        "responsable": "Andrés Plaza",
+        "estado": "OPERATIVA",
+        "aceites": [
+          {
+            "tipo": "Aceite de Motor",
+            "modelo": "5W30 DPF / 15W40",
+            "cantidad": "6.5 Lts",
+            "proveedor": "Luval"
+          }
+        ],
+        "filtros": [
+          {
+            "elemento": "Aceite de motor",
+            "alt1": "Nissan 15208-BN700",
+            "alt2": "Mann W7023",
+            "alt3": "Baldwin B7449",
+            "alt4": "-"
+          },
+          {
+            "elemento": "Combustible",
+            "alt1": "Nissan 16400-4KV0A",
+            "alt2": "Mann WK9032",
+            "alt3": "-",
+            "alt4": "-"
+          }
+        ],
+        "historial": [
+          {
+            "fecha": "31-03-2026",
+            "horometro": "142.500 km",
+            "prox": "150.000 km",
+            "descripcion": "Cambio de aceite, filtro de aceite y filtro de polen.",
+            "insumos": "Aceite 5W30"
+          }
+        ],
+        "pendientes": [
+          "Arreglar aire acondicionado (recarga de gas y chequeo de compresor)"
+        ]
+      },
+      "CAM-02": {
+        "nombre": "CAMIONETA VOLKSWAGEN",
+        "marca": "VOLKSWAGEN",
+        "modelo": "Amarok 2.0 TDI",
+        "capacidad": "1 TON",
+        "anio": 2017,
+        "patente": "JKKV-43",
+        "responsable": "Alexis Santos",
+        "estado": "OPERATIVA (CON FALLA)",
+        "aceites": [
+          {
+            "tipo": "Aceite de Motor",
+            "modelo": "5W30 Sintético VW 507.00",
+            "cantidad": "7 Lts",
+            "proveedor": "Luval"
+          }
+        ],
+        "filtros": [
+          {
+            "elemento": "Aceite de motor",
+            "alt1": "Mann HU 7008 z",
+            "alt2": "Mahle OX 388 D",
+            "alt3": "-",
+            "alt4": "-"
+          }
+        ],
+        "historial": [
+          {
+            "fecha": "31-03-2026",
+            "horometro": "98.200 km",
+            "prox": "100.000 km",
+            "descripcion": "Revisión de suspensión y frenos delanteros.",
+            "insumos": "Pastillas de freno"
+          }
+        ],
+        "pendientes": [
+          "Instalar nuevo parachoques",
+          "Desabollar y pintar parachoques y capó"
+        ]
+      },
+      "CAM-03": {
+        "nombre": "CAMIONETA NISSAN NAVARA",
+        "marca": "NISSAN",
+        "modelo": "Navara LE",
+        "capacidad": "1 TON",
+        "anio": 2015,
+        "patente": "GCLD-31",
+        "responsable": "Alexis Santos",
+        "estado": "FUERA DE SERVICIO",
+        "aceites": [
+          {
+            "tipo": "Aceite de Motor",
+            "modelo": "10W40 Diésel",
+            "cantidad": "6.8 Lts",
+            "proveedor": "Luval"
+          }
+        ],
+        "filtros": [
+          {
+            "elemento": "Aceite de motor",
+            "alt1": "Mann W920/48",
+            "alt2": "Baldwin B1400",
+            "alt3": "-",
+            "alt4": "-"
+          }
+        ],
+        "historial": [
+          {
+            "fecha": "31-03-2026",
+            "horometro": "210.000 km",
+            "prox": "En taller",
+            "descripcion": "Evaluación en taller mecánico.",
+            "insumos": "-"
+          }
+        ],
+        "pendientes": [
+          "Revisión integral de motor y tren delantero"
+        ]
+      },
+      "CAM-04": {
+        "nombre": "CAMIONETA MAXUS",
+        "marca": "MAXUS",
+        "modelo": "T60 4x4",
+        "capacidad": "1 TON",
+        "anio": 2026,
+        "patente": "VPFX-76",
+        "responsable": "Daniel Mejias",
+        "estado": "OPERATIVA",
+        "aceites": [
+          {
+            "tipo": "Aceite de Motor",
+            "modelo": "5W30 C3 Sintético",
+            "cantidad": "5.5 Lts",
+            "proveedor": "Luval"
+          }
+        ],
+        "filtros": [
+          {
+            "elemento": "Aceite de motor",
+            "alt1": "Maxus Original",
+            "alt2": "Mann W712/95",
+            "alt3": "-",
+            "alt4": "-"
+          }
+        ],
+        "historial": [
+          {
+            "fecha": "31-03-2026",
+            "horometro": "18.400 km",
+            "prox": "20.000 km",
+            "descripcion": "Mantención de pauta 15.000 km en concesionario.",
+            "insumos": "Pauta oficial"
+          }
+        ],
+        "pendientes": [
+          "Sin observaciones pendientes. Camioneta al 100%."
+        ]
+      },
+      "CMN-01": {
+        "nombre": "CAMIÓN FREIGHTLINER 06",
+        "marca": "FREIGHTLINER",
+        "modelo": "M2 106",
+        "capacidad": "15 TON",
+        "anio": 2012,
+        "patente": "FL-06",
+        "responsable": "Alexis Santos",
+        "estado": "NO OPERATIVO",
+        "aceites": [
+          {
+            "tipo": "Aceite de Motor",
+            "modelo": "SAE 15W40 CI-4",
+            "cantidad": "28 Lts",
+            "proveedor": "Luval"
+          }
+        ],
+        "filtros": [
+          {
+            "elemento": "Aceite de motor",
+            "alt1": "Fleetguard LF9009",
+            "alt2": "Baldwin BD7154",
+            "alt3": "-",
+            "alt4": "-"
+          }
+        ],
+        "historial": [
+          {
+            "fecha": "15-03-2026",
+            "horometro": "415.000 km",
+            "prox": "En taller",
+            "descripcion": "Diagnóstico eléctrico y de alimentación diésel.",
+            "insumos": "Revisión"
+          }
+        ],
+        "pendientes": [
+          "Arreglar motor de arranque",
+          "Instalar solenoide 12V de la bomba de inyección"
+        ]
+      },
+      "CMN-02": {
+        "nombre": "CAMIÓN MACK 51",
+        "marca": "MACK",
+        "modelo": "Vision / Graniter",
+        "capacidad": "20 TON",
+        "anio": 2008,
+        "patente": "MK-51",
+        "responsable": "Alexis Santos",
+        "estado": "NO OPERATIVO",
+        "aceites": [
+          {
+            "tipo": "Aceite de Motor",
+            "modelo": "SAE 15W40",
+            "cantidad": "36 Lts",
+            "proveedor": "Luval"
+          }
+        ],
+        "filtros": [
+          {
+            "elemento": "Aceite de motor",
+            "alt1": "Mack 2191P550425",
+            "alt2": "Baldwin B7685",
+            "alt3": "-",
+            "alt4": "-"
+          }
+        ],
+        "historial": [
+          {
+            "fecha": "10-03-2026",
+            "horometro": "520.000 km",
+            "prox": "En reparación",
+            "descripcion": "Chequeo de fugas en bloque y compresor.",
+            "insumos": "-"
+          }
+        ],
+        "pendientes": [
+          "Mantención mayor y ajuste de motor pendiente"
+        ]
+      },
+      "CMN-03": {
+        "nombre": "CAMIÓN VOLKSWAGEN 50",
+        "marca": "VOLKSWAGEN",
+        "modelo": "Worker 17.220",
+        "capacidad": "17 TON",
+        "anio": 2016,
+        "patente": "VW-50",
+        "responsable": "Alexis Santos",
+        "estado": "OPERATIVO (CON FALLA)",
+        "aceites": [
+          {
+            "tipo": "Aceite de Motor",
+            "modelo": "SAE 15W40",
+            "cantidad": "22 Lts",
+            "proveedor": "Luval"
+          }
+        ],
+        "filtros": [
+          {
+            "elemento": "Aceite de motor",
+            "alt1": "Mann W950/26",
+            "alt2": "Baldwin BD7154",
+            "alt3": "-",
+            "alt4": "-"
+          }
+        ],
+        "historial": [
+          {
+            "fecha": "20-03-2026",
+            "horometro": "60.626,6 km",
+            "prox": "70.000 km",
+            "descripcion": "Revisión sistema de refrigeración.",
+            "insumos": "Refrigerante 50%"
+          }
+        ],
+        "pendientes": [
+          "Arreglar fuga agua del radiador"
+        ]
+      }
+    },
+    "flota_vehiculos_v3": [
+      {
+        "id": "CAM-01",
+        "codigo": "CAM-01",
+        "nombre": "Camioneta Nissan NP300",
+        "patente": "JWYD-49",
+        "marca": "Nissan",
+        "modelo": "NP300 4x4",
+        "capacidad": "1 TON",
+        "anio": 2018,
+        "combustible": "Diésel",
+        "kilometraje": 142500,
+        "estado": "Operativo",
+        "responsable": "Andrés Plaza",
+        "fechaRegistro": "2026-03-01"
+      },
+      {
+        "id": "CAM-02",
+        "codigo": "CAM-02",
+        "nombre": "Camioneta Volkswagen Amarok",
+        "patente": "JKKV-43",
+        "marca": "Volkswagen",
+        "modelo": "Amarok 2.0 TDI",
+        "capacidad": "1 TON",
+        "anio": 2017,
+        "combustible": "Diésel",
+        "kilometraje": 98200,
+        "estado": "Operativo (con falla)",
+        "responsable": "Alexis Santos",
+        "fechaRegistro": "2026-03-01"
+      },
+      {
+        "id": "CAM-03",
+        "codigo": "CAM-03",
+        "nombre": "Camioneta Nissan Navara",
+        "patente": "GCLD-31",
+        "marca": "Nissan",
+        "modelo": "Navara LE",
+        "capacidad": "1 TON",
+        "anio": 2015,
+        "combustible": "Diésel",
+        "kilometraje": 210000,
+        "estado": "No Operativo",
+        "responsable": "Alexis Santos",
+        "fechaRegistro": "2026-03-01"
+      },
+      {
+        "id": "CAM-04",
+        "codigo": "CAM-04",
+        "nombre": "Camioneta Maxus T60",
+        "patente": "VPFX-76",
+        "marca": "Maxus",
+        "modelo": "T60 4x4",
+        "capacidad": "1 TON",
+        "anio": 2026,
+        "combustible": "Diésel",
+        "kilometraje": 18400,
+        "estado": "Operativo",
+        "responsable": "Daniel Mejias",
+        "fechaRegistro": "2026-03-01"
+      },
+      {
+        "id": "CMN-01",
+        "codigo": "CMN-01",
+        "nombre": "Camión Freightliner M2",
+        "patente": "FL-06",
+        "marca": "Freightliner",
+        "modelo": "M2 106 / C-06",
+        "capacidad": "15 TON",
+        "anio": 2012,
+        "combustible": "Diésel",
+        "kilometraje": 415000,
+        "estado": "No Operativo",
+        "responsable": "Alexis Santos",
+        "fechaRegistro": "2026-03-01"
+      },
+      {
+        "id": "CMN-02",
+        "codigo": "CMN-02",
+        "nombre": "Camión Mack 51",
+        "patente": "MK-51",
+        "marca": "Mack",
+        "modelo": "Vision / Graniter",
+        "capacidad": "20 TON",
+        "anio": 2008,
+        "combustible": "Diésel",
+        "kilometraje": 520000,
+        "estado": "No Operativo",
+        "responsable": "Alexis Santos",
+        "fechaRegistro": "2026-03-01"
+      },
+      {
+        "id": "CMN-03",
+        "codigo": "CMN-03",
+        "nombre": "Camión Volkswagen 50",
+        "patente": "VW-50",
+        "marca": "Volkswagen",
+        "modelo": "Worker 17.220 / C-50",
+        "capacidad": "17 TON",
+        "anio": 2016,
+        "combustible": "Diésel",
+        "kilometraje": 60626,
+        "estado": "Operativo (con falla)",
+        "responsable": "Alexis Santos",
+        "fechaRegistro": "2026-03-01"
+      }
+    ],
+    "flota_maquinarias_v3": [
+      {
+        "id": "GPC-01",
+        "numeroMaquinaria": "GPC-01",
+        "patenteMaquinaria": "TAYLOR-40T",
+        "tipoMaquinaria": "Grúa Portacontenedores",
+        "marcaMaquinaria": "Taylor",
+        "modeloMaquinaria": "XLC 975",
+        "capacidadMaquinaria": "40 TON",
+        "anioMaquinaria": 2013,
+        "combustibleMaquinaria": "Diésel",
+        "horometro": 44800,
+        "estado": "Operativo",
+        "responsable": "Carlos Lasso / Alexis Santos",
+        "fechaRegistro": "2026-03-01"
+      },
+      {
+        "id": "GPC-02",
+        "numeroMaquinaria": "GPC-02",
+        "patenteMaquinaria": "HYSTER-46T",
+        "tipoMaquinaria": "Grúa Portacontenedores",
+        "marcaMaquinaria": "Hyster",
+        "modeloMaquinaria": "RS 46-33 CH",
+        "capacidadMaquinaria": "46 TON",
+        "anioMaquinaria": 2017,
+        "combustibleMaquinaria": "Diésel",
+        "horometro": 28350,
+        "estado": "Operativo",
+        "responsable": "Cristian Diaz / Alexis Santos",
+        "fechaRegistro": "2026-03-01"
+      },
+      {
+        "id": "GHO-01",
+        "numeroMaquinaria": "GHO-01",
+        "patenteMaquinaria": "LIUGONG-4T",
+        "tipoMaquinaria": "Grúa Horquilla 4 Ton",
+        "marcaMaquinaria": "Liugong",
+        "modeloMaquinaria": "CPCD40A",
+        "capacidadMaquinaria": "4 TON",
+        "anioMaquinaria": 2022,
+        "combustibleMaquinaria": "Diésel",
+        "horometro": 1240,
+        "estado": "Operativo",
+        "responsable": "Alexis Santos",
+        "fechaRegistro": "2026-03-01"
+      },
+      {
+        "id": "GHO-02",
+        "numeroMaquinaria": "GHO-02",
+        "patenteMaquinaria": "KOMATSU-7T",
+        "tipoMaquinaria": "Grúa Horquilla 7 Ton",
+        "marcaMaquinaria": "Komatsu",
+        "modeloMaquinaria": "FD70-7",
+        "capacidadMaquinaria": "7 TON",
+        "anioMaquinaria": 2015,
+        "combustibleMaquinaria": "Diésel",
+        "horometro": 3890,
+        "estado": "Operativo",
+        "responsable": "Alexis Santos",
+        "fechaRegistro": "2026-03-01"
+      },
+      {
+        "id": "GHO-03",
+        "numeroMaquinaria": "GHO-03",
+        "patenteMaquinaria": "LIUGONG-3.5T",
+        "tipoMaquinaria": "Grúa Horquilla 3.5 Ton",
+        "marcaMaquinaria": "Liugong",
+        "modeloMaquinaria": "CPCD35A",
+        "capacidadMaquinaria": "3.5 TON",
+        "anioMaquinaria": 2023,
+        "combustibleMaquinaria": "Diésel",
+        "horometro": 420,
+        "estado": "Operativo",
+        "responsable": "Alexis Santos",
+        "fechaRegistro": "2026-03-01"
+      },
+      {
+        "id": "GTE-01",
+        "numeroMaquinaria": "GTE-01",
+        "patenteMaquinaria": "GROVE-60T",
+        "tipoMaquinaria": "Grúa Telescópica 60 Ton",
+        "marcaMaquinaria": "Grove",
+        "modeloMaquinaria": "RT 700E",
+        "capacidadMaquinaria": "60 TON",
+        "anioMaquinaria": 2005,
+        "combustibleMaquinaria": "Diésel",
+        "horometro": 5120,
+        "estado": "Operativo",
+        "responsable": "Alexis Santos",
+        "fechaRegistro": "2026-03-01"
+      },
+      {
+        "id": "GTE-02",
+        "numeroMaquinaria": "GTE-02",
+        "patenteMaquinaria": "GROVE-35T",
+        "tipoMaquinaria": "Grúa Telescópica 35 Ton",
+        "marcaMaquinaria": "Grove",
+        "modeloMaquinaria": "RT 535",
+        "capacidadMaquinaria": "35 TON",
+        "anioMaquinaria": 2008,
+        "combustibleMaquinaria": "Diésel",
+        "horometro": 6400,
+        "estado": "No Operativo",
+        "responsable": "Alexis Santos",
+        "fechaRegistro": "2026-03-01"
+      },
+      {
+        "id": "GTE-03",
+        "numeroMaquinaria": "GTE-03",
+        "patenteMaquinaria": "GROVE-15T",
+        "tipoMaquinaria": "Grúa Telescópica 15 Ton",
+        "marcaMaquinaria": "Grove",
+        "modeloMaquinaria": "RT 415",
+        "capacidadMaquinaria": "15 TON",
+        "anioMaquinaria": 2002,
+        "combustibleMaquinaria": "Diésel",
+        "horometro": 7800,
+        "estado": "No Operativo",
+        "responsable": "Alexis Santos",
+        "fechaRegistro": "2026-03-01"
+      }
+    ],
+    "flota_cargas": [
+      {
+        "id": "CARGA-001",
+        "fecha": "2026-03-01",
+        "patente": "GPC-01",
+        "conductor": "Carlos Lasso",
+        "litros": 80,
+        "precioLitro": 1050,
+        "total": 84000,
+        "origen": "ESTANQUE_400L",
+        "estacion": "Estanque Diésel 400L CORSSEN",
+        "saldoPosterior": 240,
+        "horometroKm": "44.820 hrs",
+        "fechaRegistro": "2026-03-01T08:30:00.000Z"
+      },
+      {
+        "id": "CARGA-002",
+        "fecha": "2026-03-01",
+        "patente": "CAM-01",
+        "conductor": "Andrés Plaza",
+        "litros": 45,
+        "precioLitro": 1050,
+        "total": 47250,
+        "origen": "ESTANQUE_400L",
+        "estacion": "Estanque Diésel 400L CORSSEN",
+        "saldoPosterior": 320,
+        "horometroKm": "142.500 km",
+        "fechaRegistro": "2026-03-01T11:15:00.000Z"
+      },
+      {
+        "id": "CARGA-003",
+        "fecha": "2026-02-28",
+        "patente": "GHO-01",
+        "conductor": "Alexis Santos",
+        "litros": 35,
+        "precioLitro": 1050,
+        "total": 36750,
+        "origen": "ESTANQUE_400L",
+        "estacion": "Estanque Diésel 400L CORSSEN",
+        "saldoPosterior": 365,
+        "horometroKm": "12.340 hrs",
+        "fechaRegistro": "2026-02-28T16:00:00.000Z"
+      }
+    ],
+    "flota_mantenciones_v3": [
+      {
+        "id": "OT-2026-001",
+        "folio": "OT-2026-001",
+        "codigoEquipo": "GPC-01",
+        "patente": "TAYLOR-40T",
+        "equipoNombre": "Grúa Portacontenedores Taylor 40T",
+        "fecha": "2026-03-01",
+        "tipo": "Preventiva 250 Hrs / 10.000 Km",
+        "horometroKm": "44.800 hrs",
+        "proximoServicio": "45.050 hrs",
+        "tecnico": "Alexis Santos",
+        "taller": "Taller Central CORSSEN",
+        "descripcion": "Mantención periódica de 250 hrs: Cambio de aceite de motor Valvoline Premium Blue 15W40, sustitución de filtro de aceite Baldwin BD50000, filtro combustible secundario BF1259, sopleteado de filtro de aire y engrase general de spreader.",
+        "insumosConsumidos": [
+          {
+            "detalle": "Aceite de Motor SAE 15W40",
+            "modelo": "Premium Blue 15W40",
+            "cantidad": 1,
+            "medida": "BALDE 19L",
+            "costoUnitario": 55000,
+            "costoTotal": 55000
+          },
+          {
+            "detalle": "Filtro de Aceite de Motor Baldwin",
+            "modelo": "BD50000",
+            "cantidad": 1,
+            "medida": "UNIDAD",
+            "costoUnitario": 18500,
+            "costoTotal": 18500
+          },
+          {
+            "detalle": "Filtro Combustible Secundario Baldwin",
+            "modelo": "BF1259",
+            "cantidad": 1,
+            "medida": "UNIDAD",
+            "costoUnitario": 14500,
+            "costoTotal": 14500
+          }
+        ],
+        "costoInsumos": 88000,
+        "costoManoObra": 35000,
+        "costoTotal": 123000,
+        "estado": "Completada",
+        "fechaRegistro": "2026-03-01T10:30:00.000Z"
+      },
+      {
+        "id": "OT-2026-002",
+        "folio": "OT-2026-002",
+        "codigoEquipo": "GPC-02",
+        "patente": "HYSTER-46T",
+        "equipoNombre": "Grúa Portacontenedores Hyster 46T",
+        "fecha": "2026-02-25",
+        "tipo": "Preventiva 250 Hrs / 10.000 Km",
+        "horometroKm": "28.350 hrs",
+        "proximoServicio": "28.600 hrs",
+        "tecnico": "Cristian Diaz / Alexis Santos",
+        "taller": "Taller Central CORSSEN",
+        "descripcion": "Servicio preventivo motor Cummins QSM11: Cambio de aceite 15W40, filtro Fleetguard LF9009, filtro separador FS1000 y chequeo general de presión hidráulica.",
+        "insumosConsumidos": [
+          {
+            "detalle": "Aceite de Motor SAE 15W40",
+            "modelo": "Premium Blue 15W40",
+            "cantidad": 2,
+            "medida": "BALDE 19L",
+            "costoUnitario": 55000,
+            "costoTotal": 110000
+          },
+          {
+            "detalle": "Filtro Aceite de Motor Fleetguard",
+            "modelo": "LF9009",
+            "cantidad": 1,
+            "medida": "UNIDAD",
+            "costoUnitario": 22000,
+            "costoTotal": 22000
+          }
+        ],
+        "costoInsumos": 132000,
+        "costoManoObra": 40000,
+        "costoTotal": 172000,
+        "estado": "Completada",
+        "fechaRegistro": "2026-02-25T14:00:00.000Z"
+      },
+      {
+        "id": "OT-2026-003",
+        "folio": "OT-2026-003",
+        "codigoEquipo": "CAM-01",
+        "patente": "JWYD-49",
+        "equipoNombre": "Camioneta Nissan NP300",
+        "fecha": "2026-02-18",
+        "tipo": "Preventiva 250 Hrs / 10.000 Km",
+        "horometroKm": "142.500 km",
+        "proximoServicio": "152.500 km",
+        "tecnico": "Alexis Santos",
+        "taller": "Taller Central CORSSEN",
+        "descripcion": "Mantención preventiva de 10.000 km: Cambio de aceite sintético 5W30, filtro de aceite Mann W7023 y revisión de niveles de frenos y refrigerante.",
+        "insumosConsumidos": [
+          {
+            "detalle": "Aceite Motor Sintético SAE 5W30",
+            "modelo": "SynPower 5W30",
+            "cantidad": 2,
+            "medida": "BIDÓN 4L",
+            "costoUnitario": 32000,
+            "costoTotal": 64000
+          },
+          {
+            "detalle": "Filtro de Aceite Mann Nissan",
+            "modelo": "W7023 / 15208-BN700",
+            "cantidad": 1,
+            "medida": "UNIDAD",
+            "costoUnitario": 9500,
+            "costoTotal": 9500
+          }
+        ],
+        "costoInsumos": 73500,
+        "costoManoObra": 20000,
+        "costoTotal": 93500,
+        "estado": "Completada",
+        "fechaRegistro": "2026-02-18T11:15:00.000Z"
+      },
+      {
+        "id": "OT-2026-004",
+        "folio": "OT-2026-004",
+        "codigoEquipo": "GHO-01",
+        "patente": "LIUGONG-4T",
+        "equipoNombre": "Grúa Horquilla Liugong 4 Ton",
+        "fecha": "2026-02-10",
+        "tipo": "Preventiva 250 Hrs / 10.000 Km",
+        "horometroKm": "1.240 hrs",
+        "proximoServicio": "1.490 hrs",
+        "tecnico": "Alexis Santos",
+        "taller": "Taller Central CORSSEN",
+        "descripcion": "Pauta 250 horas: Cambio de aceite de motor 15W40, engrase de mástil y cadenas, regulación de frenos y revisión de luces.",
+        "insumosConsumidos": [
+          {
+            "detalle": "Aceite de Motor SAE 15W40",
+            "modelo": "Premium Blue 15W40",
+            "cantidad": 1,
+            "medida": "BALDE 19L",
+            "costoUnitario": 55000,
+            "costoTotal": 55000
+          },
+          {
+            "detalle": "Grasa Multipropósito Litio EP2",
+            "modelo": "Valvoline EP-2",
+            "cantidad": 1,
+            "medida": "POTE 1KG",
+            "costoUnitario": 8900,
+            "costoTotal": 8900
+          }
+        ],
+        "costoInsumos": 63900,
+        "costoManoObra": 25000,
+        "costoTotal": 88900,
+        "estado": "Completada",
+        "fechaRegistro": "2026-02-10T16:45:00.000Z"
+      }
+    ],
+    "flota_inventario_v3": [
+      {
+        "id": "MOV-001",
+        "fecha": "2026-03-01",
+        "folioOT": "OT-2026-001",
+        "codigoEquipo": "GPC-01",
+        "equipoNombre": "Grúa Taylor 40T",
+        "insumoDetalle": "Aceite de Motor SAE 15W40 (Premium Blue 15W40)",
+        "cantidad": 1,
+        "medida": "BALDE 19L",
+        "costoUnitario": 55000,
+        "costoTotal": 55000,
+        "responsable": "Alexis Santos",
+        "stockRestante": 3
+      },
+      {
+        "id": "MOV-002",
+        "fecha": "2026-03-01",
+        "folioOT": "OT-2026-001",
+        "codigoEquipo": "GPC-01",
+        "equipoNombre": "Grúa Taylor 40T",
+        "insumoDetalle": "Filtro de Aceite de Motor Baldwin (BD50000)",
+        "cantidad": 1,
+        "medida": "UNIDAD",
+        "costoUnitario": 18500,
+        "costoTotal": 18500,
+        "responsable": "Alexis Santos",
+        "stockRestante": 2
+      },
+      {
+        "id": "MOV-003",
+        "fecha": "2026-02-25",
+        "folioOT": "OT-2026-002",
+        "codigoEquipo": "GPC-02",
+        "equipoNombre": "Grúa Hyster 46T",
+        "insumoDetalle": "Aceite de Motor SAE 15W40 (Premium Blue 15W40)",
+        "cantidad": 2,
+        "medida": "BALDE 19L",
+        "costoUnitario": 55000,
+        "costoTotal": 110000,
+        "responsable": "Cristian Diaz / Alexis Santos",
+        "stockRestante": 4
+      },
+      {
+        "id": "MOV-004",
+        "fecha": "2026-02-18",
+        "folioOT": "OT-2026-003",
+        "codigoEquipo": "CAM-01",
+        "equipoNombre": "Camioneta Nissan NP300",
+        "insumoDetalle": "Aceite Motor Sintético SAE 5W30 (SynPower 5W30)",
+        "cantidad": 2,
+        "medida": "BIDÓN 4L",
+        "costoUnitario": 32000,
+        "costoTotal": 64000,
+        "responsable": "Alexis Santos",
+        "stockRestante": 1
+      }
+    ],
+    "corssen_tambores_aceite_v2": {
+      "tambor1": {
+        "id": "tambor1",
+        "nombre": "Aceite Valvoline Premium Blue 15W40 CI-4",
+        "tipo": "Aceite de Motor (15W-40)",
+        "capacidad": 200,
+        "actual": 167,
+        "costoTotal": 550000,
+        "costoPorLitro": 2750,
+        "proveedor": "LUVAL S.A.",
+        "factura": "FAC-84920",
+        "fechaApertura": "2026-03-01",
+        "estado": "Activo"
+      },
+      "tambor2": {
+        "id": "tambor2",
+        "nombre": "Aceite Hidráulico Valvoline Unitrac 10W30 / ISO 68",
+        "tipo": "Aceite Hidráulico (10W-30)",
+        "capacidad": 200,
+        "actual": 200,
+        "costoTotal": 520000,
+        "costoPorLitro": 2600,
+        "proveedor": "LUVAL S.A.",
+        "factura": "FAC-84925",
+        "fechaApertura": "2026-03-01",
+        "estado": "Activo"
+      }
+    },
+    "corssen_tambor_aceite_v1": {
+      "id": "tambor1",
+      "nombre": "Aceite Valvoline Premium Blue 15W40 CI-4",
+      "tipo": "Aceite de Motor (15W-40)",
+      "capacidad": 200,
+      "actual": 167,
+      "costoTotal": 550000,
+      "costoPorLitro": 2750,
+      "proveedor": "LUVAL S.A.",
+      "factura": "FAC-84920",
+      "fechaApertura": "2026-03-01",
+      "estado": "Activo"
+    },
+    "corssen_historial_aceite_v1": [
+      {
+        "id": "ACEITE-001",
+        "fecha": "2026-03-01",
+        "folioOT": "OT-2026-001",
+        "codigoEquipo": "GPC-01",
+        "equipoNombre": "Grúa Portacontenedores Taylor 40T",
+        "tamborId": "tambor1",
+        "tipoAceite": "Aceite de Motor (15W-40)",
+        "nombreAceite": "Aceite Valvoline Premium Blue 15W40 CI-4",
+        "tipoMantencion": "Preventiva 250 Hrs",
+        "litrosDescontados": 33,
+        "saldoRestante": 167,
+        "costoTotal": 90750,
+        "tecnico": "Alexis Santos"
+      }
+    ],
+    "corssen_tanque_combustible_v1": {
+      "nombre": "Petróleo Diésel Grado B (Ultra Diésel)",
+      "capacidad": 400,
+      "actual": 400,
+      "costoTotal": 420000,
+      "costoPorLitro": 1050,
+      "proveedor": "COPEC S.A. / Distribuidora Sur",
+      "factura": "FAC-91823",
+      "fechaUltimaRecarga": "2026-02-27",
+      "estado": "Activo"
+    },
+    "corssen_historial_recargas_comb_v1": [
+      {
+        "id": "RECARGA-COMB-001",
+        "fecha": "2026-02-27",
+        "litrosCargados": 400,
+        "costoTotal": 420000,
+        "costoPorLitro": 1050,
+        "proveedor": "COPEC S.A. / Distribuidora Sur",
+        "factura": "FAC-91823",
+        "responsable": "Alexis Santos",
+        "saldoPosterior": 400,
+        "observaciones": "Llenado inicial del estanque de 400L de taller central."
+      }
+    ]
+  }
+}

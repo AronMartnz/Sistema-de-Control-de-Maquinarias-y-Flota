@@ -22,6 +22,123 @@
   },
   "calendario": [
     {
+      "id": "MNT-1790883767824",
+      "titulo": "Mantención Programada Servidores",
+      "tipo": "CORRECCION_ERRORES",
+      "fecha": "2026-10-05",
+      "hora": "23:00",
+      "duracion": "3 horas",
+      "estado": "PROGRAMADO",
+      "motivo": "Optimización técnica y mantención",
+      "notificadoEmail": false,
+      "notificadoWhatsapp": true,
+      "creadoEn": "2026-10-01T19:42:47.824Z"
+    },
+    {
+      "id": "MNT-1790883489117",
+      "titulo": "Mantención Programada Servidores",
+      "tipo": "CORRECCION_ERRORES",
+      "fecha": "2026-10-05",
+      "hora": "23:00",
+      "duracion": "3 horas",
+      "estado": "PROGRAMADO",
+      "motivo": "Optimización técnica y mantención",
+      "notificadoEmail": false,
+      "notificadoWhatsapp": true,
+      "creadoEn": "2026-10-01T19:38:09.117Z"
+    },
+    {
+      "id": "MNT-1790799592980",
+      "titulo": "Mantención Programada Servidores",
+      "tipo": "CORRECCION_ERRORES",
+      "fecha": "2026-10-05",
+      "hora": "23:00",
+      "duracion": "3 horas",
+      "estado": "PROGRAMADO",
+      "motivo": "Optimización técnica y mantención",
+      "notificadoEmail": false,
+      "notificadoWhatsapp": true,
+      "creadoEn": "2026-09-30T20:19:52.980Z"
+    },
+    {
+      "id": "MNT-1790799579910",
+      "titulo": "Mantención Programada Servidores",
+      "tipo": "CORRECCION_ERRORES",
+      "fecha": "2026-10-05",
+      "hora": "23:00",
+      "duracion": "3 horas",
+      "estado": "PROGRAMADO",
+      "motivo": "Optimización técnica y mantención",
+      "notificadoEmail": false,
+      "notificadoWhatsapp": true,
+      "creadoEn": "2026-09-30T20:19:39.910Z"
+    },
+    {
+      "id": "MNT-1790798745107",
+      "titulo": "Mantención Programada Servidores",
+      "tipo": "CORRECCION_ERRORES",
+      "fecha": "2026-10-05",
+      "hora": "23:00",
+      "duracion": "3 horas",
+      "estado": "PROGRAMADO",
+      "motivo": "Optimización técnica y mantención",
+      "notificadoEmail": false,
+      "notificadoWhatsapp": true,
+      "creadoEn": "2026-09-30T20:05:45.107Z"
+    },
+    {
+      "id": "MNT-1790798566282",
+      "titulo": "Mantención Programada Servidores",
+      "tipo": "CORRECCION_ERRORES",
+      "fecha": "2026-10-05",
+      "hora": "23:00",
+      "duracion": "3 horas",
+      "estado": "PROGRAMADO",
+      "motivo": "Optimización técnica y mantención",
+      "notificadoEmail": false,
+      "notificadoWhatsapp": true,
+      "creadoEn": "2026-09-30T20:02:46.282Z"
+    },
+    {
+      "id": "MNT-1790798539661",
+      "titulo": "Mantención Programada Servidores",
+      "tipo": "CORRECCION_ERRORES",
+      "fecha": "2026-10-05",
+      "hora": "23:00",
+      "duracion": "3 horas",
+      "estado": "PROGRAMADO",
+      "motivo": "Optimización técnica y mantención",
+      "notificadoEmail": false,
+      "notificadoWhatsapp": true,
+      "creadoEn": "2026-09-30T20:02:19.661Z"
+    },
+    {
+      "id": "MNT-1790797862093",
+      "titulo": "Mantención Programada Servidores",
+      "tipo": "CORRECCION_ERRORES",
+      "fecha": "2026-10-05",
+      "hora": "23:00",
+      "duracion": "3 horas",
+      "estado": "PROGRAMADO",
+      "motivo": "Optimización técnica y mantención",
+      "notificadoEmail": false,
+      "notificadoWhatsapp": true,
+      "creadoEn": "2026-09-30T19:51:02.094Z"
+    },
+    {
+      "id": "MNT-1790738284774",
+      "titulo": "Mantención Programada Servidores",
+      "tipo": "CORRECCION_ERRORES",
+      "fecha": "2026-10-05",
+      "hora": "23:00",
+      "duracion": "3 horas",
+      "estado": "PROGRAMADO",
+      "motivo": "Optimización técnica y mantención",
+      "notificadoEmail": false,
+      "notificadoWhatsapp": true,
+      "creadoEn": "2026-09-30T03:18:04.774Z"
+    },
+    {
       "id": "MNT-1790706385496",
       "titulo": "Mantención Programada Servidores",
       "tipo": "CORRECCION_ERRORES",
@@ -76,6 +193,96 @@
   ],
   "historialAvisos": [
     {
+      "id": "NOTIF-1790883767826",
+      "canal": "whatsapp",
+      "destinatario": "+56912345678",
+      "mensaje": "Aviso de prueba de mantención",
+      "fechaEnvio": "01-10-2026",
+      "horaEnvio": "07:42 p. m.",
+      "timestamp": 1790883767827,
+      "eventoId": "MNT-1790883767824"
+    },
+    {
+      "id": "NOTIF-1790883489119",
+      "canal": "whatsapp",
+      "destinatario": "+56912345678",
+      "mensaje": "Aviso de prueba de mantención",
+      "fechaEnvio": "01-10-2026",
+      "horaEnvio": "07:38 p. m.",
+      "timestamp": 1790883489120,
+      "eventoId": "MNT-1790883489117"
+    },
+    {
+      "id": "NOTIF-1790799592982",
+      "canal": "whatsapp",
+      "destinatario": "+56912345678",
+      "mensaje": "Aviso de prueba de mantención",
+      "fechaEnvio": "30-09-2026",
+      "horaEnvio": "08:19 p. m.",
+      "timestamp": 1790799592982,
+      "eventoId": "MNT-1790799592980"
+    },
+    {
+      "id": "NOTIF-1790799579912",
+      "canal": "whatsapp",
+      "destinatario": "+56912345678",
+      "mensaje": "Aviso de prueba de mantención",
+      "fechaEnvio": "30-09-2026",
+      "horaEnvio": "08:19 p. m.",
+      "timestamp": 1790799579913,
+      "eventoId": "MNT-1790799579910"
+    },
+    {
+      "id": "NOTIF-1790798745110",
+      "canal": "whatsapp",
+      "destinatario": "+56912345678",
+      "mensaje": "Aviso de prueba de mantención",
+      "fechaEnvio": "30-09-2026",
+      "horaEnvio": "08:05 p. m.",
+      "timestamp": 1790798745110,
+      "eventoId": "MNT-1790798745107"
+    },
+    {
+      "id": "NOTIF-1790798566284",
+      "canal": "whatsapp",
+      "destinatario": "+56912345678",
+      "mensaje": "Aviso de prueba de mantención",
+      "fechaEnvio": "30-09-2026",
+      "horaEnvio": "08:02 p. m.",
+      "timestamp": 1790798566284,
+      "eventoId": "MNT-1790798566282"
+    },
+    {
+      "id": "NOTIF-1790798539663",
+      "canal": "whatsapp",
+      "destinatario": "+56912345678",
+      "mensaje": "Aviso de prueba de mantención",
+      "fechaEnvio": "30-09-2026",
+      "horaEnvio": "08:02 p. m.",
+      "timestamp": 1790798539663,
+      "eventoId": "MNT-1790798539661"
+    },
+    {
+      "id": "NOTIF-1790797862096",
+      "canal": "whatsapp",
+      "destinatario": "+56912345678",
+      "mensaje": "Aviso de prueba de mantención",
+      "fechaEnvio": "30-09-2026",
+      "horaEnvio": "07:51 p. m.",
+      "timestamp": 1790797862096,
+      "eventoId": "MNT-1790797862093"
+    },
+    {
+      "id": "NOTIF-1790738284776",
+      "canal": "whatsapp",
+      "destinatario": "+56912345678",
+      "mensaje": "Aviso de prueba de mantención",
+      "fechaEnvio": "30-09-2026",
+      "horaEnvio": "03:18 a. m.",
+      "timestamp": 1790738284776,
+      "eventoId": "MNT-1790738284774"
+    },
+    {
       "id": "NOTIF-1790706385500",
       "canal": "whatsapp",
       "destinatario": "+56912345678",
@@ -106,6 +313,6 @@
       "eventoId": "MNT-1790704246182"
     }
   ],
-  "fechaModificacion": "2026-09-29T18:26:25.493Z",
+  "fechaModificacion": "2026-10-01T19:42:47.822Z",
   "modificadoPor": "admin"
 }
