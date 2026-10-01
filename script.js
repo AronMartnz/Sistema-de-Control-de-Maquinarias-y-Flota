@@ -11964,15 +11964,19 @@ Atentamente,
         }
     }, 15000);
 
-    // Event listener para efecto sticky con elevación suave en el título principal / topbar
+    // Event listener para efecto sticky con elevación y transparencias glassmorphism en el título principal / topbar
     const topbar = document.querySelector(".topbar");
     if (topbar) {
-        window.addEventListener("scroll", () => {
-            if (window.scrollY > 15) {
+        const manejarScrollTopbar = () => {
+            const scrollPos = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
+            if (scrollPos > 12) {
                 topbar.classList.add("scrolled");
             } else {
                 topbar.classList.remove("scrolled");
             }
-        }, { passive: true });
+        };
+        window.addEventListener("scroll", manejarScrollTopbar, { passive: true });
+        document.addEventListener("scroll", manejarScrollTopbar, { passive: true });
+        manejarScrollTopbar();
     }
 });

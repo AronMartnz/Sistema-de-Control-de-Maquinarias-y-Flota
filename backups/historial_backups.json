@@ -1,5 +1,25 @@
 [
   {
+    "id": "SNP-1790884796567-401",
+    "fecha": "01-10-2026",
+    "hora": "04:59:56 p. m.",
+    "timestamp": 1790884796567,
+    "motivo": "Sincronización de cambios pendientes",
+    "tipo": "AUTOMATICO",
+    "usuario": "Administrador General",
+    "resumen": {
+      "totalPrograma": 50,
+      "totalVehiculos": 7,
+      "totalMaquinarias": 8,
+      "totalMantenciones": 4,
+      "totalStock": 32,
+      "totalCargas": 3,
+      "combustibleActual": 400,
+      "aceiteActual": 367
+    },
+    "origen": "Servidor Node"
+  },
+  {
     "id": "SNP-1790883796241-907",
     "fecha": "01-10-2026",
     "hora": "04:43:16 p. m.",
@@ -397,26 +417,6 @@
     "tipo": "AUTOMATICO_SERVIDOR",
     "usuario": "Sistema Corssen",
     "resumen": {},
-    "origen": "Servidor Node"
-  },
-  {
-    "id": "SNP-1790706117271-23",
-    "fecha": "29-09-2026",
-    "hora": "03:21:57 p. m.",
-    "timestamp": 1790706117271,
-    "motivo": "Copia Automática Programada",
-    "tipo": "AUTOMATICO",
-    "usuario": "Administrador General",
-    "resumen": {
-      "totalPrograma": 50,
-      "totalVehiculos": 7,
-      "totalMaquinarias": 8,
-      "totalMantenciones": 4,
-      "totalStock": 32,
-      "totalCargas": 3,
-      "combustibleActual": 400,
-      "aceiteActual": 367
-    },
     "origen": "Servidor Node"
   }
 ]
