@@ -11,3 +11,4 @@ coverage/
 .wrangler/
 bun.lock*
 package-lock.json
+backups/SNP-*.json
