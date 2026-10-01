@@ -11980,3 +11980,129 @@ Atentamente,
         manejarScrollTopbar();
     }
 });
+
+// =========================================================
+// 12. GESTOR DE TEMA VISUAL (CLARO / OSCURO / SEGUIR SISTEMA)
+// =========================================================
+
+window.alternarMenuTema = function(e) {
+    if (e) e.stopPropagation();
+    const menu = document.getElementById("dropdownMenuTema");
+    const btn = document.getElementById("btnToggleTema");
+    if (!menu) return;
+    const estaVisible = menu.style.display === "flex";
+    menu.style.display = estaVisible ? "none" : "flex";
+    if (btn) btn.setAttribute("aria-expanded", String(!estaVisible));
+};
+
+window.seleccionarTema = function(nuevoTema) {
+    aplicarTemaVisual(nuevoTema, true);
+    const menu = document.getElementById("dropdownMenuTema");
+    if (menu) menu.style.display = "none";
+    const btn = document.getElementById("btnToggleTema");
+    if (btn) btn.setAttribute("aria-expanded", "false");
+};
+
+function aplicarTemaVisual(tema, guardar = true) {
+    if (!tema) tema = "sistema";
+    if (guardar) {
+        try {
+            localStorage.setItem("corssen_tema_preferido", tema);
+        } catch (_) {}
+    }
+
+    let esOscuro = false;
+    if (tema === "oscuro") {
+        esOscuro = true;
+    } else if (tema === "claro") {
+        esOscuro = false;
+    } else {
+        // Seguir sistema operativo
+        esOscuro = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    }
+
+    if (typeof document !== "undefined" && document && document.documentElement) {
+        if (esOscuro) {
+            document.documentElement.setAttribute("data-theme", "dark");
+        } else {
+            document.documentElement.setAttribute("data-theme", "claro");
+        }
+    }
+
+    // Actualizar indicador del botón en la topbar
+    const icono = document.getElementById("iconoTemaActual");
+    const texto = document.getElementById("textoTemaActual");
+    if (icono && texto) {
+        if (tema === "oscuro") {
+            icono.textContent = "🌙";
+            texto.textContent = "Oscuro";
+        } else if (tema === "claro") {
+            icono.textContent = "☀️";
+            texto.textContent = "Claro";
+        } else {
+            icono.textContent = "💻";
+            texto.textContent = "Sistema";
+        }
+    }
+
+    // Marcar opción activa en el dropdown
+    ["claro", "oscuro", "sistema"].forEach(t => {
+        const idOpt = "optTema" + t.charAt(0).toUpperCase() + t.slice(1);
+        const opt = document.getElementById(idOpt);
+        if (opt) {
+            if (t === tema) {
+                opt.classList.add("active");
+            } else {
+                opt.classList.remove("active");
+            }
+        }
+    });
+}
+
+function inicializarSistemaTema() {
+    let temaGuardado = "sistema";
+    try {
+        temaGuardado = localStorage.getItem("corssen_tema_preferido") || "sistema";
+    } catch (_) {}
+    aplicarTemaVisual(temaGuardado, false);
+
+    // Escuchar cambios en la preferencia del sistema operativo en tiempo real
+    if (window.matchMedia) {
+        const queryMedia = window.matchMedia("(prefers-color-scheme: dark)");
+        const handlerOS = () => {
+            let actual = "sistema";
+            try {
+                actual = localStorage.getItem("corssen_tema_preferido") || "sistema";
+            } catch (_) {}
+            if (actual === "sistema") {
+                aplicarTemaVisual("sistema", false);
+            }
+        };
+        if (queryMedia.addEventListener) {
+            queryMedia.addEventListener("change", handlerOS);
+        } else if (queryMedia.addListener) {
+            queryMedia.addListener(handlerOS);
+        }
+    }
+
+    // Cerrar dropdown al hacer clic fuera
+    document.addEventListener("click", (e) => {
+        const wrapper = document.getElementById("themeSwitchWrapper");
+        const menu = document.getElementById("dropdownMenuTema");
+        if (menu && wrapper && !wrapper.contains(e.target)) {
+            menu.style.display = "none";
+            const btn = document.getElementById("btnToggleTema");
+            if (btn) btn.setAttribute("aria-expanded", "false");
+        }
+    });
+}
+
+// Inicializar tema de inmediato
+if (typeof document !== "undefined") {
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", inicializarSistemaTema);
+    } else {
+        inicializarSistemaTema();
+    }
+}
+

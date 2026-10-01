@@ -1,5 +1,69 @@
 [
   {
+    "id": "SNP-CRON-1790886894280",
+    "fecha": "01-10-2026",
+    "hora": "08:34:54 p. m.",
+    "timestamp": 1790886894280,
+    "motivo": "Respaldo Automático Programado (Cloudflare Cron)",
+    "tipo": "CRON_AUTOMATICO",
+    "usuario": "Cloudflare Cron Trigger",
+    "resumen": {},
+    "origen": "Servidor Node & Cloudflare"
+  },
+  {
+    "id": "SNP-SERVER-1790886894274",
+    "fecha": "01-10-2026",
+    "hora": "08:34:54 p. m.",
+    "timestamp": 1790886894274,
+    "motivo": "Respaldo automático de prueba",
+    "tipo": "AUTOMATICO_SERVIDOR",
+    "usuario": "Sistema Corssen",
+    "resumen": {},
+    "origen": "Servidor Node"
+  },
+  {
+    "id": "SNP-CRON-1790886864671",
+    "fecha": "01-10-2026",
+    "hora": "08:34:24 p. m.",
+    "timestamp": 1790886864671,
+    "motivo": "Respaldo Automático Programado (Cloudflare Cron)",
+    "tipo": "CRON_AUTOMATICO",
+    "usuario": "Cloudflare Cron Trigger",
+    "resumen": {},
+    "origen": "Servidor Node & Cloudflare"
+  },
+  {
+    "id": "SNP-SERVER-1790886864664",
+    "fecha": "01-10-2026",
+    "hora": "08:34:24 p. m.",
+    "timestamp": 1790886864664,
+    "motivo": "Respaldo automático de prueba",
+    "tipo": "AUTOMATICO_SERVIDOR",
+    "usuario": "Sistema Corssen",
+    "resumen": {},
+    "origen": "Servidor Node"
+  },
+  {
+    "id": "SNP-1790886633149-369",
+    "fecha": "01-10-2026",
+    "hora": "05:30:33 p. m.",
+    "timestamp": 1790886633149,
+    "motivo": "Sincronización de cambios pendientes",
+    "tipo": "AUTOMATICO",
+    "usuario": "Administrador General",
+    "resumen": {
+      "totalPrograma": 50,
+      "totalVehiculos": 7,
+      "totalMaquinarias": 8,
+      "totalMantenciones": 4,
+      "totalStock": 32,
+      "totalCargas": 3,
+      "combustibleActual": 400,
+      "aceiteActual": 367
+    },
+    "origen": "Servidor Node"
+  },
+  {
     "id": "SNP-1790886481887-421",
     "fecha": "01-10-2026",
     "hora": "05:28:01 p. m.",
@@ -376,70 +440,6 @@
     "fecha": "30-09-2026",
     "hora": "05:03:01 p. m.",
     "timestamp": 1790798581889,
-    "motivo": "Sincronización de cambios pendientes",
-    "tipo": "AUTOMATICO",
-    "usuario": "Administrador General",
-    "resumen": {
-      "totalPrograma": 50,
-      "totalVehiculos": 7,
-      "totalMaquinarias": 8,
-      "totalMantenciones": 4,
-      "totalStock": 32,
-      "totalCargas": 3,
-      "combustibleActual": 400,
-      "aceiteActual": 367
-    },
-    "origen": "Servidor Node"
-  },
-  {
-    "id": "SNP-CRON-1790798565982",
-    "fecha": "30-09-2026",
-    "hora": "08:02:45 p. m.",
-    "timestamp": 1790798565982,
-    "motivo": "Respaldo Automático Programado (Cloudflare Cron)",
-    "tipo": "CRON_AUTOMATICO",
-    "usuario": "Cloudflare Cron Trigger",
-    "resumen": {},
-    "origen": "Servidor Node & Cloudflare"
-  },
-  {
-    "id": "SNP-SERVER-1790798565976",
-    "fecha": "30-09-2026",
-    "hora": "08:02:45 p. m.",
-    "timestamp": 1790798565976,
-    "motivo": "Respaldo automático de prueba",
-    "tipo": "AUTOMATICO_SERVIDOR",
-    "usuario": "Sistema Corssen",
-    "resumen": {},
-    "origen": "Servidor Node"
-  },
-  {
-    "id": "SNP-CRON-1790798539368",
-    "fecha": "30-09-2026",
-    "hora": "08:02:19 p. m.",
-    "timestamp": 1790798539368,
-    "motivo": "Respaldo Automático Programado (Cloudflare Cron)",
-    "tipo": "CRON_AUTOMATICO",
-    "usuario": "Cloudflare Cron Trigger",
-    "resumen": {},
-    "origen": "Servidor Node & Cloudflare"
-  },
-  {
-    "id": "SNP-SERVER-1790798539359",
-    "fecha": "30-09-2026",
-    "hora": "08:02:19 p. m.",
-    "timestamp": 1790798539359,
-    "motivo": "Respaldo automático de prueba",
-    "tipo": "AUTOMATICO_SERVIDOR",
-    "usuario": "Sistema Corssen",
-    "resumen": {},
-    "origen": "Servidor Node"
-  },
-  {
-    "id": "SNP-1790797874879-728",
-    "fecha": "30-09-2026",
-    "hora": "04:51:14 p. m.",
-    "timestamp": 1790797874879,
     "motivo": "Sincronización de cambios pendientes",
     "tipo": "AUTOMATICO",
     "usuario": "Administrador General",

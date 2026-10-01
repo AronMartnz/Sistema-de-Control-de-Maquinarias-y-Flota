@@ -23,6 +23,26 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
 
+    <!-- Inicialización Temprana del Tema Visual (Claro / Oscuro / Sistema) -->
+    <script>
+        (function() {
+            try {
+                var tema = localStorage.getItem("corssen_tema_preferido") || "sistema";
+                var esOscuro = false;
+                if (tema === "oscuro") {
+                    esOscuro = true;
+                } else if (tema === "sistema") {
+                    esOscuro = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+                }
+                if (esOscuro) {
+                    document.documentElement.setAttribute("data-theme", "dark");
+                } else {
+                    document.documentElement.setAttribute("data-theme", "claro");
+                }
+            } catch (e) {}
+        })();
+    </script>
+
     <!-- Control de Acceso y Autenticación Obligatoria -->
     <script>
         (function() {
@@ -188,6 +208,38 @@
         </div>
 
         <div class="topbar-derecha">
+            <!-- Selector de Tema Visual: Claro / Oscuro / Sistema -->
+            <div class="theme-switch-wrapper" id="themeSwitchWrapper">
+                <button type="button" id="btnToggleTema" class="btn-secundario btn-topbar-accion btn-tema" onclick="alternarMenuTema(event)" title="Cambiar apariencia visual (Claro, Oscuro o seguir Sistema)" aria-label="Cambiar tema de apariencia" aria-haspopup="true" aria-expanded="false">
+                    <span id="iconoTemaActual">☀️</span>
+                    <span id="textoTemaActual" style="font-weight:600;">Claro</span>
+                    <span style="font-size:9px; opacity:0.6; margin-left:1px;">▼</span>
+                </button>
+                <div id="dropdownMenuTema" class="dropdown-tema-menu" style="display:none;" role="menu">
+                    <button type="button" class="opcion-tema" onclick="seleccionarTema('claro')" id="optTemaClaro" role="menuitem">
+                        <span class="opcion-tema-icono">☀️</span>
+                        <div class="opcion-tema-info">
+                            <strong>Modo Claro</strong>
+                            <small>Interfaz luminosa ejecutiva</small>
+                        </div>
+                    </button>
+                    <button type="button" class="opcion-tema" onclick="seleccionarTema('oscuro')" id="optTemaOscuro" role="menuitem">
+                        <span class="opcion-tema-icono">🌙</span>
+                        <div class="opcion-tema-info">
+                            <strong>Modo Oscuro</strong>
+                            <small>Alta concentración y descanso visual</small>
+                        </div>
+                    </button>
+                    <button type="button" class="opcion-tema" onclick="seleccionarTema('sistema')" id="optTemaSistema" role="menuitem">
+                        <span class="opcion-tema-icono">💻</span>
+                        <div class="opcion-tema-info">
+                            <strong>Seguir Sistema</strong>
+                            <small>Automático según tu dispositivo</small>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
             <button onclick="exportarPlanillaCSV()" class="btn-secundario btn-topbar-accion" title="Exportar planilla general consolidada (.csv / .xlsx)">
                 📊 Exportar Planilla Excel
             </button>
