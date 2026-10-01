@@ -1,5 +1,47 @@
 [
   {
+    "id": "SNP-CRON-1790886466067",
+    "fecha": "01-10-2026",
+    "hora": "08:27:46 p. m.",
+    "timestamp": 1790886466067,
+    "motivo": "Respaldo Automático Programado (Cloudflare Cron)",
+    "tipo": "CRON_AUTOMATICO",
+    "usuario": "Cloudflare Cron Trigger",
+    "resumen": {},
+    "origen": "Servidor Node & Cloudflare"
+  },
+  {
+    "id": "SNP-SERVER-1790886466062",
+    "fecha": "01-10-2026",
+    "hora": "08:27:46 p. m.",
+    "timestamp": 1790886466062,
+    "motivo": "Respaldo automático de prueba",
+    "tipo": "AUTOMATICO_SERVIDOR",
+    "usuario": "Sistema Corssen",
+    "resumen": {},
+    "origen": "Servidor Node"
+  },
+  {
+    "id": "SNP-1790886265486-711",
+    "fecha": "01-10-2026",
+    "hora": "05:24:25 p. m.",
+    "timestamp": 1790886265487,
+    "motivo": "Sincronización de cambios pendientes",
+    "tipo": "AUTOMATICO",
+    "usuario": "Administrador General",
+    "resumen": {
+      "totalPrograma": 50,
+      "totalVehiculos": 7,
+      "totalMaquinarias": 8,
+      "totalMantenciones": 4,
+      "totalStock": 32,
+      "totalCargas": 3,
+      "combustibleActual": 400,
+      "aceiteActual": 367
+    },
+    "origen": "Servidor Node"
+  },
+  {
     "id": "SNP-1790885991022-202",
     "fecha": "01-10-2026",
     "hora": "05:19:51 p. m.",
@@ -398,48 +440,6 @@
     "fecha": "30-09-2026",
     "hora": "07:51:01 p. m.",
     "timestamp": 1790797861816,
-    "motivo": "Respaldo Automático Programado (Cloudflare Cron)",
-    "tipo": "CRON_AUTOMATICO",
-    "usuario": "Cloudflare Cron Trigger",
-    "resumen": {},
-    "origen": "Servidor Node & Cloudflare"
-  },
-  {
-    "id": "SNP-SERVER-1790797861808",
-    "fecha": "30-09-2026",
-    "hora": "07:51:01 p. m.",
-    "timestamp": 1790797861808,
-    "motivo": "Respaldo automático de prueba",
-    "tipo": "AUTOMATICO_SERVIDOR",
-    "usuario": "Sistema Corssen",
-    "resumen": {},
-    "origen": "Servidor Node"
-  },
-  {
-    "id": "SNP-1790797694764-63",
-    "fecha": "30-09-2026",
-    "hora": "04:48:14 p. m.",
-    "timestamp": 1790797694767,
-    "motivo": "Sincronización de cambios pendientes",
-    "tipo": "AUTOMATICO",
-    "usuario": "Administrador General",
-    "resumen": {
-      "totalPrograma": 50,
-      "totalVehiculos": 7,
-      "totalMaquinarias": 8,
-      "totalMantenciones": 4,
-      "totalStock": 32,
-      "totalCargas": 3,
-      "combustibleActual": 400,
-      "aceiteActual": 367
-    },
-    "origen": "Servidor Node"
-  },
-  {
-    "id": "SNP-CRON-1790738284502",
-    "fecha": "30-09-2026",
-    "hora": "03:18:04 a. m.",
-    "timestamp": 1790738284502,
     "motivo": "Respaldo Automático Programado (Cloudflare Cron)",
     "tipo": "CRON_AUTOMATICO",
     "usuario": "Cloudflare Cron Trigger",
