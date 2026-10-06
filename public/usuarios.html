@@ -1269,6 +1269,10 @@
     // 2. MODAL PARA CAMBIAR AVATAR DE CUALQUIER USUARIO
     // =====================================================
     function abrirModalAvatar(usuario, nombre, avatarActual) {
+        if (!esSuperAdminLogueado && String(usuario).toLowerCase().trim() === "admin") {
+            alert("No tienes permisos para modificar este perfil.");
+            return;
+        }
         usuarioSeleccionadoModal = usuario;
         avatarSeleccionadoModal = avatarActual || "avatar-mecanico";
 
@@ -1468,11 +1472,16 @@
             const res = await fetch("/api/usuarios", {
                 headers: { "x-usuario": usuarioLogueado }
             });
-            const usuarios = await res.json();
+            let usuarios = await res.json();
 
             if (!res.ok) {
                 alert(usuarios.mensaje || "Error cargando usuarios.");
                 return;
+            }
+
+            // Ocultar totalmente el usuario 'admin' (Administrador General) para Daniel y operadores
+            if (!esSuperAdminLogueado) {
+                usuarios = usuarios.filter(u => String(u.usuario || "").toLowerCase().trim() !== "admin");
             }
 
             listaUsuariosGlobal = usuarios;
@@ -1602,6 +1611,10 @@
     }
 
     function abrirModalEditarUsuario(usuario, nombre, rol) {
+        if (!esSuperAdminLogueado && String(usuario).toLowerCase().trim() === "admin") {
+            alert("No tienes permisos para modificar este usuario.");
+            return;
+        }
         document.getElementById("editUsuarioId").value = usuario;
         let n = nombre || usuario;
         if (n.includes("Corsser")) n = n.replace(/Corsser/gi, "Corssen");
@@ -1685,6 +1698,10 @@
     }
 
     async function cambiarPassword(usuario) {
+        if (!esSuperAdminLogueado && String(usuario).toLowerCase().trim() === "admin") {
+            alert("No tienes permisos para modificar la contraseña de este usuario.");
+            return;
+        }
         const nueva = prompt(`Ingrese la nueva contraseña para '${usuario}':`);
         if (nueva === null) return;
         if (nueva.trim().length < 4) {
@@ -1816,6 +1833,12 @@
         const rol = document.getElementById("rol").value;
         const avatar = document.getElementById("nuevoUsuarioAvatar").value;
         const mensaje = document.getElementById("mensaje");
+
+        if (usuario.toLowerCase() === "admin") {
+            mensaje.textContent = "El nombre de usuario 'admin' está reservado por el sistema.";
+            mensaje.style.color = "#dc2626";
+            return;
+        }
 
         try {
             const res = await fetch("/api/usuarios", {

@@ -11,8 +11,7 @@
     
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    <link rel="stylesheet" href="/style.css?v=20261001_sticky_v2">
+    <link rel="stylesheet" href="/style.css?v=20261002_cf_dark_v3">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -320,46 +319,46 @@
                             🛢️
                         </div>
                         <div>
-                            <h3 style="margin:0; font-size:16px; color:#0f172a; font-weight:800; display:flex; align-items:center; gap:8px;">
+                            <h3 style="margin:0; font-size:16px; font-weight:800; display:flex; align-items:center; gap:8px;">
                                 Control de Lubricantes en Taller (2 Tambores de 200 Litros)
                                 <span class="badge badge-azul" style="font-size:11px; font-weight:700;">400 Lts Totales</span>
                             </h3>
-                            <p style="margin:2px 0 0 0; font-size:12px; color:#64748b;">
+                            <p style="margin:2px 0 0 0; font-size:12px;">
                                 Monitoreo volumétrico en tiempo real de los dos tambores activos para mantenciones de flota.
                             </p>
                         </div>
                     </div>
-                    <button type="button" class="btn-secundario" onclick="navegarSeccion('moduloAceite')" style="font-size:12px; padding:7px 14px; font-weight:700; color:#1d4ed8; border-color:#93c5fd; background:#eff6ff;">
+                    <button type="button" class="btn-secundario btn-topbar-accion" onclick="navegarSeccion('moduloAceite')" style="font-size:12px; padding:7px 14px; font-weight:700;">
                         🛢️ Ver Módulo de Aceite (2 Tambores) →
                     </button>
                 </div>
 
                 <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:14px;">
                     <!-- Mini Widget Tambor 1 (Motor) -->
-                    <div style="background:#f8fafc; border:1.5px solid #bfdbfe; border-radius:12px; padding:14px; display:flex; gap:14px; align-items:center; cursor:pointer;" onclick="navegarSeccion('moduloAceite')" title="Ver Tambor 1 (Aceite de Motor)">
+                    <div class="caja-blanca" style="border:1.5px solid var(--primary-border); border-radius:12px; padding:14px; display:flex; gap:14px; align-items:center; cursor:pointer; margin-bottom:0;" onclick="navegarSeccion('moduloAceite')" title="Ver Tambor 1 (Aceite de Motor)">
                         <div style="font-size:38px; line-height:1; filter:drop-shadow(0 2px 4px rgba(37,99,235,0.2));">🛢️</div>
                         <div style="flex:1;">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
                                 <span class="badge badge-azul" style="font-weight:700; font-size:10px;">TAMBOR 1 • MOTOR (15W-40)</span>
                                 <span id="dashNivelTambor1Txt" style="font-size:13px; font-weight:800; color:#1d4ed8;">200.0 / 200 L (100%)</span>
                             </div>
-                            <div style="font-size:12.5px; font-weight:700; color:#0f172a; margin-bottom:6px;" id="dashNombreTambor1Txt">Aceite Valvoline Premium Blue 15W40</div>
-                            <div style="width:100%; height:12px; background:#e2e8f0; border-radius:6px; overflow:hidden; border:1px solid #cbd5e1;">
+                            <div style="font-size:12.5px; font-weight:700; margin-bottom:6px;" id="dashNombreTambor1Txt">Aceite Valvoline Premium Blue 15W40</div>
+                            <div style="width:100%; height:12px; background:var(--card-border); border-radius:6px; overflow:hidden; border:1px solid var(--card-border);">
                                 <div id="dashBarraTambor1" style="width:100%; height:100%; background:linear-gradient(90deg, #3b82f6, #1d4ed8); border-radius:6px; transition:width 0.4s;"></div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Mini Widget Tambor 2 (Hidráulico) -->
-                    <div style="background:#f8fafc; border:1.5px solid #a7f3d0; border-radius:12px; padding:14px; display:flex; gap:14px; align-items:center; cursor:pointer;" onclick="navegarSeccion('moduloAceite')" title="Ver Tambor 2 (Aceite Hidráulico)">
+                    <div class="caja-blanca" style="border:1.5px solid var(--status-ok-border); border-radius:12px; padding:14px; display:flex; gap:14px; align-items:center; cursor:pointer; margin-bottom:0;" onclick="navegarSeccion('moduloAceite')" title="Ver Tambor 2 (Aceite Hidráulico)">
                         <div style="font-size:38px; line-height:1; filter:drop-shadow(0 2px 4px rgba(16,185,129,0.2));">🛢️</div>
                         <div style="flex:1;">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                                <span class="badge badge-verde" style="font-weight:700; font-size:10px; background:#dcfce7; color:#15803d;">TAMBOR 2 • HIDRÁULICO (10W-30)</span>
+                                <span class="badge badge-verde" style="font-weight:700; font-size:10px;">TAMBOR 2 • HIDRÁULICO (10W-30)</span>
                                 <span id="dashNivelTambor2Txt" style="font-size:13px; font-weight:800; color:#059669;">200.0 / 200 L (100%)</span>
                             </div>
-                            <div style="font-size:12.5px; font-weight:700; color:#0f172a; margin-bottom:6px;" id="dashNombreTambor2Txt">Aceite Hidráulico Valvoline Unitrac 10W30</div>
-                            <div style="width:100%; height:12px; background:#e2e8f0; border-radius:6px; overflow:hidden; border:1px solid #cbd5e1;">
+                            <div style="font-size:12.5px; font-weight:700; margin-bottom:6px;" id="dashNombreTambor2Txt">Aceite Hidráulico Valvoline Unitrac 10W30</div>
+                            <div style="width:100%; height:12px; background:var(--card-border); border-radius:6px; overflow:hidden; border:1px solid var(--card-border);">
                                 <div id="dashBarraTambor2" style="width:100%; height:100%; background:linear-gradient(90deg, #10b981, #059669); border-radius:6px; transition:width 0.4s;"></div>
                             </div>
                         </div>
@@ -373,15 +372,15 @@
             <div class="caja-blanca" id="cajaAlertasMantencionesProximas">
                 <div class="caja-header">
                     <div style="display:flex; align-items:center; gap:12px;">
-                        <div style="width:42px; height:42px; border-radius:10px; background:#fff7ed; color:#ea580c; display:flex; align-items:center; justify-content:center; font-size:22px;">
+                        <div style="width:42px; height:42px; border-radius:10px; background:var(--status-warn-bg); color:var(--status-warn-dot); display:flex; align-items:center; justify-content:center; font-size:22px;">
                             🔔
                         </div>
                         <div>
-                            <h3 style="margin:0; font-size:16px; color:#0f172a; display:flex; align-items:center; gap:8px;">
+                            <h3 style="margin:0; font-size:16px; display:flex; align-items:center; gap:8px;">
                                 Alertas de Mantenciones Próximas y Preventivas
                                 <span class="badge badge-naranja" id="badgeTotalMantProximas" style="font-size:11.5px; font-weight:700;">0 unidades</span>
                             </h3>
-                            <p style="font-size:12px; color:#64748b; margin-top:2px;">
+                            <p style="font-size:12px; margin-top:2px;">
                                 Monitoreo continuo por horómetro, kilometraje y calendario para evitar fallas imprevistas.
                             </p>
                         </div>
@@ -562,10 +561,10 @@
 
             <!-- DETALLE DE LA FICHA TÉCNICA -->
             <div class="caja-blanca">
-                <div class="caja-header" style="border-bottom:1.5px solid #f1f5f9; padding-bottom:16px;">
+                <div class="caja-header" style="border-bottom:1.5px solid var(--card-border); padding-bottom:16px;">
                     <div>
-                        <h3 id="fichaTituloEquipo" style="font-size:18px; color:#0f172a;">GPC-01 • GRÚA PORTACONTENEDORES TAYLOR</h3>
-                        <p style="font-size:13px; color:#64748b; margin-top:2px;">Ficha técnica y plan de lubricación oficial CORSSEN LOGÍSTICA</p>
+                        <h3 id="fichaTituloEquipo" style="font-size:18px;">GPC-01 • GRÚA PORTACONTENEDORES TAYLOR</h3>
+                        <p style="font-size:13px; margin-top:2px;">Ficha técnica y plan de lubricación oficial CORSSEN LOGÍSTICA</p>
                     </div>
                     <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
                         <button type="button" id="btnEditarFichaTecnica" class="btn-primario" onclick="abrirModalEditarFicha()" style="padding:6px 14px; font-size:12px; display:inline-flex; align-items:center; gap:6px; background:#2563eb; border-color:#2563eb; font-weight:700;" title="Editar especificaciones y datos de la ficha técnica seleccionada (Solo Administrador)">
@@ -580,19 +579,19 @@
                 </div>
 
                 <!-- DATOS GENERALES -->
-                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px; margin:20px 0; background:#f8fafc; padding:16px; border-radius:12px; border:1px solid #e2e8f0;">
-                    <div><span style="font-size:11px; color:#64748b; font-weight:700;">CÓDIGO:</span> <strong id="fichaCodigo" style="display:block; font-size:14px;">GPC-01</strong></div>
-                    <div><span style="font-size:11px; color:#64748b; font-weight:700;">MARCA:</span> <strong id="fichaMarca" style="display:block; font-size:14px;">TAYLOR</strong></div>
-                    <div><span style="font-size:11px; color:#64748b; font-weight:700;">MODELO:</span> <strong id="fichaModelo" style="display:block; font-size:14px;">XLC 975</strong></div>
-                    <div><span style="font-size:11px; color:#64748b; font-weight:700;">CAPACIDAD:</span> <strong id="fichaCapacidad" style="display:block; font-size:14px;">40 TON</strong></div>
-                    <div><span style="font-size:11px; color:#64748b; font-weight:700;">AÑO:</span> <strong id="fichaAnio" style="display:block; font-size:14px;">2013</strong></div>
-                    <div><span style="font-size:11px; color:#64748b; font-weight:700;">MOTOR / PATENTE:</span> <strong id="fichaMotor" style="display:block; font-size:14px;">Cummins QSM11</strong></div>
-                    <div><span style="font-size:11px; color:#64748b; font-weight:700;">RESPONSABLE:</span> <strong id="fichaResponsable" style="display:block; font-size:14px;">Carlos Lasso</strong></div>
+                <div class="caja-blanca" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px; margin:20px 0; padding:16px; border-radius:12px; border:1px solid var(--card-border);">
+                    <div><span style="font-size:11px; font-weight:700;">CÓDIGO:</span> <strong id="fichaCodigo" style="display:block; font-size:14px;">GPC-01</strong></div>
+                    <div><span style="font-size:11px; font-weight:700;">MARCA:</span> <strong id="fichaMarca" style="display:block; font-size:14px;">TAYLOR</strong></div>
+                    <div><span style="font-size:11px; font-weight:700;">MODELO:</span> <strong id="fichaModelo" style="display:block; font-size:14px;">XLC 975</strong></div>
+                    <div><span style="font-size:11px; font-weight:700;">CAPACIDAD:</span> <strong id="fichaCapacidad" style="display:block; font-size:14px;">40 TON</strong></div>
+                    <div><span style="font-size:11px; font-weight:700;">AÑO:</span> <strong id="fichaAnio" style="display:block; font-size:14px;">2013</strong></div>
+                    <div><span style="font-size:11px; font-weight:700;">MOTOR / PATENTE:</span> <strong id="fichaMotor" style="display:block; font-size:14px;">Cummins QSM11</strong></div>
+                    <div><span style="font-size:11px; font-weight:700;">RESPONSABLE:</span> <strong id="fichaResponsable" style="display:block; font-size:14px;">Carlos Lasso</strong></div>
                 </div>
 
                 <!-- TABLA DE LUBRICANTES Y ACEITES -->
                 <div style="margin-bottom:24px;">
-                    <h4 style="font-size:14px; font-weight:800; color:#0f172a; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
+                    <h4 style="font-size:14px; font-weight:800; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
                         <span>🛢️</span> Tabla de Lubricantes y Capacidades Recomendadas
                     </h4>
                     <div class="tabla-responsive">
@@ -614,7 +613,7 @@
 
                 <!-- MATRIZ DE FILTROS (4 ALTERNATIVAS) -->
                 <div style="margin-bottom:24px;">
-                    <h4 style="font-size:14px; font-weight:800; color:#0f172a; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
+                    <h4 style="font-size:14px; font-weight:800; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
                         <span>🔄</span> Matriz de Filtros y Códigos de Equivalencia Multimarca
                     </h4>
                     <div class="tabla-responsive">
@@ -1144,8 +1143,8 @@
                 </div>
 
                 <!-- TARJETA 4: LIQUIDACIÓN FINANCIERA Y CIERRE DE ORDEN DE TRABAJO -->
-                <div class="caja-blanca" style="margin-bottom:24px; border:2px solid #bfdbfe; background:#ffffff;">
-                    <div class="caja-header" style="border-bottom:1px solid #e2e8f0;">
+                <div class="caja-blanca" style="margin-bottom:24px; border:2px solid var(--primary-light);">
+                    <div class="caja-header" style="border-bottom:1px solid var(--card-border);">
                         <div style="display:flex; align-items:center; gap:10px;">
                             <span style="font-size:20px;">💳</span>
                             <div>
@@ -1162,7 +1161,7 @@
                             <span style="font-size:11px; color:#64748b;">Mano de obra interna, taller externo o contratista.</span>
                         </div>
 
-                        <div style="display:flex; flex-direction:column; justify-content:center; padding:10px 16px; background:#ffffff; border:1px solid #e2e8f0; border-radius:10px;">
+                        <div class="caja-subtotal-insumos-ot" style="display:flex; flex-direction:column; justify-content:center; padding:10px 16px; border:1px solid var(--card-border); border-radius:10px;">
                             <span style="font-size:11.5px; color:#64748b; font-weight:700; text-transform:uppercase;">Insumos de Bodega</span>
                             <span id="labelSubtotalInsumosCard" style="font-size:18px; font-weight:800; color:#0f172a; margin-top:2px;">$0</span>
                             <span style="font-size:11px; color:#16a34a; font-weight:600;">✓ Descuento directo de stock</span>
@@ -1378,7 +1377,7 @@
             <!-- TARJETAS Y MEDIDOR VISUAL DE LOS 2 TAMBORES -->
             <div class="grid-dos-tambores">
                 <!-- Tarjeta Visual Tambor 1: Aceite de Motor 15W-40 -->
-                <div class="tarjeta-tambor tambor-motor" style="background:linear-gradient(145deg, #ffffff, #f8fafc);">
+                <div class="tarjeta-tambor tambor-motor">
                     <div class="tambor-card-layout">
                         <!-- Gráfico 3D del Tambor 1 (Azul Metálico - Motor) -->
                         <div class="columna-tambor-grafico">
@@ -1496,7 +1495,7 @@
                 </div>
 
                 <!-- Tarjeta Visual Tambor 2: Aceite Hidráulico 10W-30 / ISO 68 -->
-                <div class="tarjeta-tambor tambor-hidraulico" style="background:linear-gradient(145deg, #ffffff, #f0fdf4);">
+                <div class="tarjeta-tambor tambor-hidraulico">
                     <div class="tambor-card-layout">
                         <!-- Gráfico 3D del Tambor 2 (Verde Metálico - Hidráulico) -->
                         <div class="columna-tambor-grafico">
@@ -2048,7 +2047,7 @@
                             <span style="font-size:12px; color:#64748b;">Diésel Grado B / Ultra Diésel - Taller Central CORSSEN</span>
                         </div>
                         <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-                            <button type="button" class="btn-secundario" onclick="abrirModalAjustarNivelEstanque()" style="font-size:12px; padding:7px 13px; font-weight:700; border:1px solid #cbd5e1; background:#ffffff; color:#334155;" title="Calibrar, restablecer o ajustar nivel de litros del estanque de 400L">
+                            <button type="button" class="btn-secundario" onclick="abrirModalAjustarNivelEstanque()" style="font-size:12px; padding:7px 13px; font-weight:700;" title="Calibrar, restablecer o ajustar nivel de litros del estanque de 400L">
                                 🎛️ Calibrar Nivel
                             </button>
                             <button type="button" class="btn-primario" onclick="abrirModalRecargaTanque()" style="font-size:12px; padding:7px 14px; background:#d97706; border-color:#d97706;" title="Registrar recarga o compra de petróleo para el estanque de 400L">
@@ -2979,7 +2978,7 @@
                  CONTROL DE ACCESO POR CUOTA MENSUAL (RESPALDOS & MANTENCIÓN)
                  (EXCLUSIVO ADMINISTRADOR GENERAL 'admin')
                  ===================================================== -->
-            <div class="caja-blanca" id="seccionControlCuota" style="border: 2px solid #e2e8f0; border-radius: 16px; padding: 22px; margin-bottom: 24px; background: #ffffff; box-shadow: 0 4px 16px rgba(0,0,0,0.04);">
+            <div class="caja-blanca" id="seccionControlCuota" style="border: 2px solid var(--card-border); border-radius: 16px; padding: 22px; margin-bottom: 24px; box-shadow: var(--shadow-card);">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px; margin-bottom:18px;">
                     <div>
                         <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px; flex-wrap:wrap;">
@@ -3038,7 +3037,7 @@
             </div>
 
             <!-- APARTADO 1: CONFIGURACIÓN DE BLOQUEO DE ACCESO Y AUDIENCIA -->
-            <div style="background:#ffffff; border:1px solid #fed7aa; border-radius:14px; padding:22px; margin-bottom:24px; box-shadow:0 4px 12px rgba(217,119,6,0.06);">
+            <div class="caja-blanca" style="border:1px solid #fed7aa; border-radius:14px; padding:22px; margin-bottom:24px; box-shadow:0 4px 12px rgba(217,119,6,0.06);">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-bottom:1px solid #f1f5f9; padding-bottom:14px; margin-bottom:18px;">
                     <div style="display:flex; align-items:center; gap:10px;">
                         <span style="font-size:22px;">🔒</span>
@@ -3139,8 +3138,8 @@
             </div>
 
             <!-- APARTADO 2: CALENDARIO Y PROGRAMACIÓN DE INTERVENCIONES -->
-            <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:22px; margin-bottom:24px; box-shadow:0 4px 12px rgba(15,23,42,0.04);">
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-bottom:1px solid #f1f5f9; padding-bottom:14px; margin-bottom:18px;">
+            <div class="caja-blanca" style="border:1px solid var(--card-border); border-radius:14px; padding:22px; margin-bottom:24px; box-shadow:0 4px 12px rgba(15,23,42,0.04);">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-bottom:1px solid var(--card-border); padding-bottom:14px; margin-bottom:18px;">
                     <div style="display:flex; align-items:center; gap:10px;">
                         <span style="font-size:22px;">📅</span>
                         <div>
@@ -3174,7 +3173,7 @@
             </div>
 
             <!-- APARTADO 3: NOTIFICACIÓN Y AVISO AL CLIENTE (WHATSAPP & CORREO) -->
-            <div style="background:#ffffff; border:1px solid #bbf7d0; border-radius:14px; padding:22px; margin-bottom:24px; box-shadow:0 4px 12px rgba(22,163,74,0.06);">
+            <div class="caja-blanca" style="border:1px solid #bbf7d0; border-radius:14px; padding:22px; margin-bottom:24px; box-shadow:0 4px 12px rgba(22,163,74,0.06);">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-bottom:1px solid #f1f5f9; padding-bottom:14px; margin-bottom:18px;">
                     <div style="display:flex; align-items:center; gap:10px;">
                         <span style="font-size:22px;">📲</span>
@@ -4334,6 +4333,6 @@
     </main>
 </div>
 
-<script src="/script.js?v=20261001_sticky_v2"></script>
+<script src="/script.js?v=20261002_cf_dark_v3"></script>
 </body>
 </html>

@@ -794,7 +794,12 @@ export default {
         const userHeader = (request.headers.get("x-usuario") || "").toLowerCase().trim();
         const esAdminGeneral = (userHeader === "admin");
         const users = await obtenerUsuarios();
-        return new Response(JSON.stringify(users.map(u => {
+        // Ocultar totalmente el usuario 'admin' (Administrador General) para que Daniel y operadores no lo vean
+        const usersVisibles = esAdminGeneral
+          ? users
+          : users.filter(u => String(u.usuario || "").toLowerCase().trim() !== "admin");
+
+        return new Response(JSON.stringify(usersVisibles.map(u => {
           let uNombre = u.nombre || u.usuario;
           if (uNombre.includes("Corsser")) {
             uNombre = uNombre.replace(/Corsser/gi, "Corssen");
@@ -834,6 +839,12 @@ export default {
         }
 
         const uNorm = String(usuario).trim().toLowerCase();
+        if (uNorm === "admin") {
+          return new Response(JSON.stringify({ mensaje: "El nombre de usuario 'admin' está reservado por el sistema." }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
+        }
         const passLimpia = String(password || "1234").trim();
         const nuevo = {
           usuario: uNorm,
@@ -901,6 +912,14 @@ export default {
       try {
         const parts = path.split("/");
         const userTarget = decodeURIComponent(parts[3] || "").toLowerCase().trim();
+        const userHeader = (request.headers.get("x-usuario") || "").toLowerCase().trim();
+        if (userTarget === "admin" && userHeader !== "admin") {
+          return new Response(JSON.stringify({ mensaje: "Acceso denegado: No tiene permisos sobre este usuario." }), {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
+        }
+
         const body = await request.json().catch(() => ({}));
         const avatar = body.avatar;
 
@@ -936,6 +955,14 @@ export default {
       try {
         const parts = path.split("/");
         const userTarget = decodeURIComponent(parts[3] || "").toLowerCase().trim();
+        const userHeader = (request.headers.get("x-usuario") || "").toLowerCase().trim();
+        if (userTarget === "admin" && userHeader !== "admin") {
+          return new Response(JSON.stringify({ mensaje: "Acceso denegado: No tiene permisos sobre este usuario." }), {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
+        }
+
         const body = await request.json().catch(() => ({}));
         const nuevaPass = body.nuevaPassword;
 
@@ -1004,6 +1031,13 @@ export default {
     // API Usuarios - Actualizar datos (Nombre y Rol - PUT/POST/PATCH)
     if (path.startsWith("/api/usuarios/") && !path.endsWith("/avatar") && !path.endsWith("/password") && !path.includes("/estado") && (request.method === "PUT" || request.method === "POST" || request.method === "PATCH")) {
       const userToUpdate = decodeURIComponent(path.split("/")[3] || "").toLowerCase().trim();
+      const userHeader = (request.headers.get("x-usuario") || "").toLowerCase().trim();
+      if (userToUpdate === "admin" && userHeader !== "admin") {
+        return new Response(JSON.stringify({ mensaje: "Acceso denegado: El usuario Administrador General no puede ser modificado." }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
       try {
         const body = await request.json().catch(() => ({}));
         let { nombre, rol } = body;

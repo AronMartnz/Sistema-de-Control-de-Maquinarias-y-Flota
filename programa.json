@@ -43,14 +43,13 @@
         "equipo": "GRÚA HORQUILLA 7 TON",
         "marca": "KOMATSU",
         "cat": "GRÚAS",
-        "estado": "Operativo",
-        "prioridad": "Media",
+        "estado": "No Operativo",
+        "prioridad": "Alta",
         "horometro": "3890 hrs",
         "frecuencia": "250 horas",
         "prox": "Terminar armado",
         "responsable": "Alexis Santos",
-        "observaciones": "Armado finalizado. Operativa.",
-        "actualizado_en": "2026-09-12T17:46:03.856Z"
+        "observaciones": "Terminar armado de grúa. Instalar piola de freno de mano y espejo."
     },
     {
         "cod": "GHO-03",

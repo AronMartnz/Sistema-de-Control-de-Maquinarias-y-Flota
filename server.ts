@@ -358,7 +358,12 @@ app.get("/api/usuarios", verificarAdmin, (req, res) => {
             return res.status(500).json({ mensaje: "Error al leer usuarios." });
         }
 
-        const usuariosSeguros = usuarios.map((u: any) => {
+        // Ocultar totalmente el usuario 'admin' (Administrador General) para que Daniel y operadores no lo vean
+        const usuariosVisibles = esAdminGeneral
+            ? usuarios
+            : usuarios.filter((u: any) => String(u.usuario || "").toLowerCase().trim() !== "admin");
+
+        const usuariosSeguros = usuariosVisibles.map((u: any) => {
             const uLower = String(u.usuario || "").toLowerCase().trim();
             const passVisible = u.password_plana || (!String(u.password || "").startsWith("$2") ? u.password : (uLower === "admin" ? "admin123" : "1234"));
             return {
@@ -385,6 +390,10 @@ app.post("/api/usuarios", verificarAdmin, async (req, res) => {
 
         if (!usuario || !nombre || !password || !rol) {
             return res.status(400).json({ mensaje: "Todos los campos son obligatorios." });
+        }
+
+        if (String(usuario).toLowerCase().trim() === "admin") {
+            return res.status(400).json({ mensaje: "El nombre de usuario 'admin' está reservado por el sistema." });
         }
 
         if (password.length < 4) {
@@ -463,6 +472,10 @@ app.patch("/api/usuarios/:usuario/avatar", async (req, res) => {
         const esMismoUsuario = String(usuarioHeader).toLowerCase() === String(usuarioObjetivo).toLowerCase();
         const esAdmin = String(solicitante.rol).toLowerCase() === "admin";
 
+        if (String(usuarioObjetivo).toLowerCase() === "admin" && String(usuarioHeader).toLowerCase() !== "admin") {
+            return res.status(403).json({ mensaje: "Acceso denegado: No tienes permisos para modificar este avatar." });
+        }
+
         if (!esMismoUsuario && !esAdmin) {
             return res.status(403).json({ mensaje: "No tienes permiso para modificar el avatar de otro usuario." });
         }
@@ -533,7 +546,12 @@ app.patch("/api/perfil/avatar", async (req, res) => {
 // Cambiar contraseña (Solo admin)
 app.patch("/api/usuarios/:usuario/password", verificarAdmin, async (req, res) => {
     try {
-        const usuarioObjetivo = decodeURIComponent(req.params.usuario);
+        const usuarioObjetivo = decodeURIComponent(req.params.usuario).trim();
+        const solicitanteHeader = String(req.headers["x-usuario"] || (req as any).usuario || "").toLowerCase().trim();
+        if (usuarioObjetivo.toLowerCase() === "admin" && solicitanteHeader !== "admin") {
+            return res.status(403).json({ mensaje: "Acceso denegado: No tiene permisos para modificar la contraseña de este usuario." });
+        }
+
         const { nuevaPassword } = req.body;
 
         if (!nuevaPassword || nuevaPassword.length < 4) {
@@ -546,7 +564,7 @@ app.patch("/api/usuarios/:usuario/password", verificarAdmin, async (req, res) =>
         }
 
         const indice = usuarios.findIndex(
-            u => String(u.usuario).toLowerCase() === String(usuarioObjetivo).toLowerCase().trim()
+            u => String(u.usuario).toLowerCase() === usuarioObjetivo.toLowerCase()
         );
 
         if (indice === -1) {
@@ -598,6 +616,11 @@ app.delete("/api/usuarios/:usuario", verificarAdmin, (req, res) => {
 const handlerActualizarUsuario = (req: express.Request, res: express.Response) => {
     try {
         const usuarioObjetivo = decodeURIComponent(req.params.usuario).trim();
+        const solicitanteHeader = String(req.headers["x-usuario"] || (req as any).usuario || "").toLowerCase().trim();
+        if (usuarioObjetivo.toLowerCase() === "admin" && solicitanteHeader !== "admin") {
+            return res.status(403).json({ mensaje: "Acceso denegado: El usuario Administrador General no puede ser modificado." });
+        }
+
         let { nombre, rol } = req.body;
 
         if (!nombre || typeof nombre !== "string" || nombre.trim().length === 0) {

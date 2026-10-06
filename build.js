@@ -16,20 +16,7 @@ if (!fs.existsSync('dist')) {
   fs.mkdirSync('dist', { recursive: true });
 }
 
-// 3. Copiar todos los archivos de public/ a dist/
-if (fs.existsSync('public')) {
-  const publicFiles = fs.readdirSync('public');
-  for (const file of publicFiles) {
-    const src = path.join('public', file);
-    const dest = path.join('dist', file);
-    if (fs.statSync(src).isFile()) {
-      fs.copyFileSync(src, dest);
-      console.log(`Copiado public/${file} -> dist/${file}`);
-    }
-  }
-}
-
-// 4. Copiar archivos raíz clave a dist/ si no estaban
+// 3. Sincronizar archivos raíz clave a public/ (para Cloudflare Workers Assets y Cloudflare Pages)
 const rootFiles = [
   'index.html',
   'style.css',
@@ -38,13 +25,30 @@ const rootFiles = [
   'usuarios.html',
   'logo.svg',
   'logo_isotipo.svg',
-  'usuarios.json'
+  'usuarios.json',
+  'config_servicio.json',
+  'config_mantenimiento.json'
 ];
+
+if (!fs.existsSync('public')) {
+  fs.mkdirSync('public', { recursive: true });
+}
 
 for (const file of rootFiles) {
   if (fs.existsSync(file)) {
-    fs.copyFileSync(file, path.join('dist', file));
-    console.log(`Copiado ${file} -> dist/${file}`);
+    fs.copyFileSync(file, path.join('public', file));
+    console.log(`Sincronizado ${file} -> public/${file}`);
+  }
+}
+
+// 4. Copiar todos los archivos de public/ a dist/
+const publicFiles = fs.readdirSync('public');
+for (const file of publicFiles) {
+  const src = path.join('public', file);
+  const dest = path.join('dist', file);
+  if (fs.statSync(src).isFile()) {
+    fs.copyFileSync(src, dest);
+    console.log(`Copiado public/${file} -> dist/${file}`);
   }
 }
 

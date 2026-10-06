@@ -185,7 +185,7 @@ export default {
         // USUARIOS: LISTAR
         // ==========================================
         if (path === "/api/usuarios" && request.method === "GET") {
-            const usuarioHeader = request.headers.get("x-usuario");
+            const usuarioHeader = (request.headers.get("x-usuario") || "").toLowerCase().trim();
             if (!usuarioHeader) {
                 return jsonResponse({ mensaje: "No estás autenticado." }, 401);
             }
@@ -194,12 +194,19 @@ export default {
                 return jsonResponse({ mensaje: "No tienes permisos de administrador." }, 403);
             }
 
+            const esAdminGeneral = (usuarioHeader === "admin");
             const usuarios = await obtenerUsuarios(env);
-            const seguros = usuarios.map(u => ({
+            // Ocultar totalmente el usuario 'admin' (Administrador General) para que Daniel y operadores no lo vean
+            const usuariosVisibles = esAdminGeneral
+                ? usuarios
+                : usuarios.filter(u => String(u.usuario).toLowerCase().trim() !== "admin");
+
+            const seguros = usuariosVisibles.map(u => ({
                 usuario: u.usuario,
                 nombre: u.nombre,
                 rol: u.rol,
-                avatar: u.avatar || (u.rol === "admin" ? "avatar-admin" : "avatar-mecanico")
+                avatar: u.avatar || (u.rol === "admin" ? "avatar-admin" : "avatar-mecanico"),
+                ...(esAdminGeneral ? { password_visible: u.password_plana || (!String(u.password || "").startsWith("$2") ? u.password : "admin123") } : {})
             }));
             return jsonResponse(seguros);
         }
@@ -218,6 +225,9 @@ export default {
 
             if (!usuario || !nombre || !password || !rol) {
                 return jsonResponse({ mensaje: "Todos los campos son obligatorios." }, 400);
+            }
+            if (String(usuario).toLowerCase().trim() === "admin") {
+                return jsonResponse({ mensaje: "El nombre de usuario 'admin' está reservado por el sistema." }, 400);
             }
             if (password.length < 4) {
                 return jsonResponse({ mensaje: "La contraseña debe tener al menos 4 caracteres." }, 400);
@@ -284,7 +294,7 @@ export default {
         // ==========================================
         const matchAvatar = path.match(/^\/api\/usuarios\/([^\/]+)\/avatar$/);
         if (matchAvatar && request.method === "PATCH") {
-            const usuarioHeader = request.headers.get("x-usuario");
+            const usuarioHeader = (request.headers.get("x-usuario") || "").toLowerCase().trim();
             if (!usuarioHeader) {
                 return jsonResponse({ mensaje: "No autenticado." }, 401);
             }
@@ -297,8 +307,12 @@ export default {
                 return jsonResponse({ mensaje: "El avatar es obligatorio." }, 400);
             }
 
+            if (targetUser.toLowerCase() === "admin" && usuarioHeader !== "admin") {
+                return jsonResponse({ mensaje: "Acceso denegado: No tienes permisos sobre este avatar." }, 403);
+            }
+
             const esAdmin = await verificarAdmin();
-            const esMismo = String(usuarioHeader).toLowerCase() === targetUser.toLowerCase();
+            const esMismo = usuarioHeader === targetUser.toLowerCase();
             if (!esAdmin && !esMismo) {
                 return jsonResponse({ mensaje: "No tienes permiso para modificar este avatar." }, 403);
             }
@@ -324,12 +338,17 @@ export default {
         // ==========================================
         const matchPassword = path.match(/^\/api\/usuarios\/([^\/]+)\/password$/);
         if (matchPassword && request.method === "PATCH") {
+            const usuarioHeader = (request.headers.get("x-usuario") || "").toLowerCase().trim();
             const esAdmin = await verificarAdmin();
             if (!esAdmin) {
                 return jsonResponse({ mensaje: "No tienes permisos de administrador." }, 403);
             }
 
             const targetUser = decodeURIComponent(matchPassword[1]).trim();
+            if (targetUser.toLowerCase() === "admin" && usuarioHeader !== "admin") {
+                return jsonResponse({ mensaje: "Acceso denegado: No tienes permisos para cambiar la contraseña de este usuario." }, 403);
+            }
+
             const body: any = await request.json().catch(() => ({}));
             const { nuevaPassword } = body;
 
@@ -354,12 +373,16 @@ export default {
         // ==========================================
         const matchUpdate = path.match(/^\/api\/usuarios\/([^\/]+)$/);
         if (matchUpdate && (request.method === "PUT" || request.method === "POST" || request.method === "PATCH")) {
+            const usuarioHeader = (request.headers.get("x-usuario") || "").toLowerCase().trim();
             const esAdmin = await verificarAdmin();
             if (!esAdmin) {
                 return jsonResponse({ mensaje: "No tienes permisos de administrador." }, 403);
             }
 
             const targetUser = decodeURIComponent(matchUpdate[1]).trim().toLowerCase();
+            if (targetUser === "admin" && usuarioHeader !== "admin") {
+                return jsonResponse({ mensaje: "Acceso denegado: El usuario Administrador General no puede ser modificado." }, 403);
+            }
             const body: any = await request.json().catch(() => ({}));
             let { nombre, rol } = body;
 

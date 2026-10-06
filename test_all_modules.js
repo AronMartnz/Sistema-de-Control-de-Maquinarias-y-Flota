@@ -141,6 +141,10 @@ async function ejecutarPruebas() {
         assert(resUsersDanielView.body?.[0]?.password_visible === undefined,
             'Usuarios no administradores generales NO tienen acceso a ver contraseñas', 'API / Seguridad Claves');
 
+        const tieneAdminDaniel = resUsersDanielView.body?.some(u => String(u.usuario).toLowerCase().trim() === 'admin');
+        assert(!tieneAdminDaniel,
+            'El usuario Administrador General (admin) está totalmente oculto para Daniel y operadores en GET /api/usuarios', 'API / Privacidad Admin General');
+
         // Control de Cuota Mensual y Suspensión de Inicio de Sesión
         const resEstadoServicio = await request('GET', '/api/servicio/estado');
         assert(resEstadoServicio.status === 200 && (resEstadoServicio.body?.estadoServicio === 'activo' || resEstadoServicio.body?.estadoServicio === 'suspendido'),

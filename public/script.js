@@ -7887,7 +7887,7 @@ function renderizarCapitulosTutorial() {
     contenedor.innerHTML = tutorial.pasos.map((p, idx) => {
         const esActivo = idx === tutorialPasoIndex;
         return `
-            <button type="button" onclick="irAPasoTutorial(${idx})" class="btn-secundario" style="padding:6px 12px; font-size:11.5px; white-space:nowrap; border-radius:8px; font-weight:${esActivo ? '800' : '600'}; background:${esActivo ? '#0284c7' : '#ffffff'}; color:${esActivo ? '#ffffff' : '#0f172a'}; border-color:${esActivo ? '#0284c7' : '#cbd5e1'};">
+            <button type="button" onclick="irAPasoTutorial(${idx})" class="btn-secundario btn-capitulo-video ${esActivo ? 'active' : ''}">
                 ${p.icono} ${idx + 1}. ${p.categoria}
             </button>
         `;
@@ -7898,13 +7898,10 @@ function actualizarEstiloCapitulosActivos() {
     const contenedor = document.getElementById("videoContenedorCapitulos");
     if (!contenedor) return;
 
-    const botones = contenedor.querySelectorAll("button");
+    const botones = contenedor.querySelectorAll(".btn-capitulo-video");
     botones.forEach((btn, idx) => {
         const esActivo = idx === tutorialPasoIndex;
-        btn.style.background = esActivo ? "#0284c7" : "#ffffff";
-        btn.style.color = esActivo ? "#ffffff" : "#0f172a";
-        btn.style.borderColor = esActivo ? "#0284c7" : "#cbd5e1";
-        btn.style.fontWeight = esActivo ? "800" : "600";
+        btn.classList.toggle("active", esActivo);
     });
 }
 
