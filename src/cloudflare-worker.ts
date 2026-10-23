@@ -541,6 +541,160 @@ export default {
             }
         }
 
+        if (path.startsWith("/api/backup/obtener/") && request.method === "GET") {
+            try {
+                const bId = decodeURIComponent(path.replace("/api/backup/obtener/", "")).trim();
+                let backupData: any = null;
+
+                if (env.DB) {
+                    if (bId === "ultimo") {
+                        const row: any = await env.DB.prepare(
+                            "SELECT * FROM corssen_backups ORDER BY timestamp DESC LIMIT 1"
+                        ).first();
+                        if (row) {
+                            backupData = {
+                                id: row.id,
+                                timestamp: row.timestamp,
+                                fecha: row.fecha,
+                                hora: row.hora,
+                                motivo: row.motivo,
+                                tipo: row.tipo,
+                                usuario: row.usuario,
+                                resumen: row.resumen_json ? JSON.parse(row.resumen_json) : {},
+                                data: row.data_json ? JSON.parse(row.data_json) : {}
+                            };
+                        }
+                    } else {
+                        const row: any = await env.DB.prepare(
+                            "SELECT * FROM corssen_backups WHERE id = ?"
+                        ).bind(bId).first();
+                        if (row) {
+                            backupData = {
+                                id: row.id,
+                                timestamp: row.timestamp,
+                                fecha: row.fecha,
+                                hora: row.hora,
+                                motivo: row.motivo,
+                                tipo: row.tipo,
+                                usuario: row.usuario,
+                                resumen: row.resumen_json ? JSON.parse(row.resumen_json) : {},
+                                data: row.data_json ? JSON.parse(row.data_json) : {}
+                            };
+                        }
+                    }
+                }
+
+                if (!backupData && env.CORSSEN_STORAGE) {
+                    if (bId === "ultimo") {
+                        backupData = await env.CORSSEN_STORAGE.get("corssen_backup_ultimo", { type: "json" });
+                    } else {
+                        backupData = await env.CORSSEN_STORAGE.get(`backup_${bId}`, { type: "json" });
+                    }
+                }
+
+                if (!backupData) {
+                    return jsonResponse({ error: "Respaldo no encontrado en Cloudflare" }, 404);
+                }
+
+                // Reconciliar con fichas técnicas para que unidades recién creadas o editadas aparezcan en flota
+                if (bId === "ultimo" && backupData && backupData.data && env.DB) {
+                    try {
+                        const { results: fichasD1 } = await env.DB.prepare("SELECT * FROM corssen_fichas").all();
+                        if (Array.isArray(fichasD1) && fichasD1.length > 0) {
+                            if (!backupData.data.corssen_fichas_v2 || typeof backupData.data.corssen_fichas_v2 !== "object") {
+                                backupData.data.corssen_fichas_v2 = {};
+                            }
+                            if (!Array.isArray(backupData.data.flota_vehiculos_v3)) backupData.data.flota_vehiculos_v3 = [];
+                            if (!Array.isArray(backupData.data.flota_maquinarias_v3)) backupData.data.flota_maquinarias_v3 = [];
+
+                            fichasD1.forEach((fRow: any) => {
+                                if (!fRow.cod) return;
+                                let fData: any = {};
+                                if (fRow.especificaciones_json) {
+                                    try { fData = JSON.parse(fRow.especificaciones_json); } catch(_) {}
+                                }
+                                const codUpper = fRow.cod.toUpperCase();
+                                const nombreFinal = fRow.equipo || fData.nombre || codUpper;
+                                const marcaFinal = fRow.marca || fData.marca || "";
+                                const modeloFinal = fRow.modelo || fData.modelo || "";
+                                const motorFinal = fRow.motor || fData.motor || "";
+                                const patLimpia = (fRow.chasis_vin || fData.patente || (motorFinal.includes("-") ? motorFinal.replace(/patente:\s*/gi, "").trim() : codUpper));
+                                const capacidadFinal = fRow.capacidad || fData.capacidad || "";
+                                const anioFinal = fRow.anio || fData.anio || 2024;
+                                const estadoFinal = fData.estado || "Operativo";
+                                const respFinal = fData.responsable || "Aron Martinez";
+                                const catFinal = (fData.categoria || "").toUpperCase();
+
+                                backupData.data.corssen_fichas_v2[fRow.cod] = {
+                                    ...backupData.data.corssen_fichas_v2[fRow.cod],
+                                    ...fData,
+                                    codigo: fRow.cod,
+                                    nombre: nombreFinal,
+                                    marca: marcaFinal,
+                                    modelo: modeloFinal,
+                                    motor: motorFinal,
+                                    patente: patLimpia,
+                                    capacidad: capacidadFinal,
+                                    anio: anioFinal,
+                                    estado: estadoFinal,
+                                    responsable: respFinal
+                                };
+
+                                const esVehiculo = codUpper.startsWith("CAM") || codUpper.startsWith("CMN") || catFinal === "MÓVILES";
+                                if (esVehiculo) {
+                                    const vIdx = backupData.data.flota_vehiculos_v3.findIndex((v: any) => (v.codigo || v.id || v.patente || "").toUpperCase() === codUpper);
+                                    const vItem = {
+                                        id: codUpper,
+                                        codigo: codUpper,
+                                        nombre: nombreFinal,
+                                        patente: patLimpia,
+                                        marca: marcaFinal || "Vehículo",
+                                        modelo: modeloFinal || "Pickup",
+                                        capacidad: capacidadFinal || "1 TON",
+                                        anio: anioFinal,
+                                        combustible: "Diésel",
+                                        kilometraje: parseInt(String(fData.horometro || '0').replace(/\D/g, '')) || 0,
+                                        estado: estadoFinal,
+                                        responsable: respFinal
+                                    };
+                                    if (vIdx !== -1) {
+                                        backupData.data.flota_vehiculos_v3[vIdx] = { ...backupData.data.flota_vehiculos_v3[vIdx], ...vItem };
+                                    } else {
+                                        backupData.data.flota_vehiculos_v3.push(vItem);
+                                    }
+                                } else if (catFinal !== "AUXILIARES" && catFinal !== "MARÍTIMO") {
+                                    const mIdx = backupData.data.flota_maquinarias_v3.findIndex((m: any) => (m.numeroMaquinaria || m.id || m.codigo || "").toUpperCase() === codUpper);
+                                    const mItem = {
+                                        id: codUpper,
+                                        numeroMaquinaria: codUpper,
+                                        patenteMaquinaria: patLimpia,
+                                        tipoMaquinaria: nombreFinal,
+                                        marcaMaquinaria: marcaFinal || "Maquinaria",
+                                        modeloMaquinaria: modeloFinal || "Estándar",
+                                        capacidadMaquinaria: capacidadFinal || "Pesado",
+                                        anioMaquinaria: anioFinal,
+                                        combustibleMaquinaria: "Diésel",
+                                        horometro: parseInt(String(fData.horometro || '0').replace(/\D/g, '')) || 0,
+                                        estado: estadoFinal,
+                                        responsable: respFinal
+                                    };
+                                    if (mIdx !== -1) {
+                                        backupData.data.flota_maquinarias_v3[mIdx] = { ...backupData.data.flota_maquinarias_v3[mIdx], ...mItem };
+                                    } else {
+                                        backupData.data.flota_maquinarias_v3.push(mItem);
+                                    }
+                                }
+                            });
+                        }
+                    } catch (_) {}
+                }
+
+                return jsonResponse(backupData);
+            } catch (err: any) {
+                return jsonResponse({ error: "Error obteniendo backup: " + err.message }, 500);
+            }
+        }
+
         // ==========================================
         // SINCRONIZACIÓN NATIVA EN CLOUDFLARE D1
         // ==========================================

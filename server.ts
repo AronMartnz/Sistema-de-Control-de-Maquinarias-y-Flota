@@ -1360,6 +1360,76 @@ app.get("/api/backup/obtener/:id", (req, res) => {
                         }
                     });
                 }
+
+                // Reconciliar con fichas técnicas
+                const fichasActuales = leerFichas();
+                if (fichasActuales && typeof fichasActuales === "object") {
+                    if (!data.data.corssen_fichas_v2 || typeof data.data.corssen_fichas_v2 !== "object") {
+                        data.data.corssen_fichas_v2 = {};
+                    }
+                    if (!Array.isArray(data.data.flota_vehiculos_v3)) data.data.flota_vehiculos_v3 = [];
+                    if (!Array.isArray(data.data.flota_maquinarias_v3)) data.data.flota_maquinarias_v3 = [];
+
+                    Object.entries(fichasActuales).forEach(([cod, fData]: [string, any]) => {
+                        if (!cod || !fData) return;
+                        const codUpper = cod.toUpperCase();
+                        data.data.corssen_fichas_v2[cod] = { ...data.data.corssen_fichas_v2[cod], ...fData };
+                        const nombreFinal = fData.nombre || codUpper;
+                        const marcaFinal = fData.marca || "";
+                        const modeloFinal = fData.modelo || "";
+                        const patLimpia = (fData.patente || (fData.motor && fData.motor.includes("-") ? fData.motor.replace(/patente:\s*/gi, "").trim() : codUpper));
+                        const capacidadFinal = fData.capacidad && fData.capacidad !== "-" ? fData.capacidad : "";
+                        const anioFinal = fData.anio && fData.anio !== "-" ? (parseInt(fData.anio) || 2024) : 2024;
+                        const estadoFinal = fData.estado || "Operativo";
+                        const respFinal = fData.responsable || "Aron Martinez";
+                        const catFinal = (fData.categoria || "").toUpperCase();
+
+                        const esVehiculo = codUpper.startsWith("CAM") || codUpper.startsWith("CMN") || catFinal === "MÓVILES";
+                        if (esVehiculo) {
+                            const vIdx = data.data.flota_vehiculos_v3.findIndex((v: any) => (v.codigo || v.id || v.patente || "").toUpperCase() === codUpper);
+                            const vItem = {
+                                id: codUpper,
+                                codigo: codUpper,
+                                nombre: nombreFinal,
+                                patente: patLimpia,
+                                marca: marcaFinal || "Vehículo",
+                                modelo: modeloFinal || "Pickup",
+                                capacidad: capacidadFinal || "1 TON",
+                                anio: anioFinal,
+                                combustible: "Diésel",
+                                kilometraje: parseInt(String(fData.horometro || '0').replace(/\D/g, '')) || 0,
+                                estado: estadoFinal,
+                                responsable: respFinal
+                            };
+                            if (vIdx !== -1) {
+                                data.data.flota_vehiculos_v3[vIdx] = { ...data.data.flota_vehiculos_v3[vIdx], ...vItem };
+                            } else {
+                                data.data.flota_vehiculos_v3.push(vItem);
+                            }
+                        } else if (catFinal !== "AUXILIARES" && catFinal !== "MARÍTIMO") {
+                            const mIdx = data.data.flota_maquinarias_v3.findIndex((m: any) => (m.numeroMaquinaria || m.id || m.codigo || "").toUpperCase() === codUpper);
+                            const mItem = {
+                                id: codUpper,
+                                numeroMaquinaria: codUpper,
+                                patenteMaquinaria: patLimpia,
+                                tipoMaquinaria: nombreFinal,
+                                marcaMaquinaria: marcaFinal || "Maquinaria",
+                                modeloMaquinaria: modeloFinal || "Estándar",
+                                capacidadMaquinaria: capacidadFinal || "Pesado",
+                                anioMaquinaria: anioFinal,
+                                combustibleMaquinaria: "Diésel",
+                                horometro: parseInt(String(fData.horometro || '0').replace(/\D/g, '')) || 0,
+                                estado: estadoFinal,
+                                responsable: respFinal
+                            };
+                            if (mIdx !== -1) {
+                                data.data.flota_maquinarias_v3[mIdx] = { ...data.data.flota_maquinarias_v3[mIdx], ...mItem };
+                            } else {
+                                data.data.flota_maquinarias_v3.push(mItem);
+                            }
+                        }
+                    });
+                }
             }
             return res.json(data);
         }

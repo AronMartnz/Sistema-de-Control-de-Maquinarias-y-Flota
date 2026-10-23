@@ -649,5 +649,31 @@
         "prox": "Anual",
         "responsable": "Miguel Huerta",
         "observaciones": "Inspección de grilletes y cadenas."
+    },
+    {
+        "cod": "CAM-05",
+        "equipo": "CAMIONETA TOYOTA HILUX 4X4 (TD-KP-72)",
+        "marca": "TOYOTA",
+        "cat": "MÓVILES",
+        "estado": "Operativo",
+        "prioridad": "Media",
+        "horometro": "0 km",
+        "frecuencia": "10000 kilometros",
+        "prox": "10000 km",
+        "responsable": "Aron Martinez",
+        "observaciones": "Camioneta operativa recién registrada."
+    },
+    {
+        "cod": "GHO-04",
+        "equipo": "GRÚA HORQUILLA HANGCHA CPQD30",
+        "marca": "HANGCHA",
+        "cat": "GRÚAS",
+        "estado": "Operativo",
+        "prioridad": "Media",
+        "horometro": "0 hrs",
+        "frecuencia": "250 horas",
+        "prox": "250 hrs",
+        "responsable": "Aron Martinez",
+        "observaciones": "Grúa horquilla operativa recién registrada."
     }
 ]

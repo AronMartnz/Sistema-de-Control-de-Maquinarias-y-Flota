@@ -864,6 +864,7 @@
         ]
     },
     "CMN-01": {
+        "codigo": "CMN-01",
         "nombre": "CAMIÓN FREIGHTLINER 06",
         "marca": "FREIGHTLINER",
         "modelo": "M2 106",
@@ -902,8 +903,7 @@
             "Arreglar motor de arranque",
             "Instalar solenoide 12V de la bomba de inyección"
         ],
-        "codigo": "CMN-01",
-        "actualizado_en": "2026-10-23T16:41:30.460Z"
+        "actualizado_en": "2026-10-23T19:09:34.538Z"
     },
     "CMN-02": {
         "nombre": "CAMIÓN MACK 51",
@@ -982,5 +982,63 @@
         "pendientes": [
             "Arreglar fuga agua del radiador"
         ]
+    },
+    "CAM-05": {
+        "nombre": "CAMIONETA TOYOTA HILUX 4X4 (TD-KP-72)",
+        "marca": "TOYOTA",
+        "modelo": "Hilux 4X4",
+        "capacidad": "1 TON",
+        "anio": 2024,
+        "motor": "Patente: TD-KP-72",
+        "patente": "TD-KP-72",
+        "categoria": "MÓVILES",
+        "responsable": "Aron Martinez",
+        "estado": "Operativo",
+        "aceites": [
+            {
+                "tipo": "Aceite de Motor",
+                "modelo": "Valvoline SynPower",
+                "cantidad": "-",
+                "proveedor": "Luval"
+            }
+        ],
+        "filtros": [],
+        "historial": [],
+        "pendientes": []
+    },
+    "GHO-04": {
+        "nombre": "GRÚA HORQUILLA HANGCHA CPQD30",
+        "marca": "Hangcha",
+        "modelo": "CPQD30",
+        "capacidad": "3 TON",
+        "anio": 2024,
+        "motor": "-",
+        "patente": "HANGCHA-3T",
+        "categoria": "GRÚAS",
+        "responsable": "Aron Martinez",
+        "estado": "Operativo",
+        "aceites": [
+            {
+                "tipo": "Aceite de Motor",
+                "modelo": "Valvoline Premium Blue",
+                "cantidad": "-",
+                "proveedor": "Luval"
+            },
+            {
+                "tipo": "Aceite Hidráulico",
+                "modelo": "Tellus / Rando HD",
+                "cantidad": "-",
+                "proveedor": "Luval"
+            },
+            {
+                "tipo": "Aceite Transmisión",
+                "modelo": "Spirax / HD",
+                "cantidad": "-",
+                "proveedor": "Luval"
+            }
+        ],
+        "filtros": [],
+        "historial": [],
+        "pendientes": []
     }
 }

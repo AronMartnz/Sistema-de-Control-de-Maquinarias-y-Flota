@@ -1941,25 +1941,87 @@ export default {
               if (!backupData.data.corssen_fichas_v2 || typeof backupData.data.corssen_fichas_v2 !== "object") {
                 backupData.data.corssen_fichas_v2 = {};
               }
+              if (!Array.isArray(backupData.data.flota_vehiculos_v3)) backupData.data.flota_vehiculos_v3 = [];
+              if (!Array.isArray(backupData.data.flota_maquinarias_v3)) backupData.data.flota_maquinarias_v3 = [];
+
               fichasD1.forEach(fRow => {
                 if (!fRow.cod) return;
                 let fData = {};
                 if (fRow.especificaciones_json) {
                   try { fData = JSON.parse(fRow.especificaciones_json); } catch(_) {}
                 }
+                const codUpper = fRow.cod.toUpperCase();
+                const nombreFinal = fRow.equipo || fData.nombre || codUpper;
+                const marcaFinal = fRow.marca || fData.marca || "";
+                const modeloFinal = fRow.modelo || fData.modelo || "";
+                const motorFinal = fRow.motor || fData.motor || "";
+                const patLimpia = (fRow.chasis_vin || fData.patente || (motorFinal.includes("-") ? motorFinal.replace(/patente:\s*/gi, "").trim() : codUpper));
+                const capacidadFinal = fRow.capacidad || fData.capacidad || "";
+                const anioFinal = fRow.anio || fData.anio || 2024;
+                const estadoFinal = fData.estado || "Operativo";
+                const respFinal = fData.responsable || "Alexis Santos";
+                const catFinal = (fData.categoria || "").toUpperCase();
+
                 backupData.data.corssen_fichas_v2[fRow.cod] = {
                   ...backupData.data.corssen_fichas_v2[fRow.cod],
                   ...fData,
                   codigo: fRow.cod,
-                  nombre: fRow.equipo || fData.nombre || fRow.cod,
-                  marca: fRow.marca || fData.marca || "",
-                  modelo: fRow.modelo || fData.modelo || "",
-                  motor: fRow.motor || fData.motor || "",
-                  patente: fRow.chasis_vin || fData.patente || "",
-                  capacidad: fRow.capacidad || fData.capacidad || "",
-                  anio: fRow.anio || fData.anio || "",
+                  nombre: nombreFinal,
+                  marca: marcaFinal,
+                  modelo: modeloFinal,
+                  motor: motorFinal,
+                  patente: patLimpia,
+                  capacidad: capacidadFinal,
+                  anio: anioFinal,
+                  estado: estadoFinal,
+                  responsable: respFinal,
                   filtros: fRow.filtros_json ? (typeof fRow.filtros_json === "string" ? JSON.parse(fRow.filtros_json) : fRow.filtros_json) : (fData.filtros || [])
                 };
+
+                const esVehiculo = codUpper.startsWith("CAM") || codUpper.startsWith("CMN") || catFinal === "MÓVILES";
+                if (esVehiculo) {
+                  const vIdx = backupData.data.flota_vehiculos_v3.findIndex(v => (v.codigo || v.id || v.patente || "").toUpperCase() === codUpper || (v.patente && v.patente.toUpperCase() === patLimpia.toUpperCase()));
+                  const vItem = {
+                    id: codUpper,
+                    codigo: codUpper,
+                    nombre: nombreFinal,
+                    patente: patLimpia,
+                    marca: marcaFinal || "Vehículo",
+                    modelo: modeloFinal || "Pickup",
+                    capacidad: capacidadFinal || "1 TON",
+                    anio: anioFinal,
+                    combustible: "Diésel",
+                    kilometraje: parseInt(String(fData.horometro || '0').replace(/\D/g, '')) || 0,
+                    estado: estadoFinal,
+                    responsable: respFinal
+                  };
+                  if (vIdx !== -1) {
+                    backupData.data.flota_vehiculos_v3[vIdx] = { ...backupData.data.flota_vehiculos_v3[vIdx], ...vItem };
+                  } else {
+                    backupData.data.flota_vehiculos_v3.push(vItem);
+                  }
+                } else if (catFinal !== "AUXILIARES" && catFinal !== "MARÍTIMO") {
+                  const mIdx = backupData.data.flota_maquinarias_v3.findIndex(m => (m.numeroMaquinaria || m.id || m.codigo || "").toUpperCase() === codUpper);
+                  const mItem = {
+                    id: codUpper,
+                    numeroMaquinaria: codUpper,
+                    patenteMaquinaria: patLimpia,
+                    tipoMaquinaria: nombreFinal,
+                    marcaMaquinaria: marcaFinal || "Maquinaria",
+                    modeloMaquinaria: modeloFinal || "Estándar",
+                    capacidadMaquinaria: capacidadFinal || "Pesado",
+                    anioMaquinaria: anioFinal,
+                    combustibleMaquinaria: "Diésel",
+                    horometro: parseInt(String(fData.horometro || '0').replace(/\D/g, '')) || 0,
+                    estado: estadoFinal,
+                    responsable: respFinal
+                  };
+                  if (mIdx !== -1) {
+                    backupData.data.flota_maquinarias_v3[mIdx] = { ...backupData.data.flota_maquinarias_v3[mIdx], ...mItem };
+                  } else {
+                    backupData.data.flota_maquinarias_v3.push(mItem);
+                  }
+                }
               });
             }
           } catch (eFichas) {

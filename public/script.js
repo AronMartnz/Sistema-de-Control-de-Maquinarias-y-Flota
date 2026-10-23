@@ -15,6 +15,7 @@ const DATOS_MAESTROS_CORSSEN = [
     { cod: "GHO-01", equipo: "GRÚA HORQUILLA 4 TON", marca: "LIUGONG", cat: "GRÚAS", estado: "Operativo", prioridad: "Alta", horometro: "1240 hrs", frecuencia: "250 horas", prox: "1490 hrs", responsable: "Alexis Santos", observaciones: "Arreglar piola de parada de motor. Tapar cables eléctricos cabina." },
     { cod: "GHO-02", equipo: "GRÚA HORQUILLA 7 TON", marca: "KOMATSU", cat: "GRÚAS", estado: "No Operativo", prioridad: "Alta", horometro: "3890 hrs", frecuencia: "250 horas", prox: "Terminar armado", responsable: "Alexis Santos", observaciones: "Terminar armado de grúa. Instalar piola de freno de mano y espejo." },
     { cod: "GHO-03", equipo: "GRÚA HORQUILLA 3.5 TON", marca: "LIUGONG", cat: "GRÚAS", estado: "Operativo", prioridad: "Alta", horometro: "420 hrs", frecuencia: "250 horas", prox: "670 hrs", responsable: "Alexis Santos", observaciones: "Colocar espejo retrovisor." },
+    { cod: "GHO-04", equipo: "GRÚA HORQUILLA HANGCHA CPQD30", marca: "HANGCHA", cat: "GRÚAS", estado: "Operativo", prioridad: "Media", horometro: "0 hrs", frecuencia: "250 horas", prox: "250 hrs", responsable: "Aron Martinez", observaciones: "Grúa horquilla operativa." },
     { cod: "GTE-01", equipo: "GRÚA TELESCÓPICA 60 TON", marca: "GROVE", cat: "GRÚAS", estado: "Operativo", prioridad: "Alta", horometro: "5120 hrs", frecuencia: "250 horas", prox: "5370 hrs", responsable: "Alexis Santos", observaciones: "Arreglar alarma de retroceso. Revisar flexibles de pedal en cabina." },
     { cod: "GTE-02", equipo: "GRÚA TELESCÓPICA 35 TON", marca: "GROVE", cat: "GRÚAS", estado: "No Operativo", prioridad: "Media", horometro: "6400 hrs", frecuencia: "250 horas", prox: "En reparación", responsable: "Alexis Santos", observaciones: "Arreglar cables cortados (no bajan patas de levante). Freno de parqueo bloqueado." },
     { cod: "GTE-03", equipo: "GRÚA TELESCÓPICA 15 TON", marca: "GROVE", cat: "GRÚAS", estado: "No Operativo", prioridad: "Media", horometro: "7800 hrs", frecuencia: "250 horas", prox: "En taller", responsable: "Alexis Santos", observaciones: "Instalar la transmisión." },
@@ -24,6 +25,7 @@ const DATOS_MAESTROS_CORSSEN = [
     { cod: "CAM-02", equipo: "CAMIONETA VOLKSWAGEN (JKKV-43)", marca: "VOLKSWAGEN", cat: "MÓVILES", estado: "Operativo (con falla)", prioridad: "Media", horometro: "98.200 km", frecuencia: "10000 kilometros", prox: "100.000 km", responsable: "Alexis Santos", observaciones: "Instalar nuevo parachoques, desabollar y pintar capó." },
     { cod: "CAM-03", equipo: "CAMIONETA NISSAN NAVARA (GCLD-31)", marca: "NISSAN", cat: "MÓVILES", estado: "No Operativo", prioridad: "Baja", horometro: "210.000 km", frecuencia: "10000 kilometros", prox: "Fuera de servicio", responsable: "Alexis Santos", observaciones: "Revisión general en taller." },
     { cod: "CAM-04", equipo: "CAMIONETA MAXUS (VPFX-76)", marca: "MAXUS", cat: "MÓVILES", estado: "Operativo", prioridad: "Baja", horometro: "18.400 km", frecuencia: "10000 kilometros", prox: "20.000 km", responsable: "Daniel Mejias", observaciones: "Operativa sin observaciones pendientes." },
+    { cod: "CAM-05", equipo: "CAMIONETA TOYOTA HILUX 4X4 (TD-KP-72)", marca: "TOYOTA", cat: "MÓVILES", estado: "Operativo", prioridad: "Media", horometro: "0 km", frecuencia: "10000 kilometros", prox: "10000 km", responsable: "Aron Martinez", observaciones: "Camioneta operativa recién registrada." },
     { cod: "CMN-01", equipo: "CAMIÓN FREIGHTLINER 06", marca: "FREIGHTLINER", cat: "MÓVILES", estado: "No Operativo", prioridad: "Media", horometro: "415.000 km", frecuencia: "10000 kilometros", prox: "En taller", responsable: "Alexis Santos", observaciones: "Arreglar motor de arranque. Instalar solenoide 12V de la bomba." },
     { cod: "CMN-02", equipo: "CAMIÓN MACK 51", marca: "MACK", cat: "MÓVILES", estado: "No Operativo", prioridad: "Baja", horometro: "520.000 km", frecuencia: "10000 kilometros", prox: "Revisión", responsable: "Alexis Santos", observaciones: "Mantención mayor pendiente." },
     { cod: "CMN-03", equipo: "CAMIÓN VOLKSWAGEN 50", marca: "VOLKSWAGEN", cat: "MÓVILES", estado: "Operativo (con falla)", prioridad: "Media", horometro: "60.626,6 km", frecuencia: "10000 kilometros", prox: "70.000 km", responsable: "Alexis Santos", observaciones: "Arreglar fuga agua radiador." },
@@ -826,6 +828,7 @@ const DATOS_VEHICULOS_DEFAULT = [
     { id: "CAM-02", codigo: "CAM-02", nombre: "Camioneta Volkswagen Amarok", patente: "JKKV-43", marca: "Volkswagen", modelo: "Amarok 2.0 TDI", capacidad: "1 TON", anio: 2017, combustible: "Diésel", kilometraje: 98200, estado: "Operativo (con falla)", responsable: "Alexis Santos", fechaRegistro: "2026-03-01" },
     { id: "CAM-03", codigo: "CAM-03", nombre: "Camioneta Nissan Navara", patente: "GCLD-31", marca: "Nissan", modelo: "Navara LE", capacidad: "1 TON", anio: 2015, combustible: "Diésel", kilometraje: 210000, estado: "No Operativo", responsable: "Alexis Santos", fechaRegistro: "2026-03-01" },
     { id: "CAM-04", codigo: "CAM-04", nombre: "Camioneta Maxus T60", patente: "VPFX-76", marca: "Maxus", modelo: "T60 4x4", capacidad: "1 TON", anio: 2026, combustible: "Diésel", kilometraje: 18400, estado: "Operativo", responsable: "Daniel Mejias", fechaRegistro: "2026-03-01" },
+    { id: "CAM-05", codigo: "CAM-05", nombre: "Camioneta TOYOTA Hilux 4X4", patente: "TD-KP-72", marca: "Toyota", modelo: "Hilux 4X4", capacidad: "1 TON", anio: 2024, combustible: "Diésel", kilometraje: 0, estado: "Operativo", responsable: "Aron Martinez", fechaRegistro: "2026-03-01" },
     { id: "CMN-01", codigo: "CMN-01", nombre: "Camión Freightliner M2", patente: "FL-06", marca: "Freightliner", modelo: "M2 106 / C-06", capacidad: "15 TON", anio: 2012, combustible: "Diésel", kilometraje: 415000, estado: "No Operativo", responsable: "Alexis Santos", fechaRegistro: "2026-03-01" },
     { id: "CMN-02", codigo: "CMN-02", nombre: "Camión Mack 51", patente: "MK-51", marca: "Mack", modelo: "Vision / Graniter", capacidad: "20 TON", anio: 2008, combustible: "Diésel", kilometraje: 520000, estado: "No Operativo", responsable: "Alexis Santos", fechaRegistro: "2026-03-01" },
     { id: "CMN-03", codigo: "CMN-03", nombre: "Camión Volkswagen 50", patente: "VW-50", marca: "Volkswagen", modelo: "Worker 17.220 / C-50", capacidad: "17 TON", anio: 2016, combustible: "Diésel", kilometraje: 60626, estado: "Operativo (con falla)", responsable: "Alexis Santos", fechaRegistro: "2026-03-01" }
@@ -837,6 +840,7 @@ const DATOS_MAQUINARIAS_DEFAULT = [
     { id: "GHO-01", numeroMaquinaria: "GHO-01", patenteMaquinaria: "LIUGONG-4T", tipoMaquinaria: "Grúa Horquilla 4 Ton", marcaMaquinaria: "Liugong", modeloMaquinaria: "CPCD40A", capacidadMaquinaria: "4 TON", anioMaquinaria: 2022, combustibleMaquinaria: "Diésel", horometro: 1240, estado: "Operativo", responsable: "Alexis Santos", fechaRegistro: "2026-03-01" },
     { id: "GHO-02", numeroMaquinaria: "GHO-02", patenteMaquinaria: "KOMATSU-7T", tipoMaquinaria: "Grúa Horquilla 7 Ton", marcaMaquinaria: "Komatsu", modeloMaquinaria: "FD70-7", capacidadMaquinaria: "7 TON", anioMaquinaria: 2015, combustibleMaquinaria: "Diésel", horometro: 3890, estado: "No Operativo", responsable: "Alexis Santos", fechaRegistro: "2026-03-01" },
     { id: "GHO-03", numeroMaquinaria: "GHO-03", patenteMaquinaria: "LIUGONG-3.5T", tipoMaquinaria: "Grúa Horquilla 3.5 Ton", marcaMaquinaria: "Liugong", modeloMaquinaria: "CPCD35A", capacidadMaquinaria: "3.5 TON", anioMaquinaria: 2023, combustibleMaquinaria: "Diésel", horometro: 420, estado: "Operativo", responsable: "Alexis Santos", fechaRegistro: "2026-03-01" },
+    { id: "GHO-04", numeroMaquinaria: "GHO-04", patenteMaquinaria: "HANGCHA-3T", tipoMaquinaria: "Grúa Horquilla Hangcha CPQD30", marcaMaquinaria: "Hangcha", modeloMaquinaria: "CPQD30", capacidadMaquinaria: "3 TON", anioMaquinaria: 2024, combustibleMaquinaria: "Gasolina / GLP", horometro: 0, estado: "Operativo", responsable: "Aron Martinez", fechaRegistro: "2026-03-01" },
     { id: "GTE-01", numeroMaquinaria: "GTE-01", patenteMaquinaria: "GROVE-60T", tipoMaquinaria: "Grúa Telescópica 60 Ton", marcaMaquinaria: "Grove", modeloMaquinaria: "RT 700E", capacidadMaquinaria: "60 TON", anioMaquinaria: 2005, combustibleMaquinaria: "Diésel", horometro: 5120, estado: "Operativo", responsable: "Alexis Santos", fechaRegistro: "2026-03-01" },
     { id: "GTE-02", numeroMaquinaria: "GTE-02", patenteMaquinaria: "GROVE-35T", tipoMaquinaria: "Grúa Telescópica 35 Ton", marcaMaquinaria: "Grove", modeloMaquinaria: "RT 535", capacidadMaquinaria: "35 TON", anioMaquinaria: 2008, combustibleMaquinaria: "Diésel", horometro: 6400, estado: "No Operativo", responsable: "Alexis Santos", fechaRegistro: "2026-03-01" },
     { id: "GTE-03", numeroMaquinaria: "GTE-03", patenteMaquinaria: "GROVE-15T", tipoMaquinaria: "Grúa Telescópica 15 Ton", marcaMaquinaria: "Grove", modeloMaquinaria: "RT 415", capacidadMaquinaria: "15 TON", anioMaquinaria: 2002, combustibleMaquinaria: "Diésel", horometro: 7800, estado: "No Operativo", responsable: "Alexis Santos", fechaRegistro: "2026-03-01" }
@@ -1050,6 +1054,11 @@ function cargarTodo() {
                     });
                 }
             });
+        }
+
+        // Sincronizar automáticamente cualquier ficha técnica existente con Flota Registrada
+        if (typeof sincronizarFichasConFlotaRegistrada === "function") {
+            sincronizarFichasConFlotaRegistrada();
         }
 
         guardarTodo();
@@ -3861,7 +3870,126 @@ function irACargarCombustible(patente) {
     }
 }
 
+// =========================================================
+// SINCRONIZADOR INTEGRAL FICHAS TÉCNICAS <-> FLOTA REGISTRADA
+// =========================================================
+function sincronizarFichasConFlotaRegistrada() {
+    if (typeof corssenFichas !== "object" || !corssenFichas) return;
+
+    let huboCambios = false;
+    Object.entries(corssenFichas).forEach(([cod, f]) => {
+        if (!cod || !f) return;
+        const codUpper = cod.toUpperCase();
+        const categoria = (f.categoria || "").toUpperCase();
+        const esVehiculo = codUpper.startsWith("CAM") || codUpper.startsWith("CMN") || categoria === "MÓVILES";
+        const nombreFinal = f.nombre || `${f.marca || ''} ${f.modelo || ''}`.trim() || codUpper;
+        const marcaFinal = f.marca || (esVehiculo ? "Vehículo" : "Maquinaria");
+        const modeloFinal = f.modelo || "Estándar";
+        const capacidadFinal = f.capacidad && f.capacidad !== "-" ? f.capacidad : (esVehiculo ? "1 TON" : "Pesado");
+        const anioFinal = f.anio && f.anio !== "-" ? (parseInt(f.anio) || 2024) : 2024;
+        const estadoFinal = f.estado || "Operativo";
+        const respFinal = f.responsable || "Alexis Santos";
+
+        if (esVehiculo) {
+            const rawPat = f.patente || (f.motor && f.motor.includes("-") ? f.motor : "");
+            const patLimpia = rawPat.replace(/patente:\s*/gi, "").trim() || codUpper;
+            const vIdx = vehiculos.findIndex(v => 
+                (v.codigo || v.id || "").toUpperCase() === codUpper || 
+                ((v.patente || "").toUpperCase() === patLimpia.toUpperCase() && patLimpia !== codUpper)
+            );
+
+            const numKm = parseInt(String(f.horometro || '0').replace(/\D/g, '')) || 0;
+            const vehObj = {
+                id: codUpper,
+                codigo: codUpper,
+                nombre: nombreFinal,
+                patente: patLimpia,
+                marca: marcaFinal,
+                modelo: modeloFinal,
+                capacidad: capacidadFinal,
+                anio: anioFinal,
+                combustible: f.combustible || "Diésel",
+                kilometraje: numKm,
+                estado: estadoFinal,
+                responsable: respFinal,
+                fechaRegistro: f.fechaRegistro || new Date().toISOString().split("T")[0]
+            };
+
+            if (vIdx !== -1) {
+                if (!numKm && vehiculos[vIdx].kilometraje) {
+                    vehObj.kilometraje = vehiculos[vIdx].kilometraje;
+                }
+                vehiculos[vIdx] = { ...vehiculos[vIdx], ...vehObj };
+            } else {
+                vehiculos.push(vehObj);
+                huboCambios = true;
+            }
+        } else if (categoria !== "AUXILIARES" && categoria !== "MARÍTIMO") {
+            // Maquinaria Pesada o Grúa (GHO, GPC, GTE, etc.)
+            const mIdx = maquinarias.findIndex(m => 
+                (m.numeroMaquinaria || m.id || m.codigo || "").toUpperCase() === codUpper
+            );
+
+            const numHrs = parseInt(String(f.horometro || '0').replace(/\D/g, '')) || 0;
+            const maqObj = {
+                id: codUpper,
+                numeroMaquinaria: codUpper,
+                patenteMaquinaria: f.patente || codUpper,
+                tipoMaquinaria: nombreFinal,
+                marcaMaquinaria: marcaFinal,
+                modeloMaquinaria: modeloFinal,
+                capacidadMaquinaria: capacidadFinal,
+                anioMaquinaria: anioFinal,
+                combustibleMaquinaria: f.combustible || "Diésel",
+                horometro: numHrs,
+                estado: estadoFinal,
+                responsable: respFinal,
+                fechaRegistro: f.fechaRegistro || new Date().toISOString().split("T")[0]
+            };
+
+            if (mIdx !== -1) {
+                if (!numHrs && maquinarias[mIdx].horometro) {
+                    maqObj.horometro = maquinarias[mIdx].horometro;
+                }
+                maquinarias[mIdx] = { ...maquinarias[mIdx], ...maqObj };
+            } else {
+                maquinarias.push(maqObj);
+                huboCambios = true;
+            }
+        }
+
+        // Sincronizar en Programa Maestro si falta
+        const pIdx = corssenPrograma.findIndex(p => (p.cod || "").toUpperCase() === codUpper);
+        if (pIdx === -1) {
+            corssenPrograma.push({
+                cod: codUpper,
+                equipo: nombreFinal,
+                marca: marcaFinal.toUpperCase(),
+                cat: categoria || (esVehiculo ? "MÓVILES" : "GRÚAS"),
+                estado: estadoFinal,
+                prioridad: "Media",
+                horometro: f.horometro || "0 hrs",
+                frecuencia: (f.horometro || "").includes("km") ? "10000 kilometros" : "250 horas",
+                prox: f.prox || "250 hrs",
+                responsable: respFinal,
+                observaciones: `Sincronizado automáticamente desde Ficha Técnica ${codUpper}`
+            });
+            huboCambios = true;
+        }
+    });
+
+    if (huboCambios) {
+        try {
+            localStorage.setItem("flota_vehiculos_v3", JSON.stringify(vehiculos));
+            localStorage.setItem("flota_maquinarias_v3", JSON.stringify(maquinarias));
+            localStorage.setItem("corssen_programa_v2", JSON.stringify(corssenPrograma));
+        } catch (_) {}
+    }
+}
+window.sincronizarFichasConFlotaRegistrada = sincronizarFichasConFlotaRegistrada;
+
 function renderizarFlotaRegistrada() {
+    sincronizarFichasConFlotaRegistrada();
     const query = (document.getElementById("inputBuscarFlota")?.value || "").toLowerCase().trim();
 
     // 1. VEHÍCULOS / CAMIONETAS Y CAMIONES
@@ -9565,6 +9693,11 @@ async function sincronizarConUltimoRespaldoNube(forzarRecarga = false) {
                 if (estadoTanqueCombustible.actual === undefined || estadoTanqueCombustible.actual === 240 || estadoTanqueCombustible.actual < capTanqueCloud) {
                     estadoTanqueCombustible.actual = capTanqueCloud;
                 }
+            }
+
+            // Sincronizar fichas técnicas recibidas con la flota registrada y programa maestro
+            if (typeof sincronizarFichasConFlotaRegistrada === "function") {
+                sincronizarFichasConFlotaRegistrada();
             }
 
             // Guardar localmente reflejando el timestamp del servidor
