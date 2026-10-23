@@ -241,6 +241,72 @@ async function ejecutarPruebas() {
             'Disparador y ejecución de respaldo automático Cron (/api/backup/cron-ejecutar)', 'API / Backups');
 
         // -------------------------------------------------------------
+        // TESTS DE FICHAS TÉCNICAS (CAMIONES Y MAQUINARIAS)
+        // -------------------------------------------------------------
+        const resFichasGet = await request('GET', '/api/fichas');
+        assert(resFichasGet.status === 200 && typeof resFichasGet.body === 'object' && Object.keys(resFichasGet.body).length > 0,
+            'Consulta de catálogo completo de fichas técnicas (/api/fichas)', 'API / Fichas Técnicas');
+
+        const resFichaCamionGet = await request('GET', '/api/fichas/CMN-01');
+        assert(resFichaCamionGet.status === 200 && resFichaCamionGet.body?.codigo === 'CMN-01',
+            'Consulta de ficha técnica de camión CMN-01 (/api/fichas/CMN-01)', 'API / Fichas Técnicas');
+
+        // Operador intenta editar ficha técnica -> bloqueado con 403
+        const resFichaOpPut = await request('PUT', '/api/fichas/CMN-01', { 'x-usuario': 'operador' }, {
+            nombre: 'CAMIÓN FREIGHTLINER 06 MODIFICADO',
+            marca: 'FREIGHTLINER'
+        });
+        assert(resFichaOpPut.status === 403,
+            'Operador no-admin no tiene permisos para editar ficha técnica de camión (403)', 'API / Seguridad Fichas');
+
+        // Administrador edita ficha técnica de camión CMN-01 con éxito
+        const datosCamionModificado = {
+            ...resFichaCamionGet.body,
+            nombre: 'CAMIÓN FREIGHTLINER 06 ACTUALIZADO',
+            responsable: 'Alexis Santos',
+            observaciones: 'Mantención de frenos y revisión de fluidos efectuada',
+            pendientes: ['Ajuste de inyectores', 'Revisión neumática']
+        };
+        const resFichaAdminPut = await request('PUT', '/api/fichas/CMN-01', { 'x-usuario': 'admin' }, datosCamionModificado);
+        assert(resFichaAdminPut.status === 200 && resFichaAdminPut.body?.ficha?.nombre === 'CAMIÓN FREIGHTLINER 06 ACTUALIZADO',
+            'Administrador edita y guarda ficha técnica de camión con éxito en servidor (/api/fichas/CMN-01)', 'API / Fichas Técnicas');
+
+        // Verificar que la ficha editada se conserva y el último backup la incluye
+        const resFichaVerificada = await request('GET', '/api/fichas/CMN-01');
+        assert(resFichaVerificada.status === 200 && resFichaVerificada.body?.nombre === 'CAMIÓN FREIGHTLINER 06 ACTUALIZADO',
+            'Ficha técnica editada de camión persiste correctamente en el servidor', 'API / Fichas Técnicas');
+
+        // Registrar nueva maquinaria con persistencia completa en programa y ficha
+        const nuevaMaqTest = {
+            cod: 'GHO-TEST-99',
+            equipo: 'GRÚA HORQUILLA TEST 99',
+            marca: 'HYSTER',
+            cat: 'HORQUILLAS',
+            estado: 'Operativo',
+            horometro: '150 hrs',
+            prox: '400 hrs'
+        };
+        const resProgMaqPut = await request('PUT', '/api/programa/GHO-TEST-99', { 'x-usuario': 'admin' }, nuevaMaqTest);
+        const resFichaMaqPut = await request('PUT', '/api/fichas/GHO-TEST-99', { 'x-usuario': 'admin' }, {
+            codigo: 'GHO-TEST-99',
+            nombre: 'GRÚA HORQUILLA TEST 99',
+            marca: 'HYSTER',
+            modelo: 'H50XT',
+            estado: 'Operativo'
+        });
+        assert(resProgMaqPut.status === 200 && resFichaMaqPut.status === 200,
+            'Registro y persistencia de nueva maquinaria en Programa Maestro y Fichas Técnicas', 'API / Maquinarias');
+
+        // Limpieza de datos de prueba
+        await request('DELETE', '/api/programa/GHO-TEST-99', { 'x-usuario': 'admin' });
+        await request('DELETE', '/api/fichas/GHO-TEST-99', { 'x-usuario': 'admin' });
+        // Restaurar nombre original de CMN-01
+        await request('PUT', '/api/fichas/CMN-01', { 'x-usuario': 'admin' }, {
+            ...resFichaCamionGet.body,
+            nombre: 'CAMIÓN FREIGHTLINER 06'
+        });
+
+        // -------------------------------------------------------------
         // TESTS DE VENTANA DE MANTENIMIENTO, CALENDARIO Y AVISOS
         // -------------------------------------------------------------
         const resMantGetAdmin = await request('GET', '/api/mantenimiento/config', { 'x-usuario': 'admin' });

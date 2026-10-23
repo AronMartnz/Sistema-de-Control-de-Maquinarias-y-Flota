@@ -365,7 +365,7 @@
         "anio": 2007,
         "motor": "Komatsu 6D102E",
         "responsable": "Alexis Santos",
-        "estado": "No Operativo",
+        "estado": "Operativo",
         "aceites": [
             {
                 "tipo": "Aceite de Motor",
@@ -901,7 +901,9 @@
         "pendientes": [
             "Arreglar motor de arranque",
             "Instalar solenoide 12V de la bomba de inyección"
-        ]
+        ],
+        "codigo": "CMN-01",
+        "actualizado_en": "2026-10-23T16:41:30.460Z"
     },
     "CMN-02": {
         "nombre": "CAMIÓN MACK 51",

@@ -1107,7 +1107,7 @@ app.get("/api/fichas/:cod", (req, res) => {
     const cod = decodeURIComponent(req.params.cod).trim().toUpperCase();
     const fichas = leerFichas();
     if (fichas[cod]) {
-        res.json(fichas[cod]);
+        res.json({ codigo: cod, ...fichas[cod] });
     } else {
         res.status(404).json({ error: `Ficha técnica no encontrada para ${cod}` });
     }
@@ -1120,6 +1120,31 @@ app.put("/api/fichas/:cod", verificarAdmin, (req, res) => {
         let fichas = leerFichas();
         fichas[cod] = { ...datosFicha, codigo: cod, actualizado_en: new Date().toISOString() };
         guardarFichas(fichas);
+
+        // Sincronizar de inmediato el último backup en disco para que /api/backup/obtener/ultimo tenga la ficha actualizada
+        try {
+            const indexPath = path.join(backupsDir, "historial_backups.json");
+            if (fs.existsSync(indexPath)) {
+                const historial = JSON.parse(fs.readFileSync(indexPath, "utf8"));
+                if (Array.isArray(historial) && historial.length > 0 && historial[0].id) {
+                    const bPath = path.join(backupsDir, `${historial[0].id}.json`);
+                    if (fs.existsSync(bPath)) {
+                        const bData = JSON.parse(fs.readFileSync(bPath, "utf8"));
+                        if (bData && bData.data) {
+                            if (!bData.data.corssen_fichas_v2 || typeof bData.data.corssen_fichas_v2 !== "object") {
+                                bData.data.corssen_fichas_v2 = {};
+                            }
+                            bData.data.corssen_fichas_v2[cod] = fichas[cod];
+                            bData.timestamp = Date.now();
+                            fs.writeFileSync(bPath, JSON.stringify(bData, null, 2), "utf8");
+                        }
+                    }
+                }
+            }
+        } catch (eSyncBkp) {
+            console.warn("Advertencia sincronizando último backup con ficha:", eSyncBkp);
+        }
+
         res.json({ mensaje: `Ficha técnica de ${cod} guardada con éxito en el servidor`, ficha: fichas[cod] });
     } catch (error) {
         console.error("Error guardando ficha técnica:", error);
@@ -1134,6 +1159,28 @@ app.delete("/api/fichas/:cod", verificarAdmin, (req, res) => {
         if (fichas[cod]) {
             delete fichas[cod];
             guardarFichas(fichas);
+
+            // Sincronizar de inmediato el último backup en disco
+            try {
+                const indexPath = path.join(backupsDir, "historial_backups.json");
+                if (fs.existsSync(indexPath)) {
+                    const historial = JSON.parse(fs.readFileSync(indexPath, "utf8"));
+                    if (Array.isArray(historial) && historial.length > 0 && historial[0].id) {
+                        const bPath = path.join(backupsDir, `${historial[0].id}.json`);
+                        if (fs.existsSync(bPath)) {
+                            const bData = JSON.parse(fs.readFileSync(bPath, "utf8"));
+                            if (bData?.data?.corssen_fichas_v2?.[cod]) {
+                                delete bData.data.corssen_fichas_v2[cod];
+                                bData.timestamp = Date.now();
+                                fs.writeFileSync(bPath, JSON.stringify(bData, null, 2), "utf8");
+                            }
+                        }
+                    }
+                }
+            } catch (eSyncBkp) {
+                console.warn("Advertencia sincronizando eliminación en último backup:", eSyncBkp);
+            }
+
             res.json({ mensaje: `Ficha técnica de ${cod} eliminada del servidor` });
         } else {
             res.status(404).json({ error: "Ficha no encontrada" });

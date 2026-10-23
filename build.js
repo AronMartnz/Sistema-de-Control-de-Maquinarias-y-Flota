@@ -26,6 +26,8 @@ const rootFiles = [
   'logo.svg',
   'logo_isotipo.svg',
   'usuarios.json',
+  'fichas.json',
+  'programa.json',
   'config_servicio.json',
   'config_mantenimiento.json'
 ];

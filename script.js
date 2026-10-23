@@ -3341,6 +3341,11 @@ function guardarEdicionFicha(e) {
                 body: JSON.stringify(progObj)
             }).catch(e => console.warn("Sync prog PUT:", e));
         }
+
+        // Respaldo inmediato garantizado en la nube Cloudflare KV y D1
+        if (typeof window !== "undefined" && typeof window.ejecutarAutoBackupSistema === "function") {
+            window.ejecutarAutoBackupSistema(`Edición de ficha técnica ${nuevoCodigo}`, "AUTOMATICO", true);
+        }
     } catch (eServidor) {
         console.warn("Error enviando cambios de ficha al servidor:", eServidor);
     }
@@ -4841,6 +4846,40 @@ function registrarVehiculo(e) {
 
     // 4. Guardar y sincronizar todas las vistas
     guardarTodo();
+
+    // Sincronización inmediata remota con Cloudflare y servidor
+    try {
+        const usuarioActual = sessionStorage.getItem("usuarioLogueado") || "admin";
+        const progObj = corssenPrograma.find(p => (p.cod || "").toUpperCase() === nuevoId.toUpperCase());
+        if (progObj) {
+            fetch(`/api/programa/${encodeURIComponent(nuevoId)}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-usuario": usuarioActual
+                },
+                body: JSON.stringify(progObj)
+            }).catch(e => console.warn("Sync prog PUT vehículo:", e));
+        }
+
+        if (corssenFichas[nuevoId]) {
+            fetch(`/api/fichas/${encodeURIComponent(nuevoId)}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-usuario": usuarioActual
+                },
+                body: JSON.stringify(corssenFichas[nuevoId])
+            }).catch(e => console.warn("Sync ficha PUT vehículo:", e));
+        }
+
+        if (typeof window !== "undefined" && typeof window.ejecutarAutoBackupSistema === "function") {
+            window.ejecutarAutoBackupSistema(`Alta y sincronización de vehículo ${nuevoId}`, "AUTOMATICO", true);
+        }
+    } catch (eSyncVeh) {
+        console.warn("Error en sincronización remota de vehículo:", eSyncVeh);
+    }
+
     poblarSelectorEquiposMantencion();
     poblarSelectorEquiposCompatiblesStock();
     renderizarSelectorFichas();
@@ -5031,6 +5070,40 @@ function registrarMaquinaria(e) {
 
     // 4. Sincronizar persistencia y re-renderizar todas las vistas
     guardarTodo();
+
+    // Sincronización inmediata remota con Cloudflare y servidor Express
+    try {
+        const usuarioActual = sessionStorage.getItem("usuarioLogueado") || "admin";
+        const progObj = corssenPrograma.find(p => (p.cod || "").toUpperCase() === numeroMaquinaria.toUpperCase());
+        if (progObj) {
+            fetch(`/api/programa/${encodeURIComponent(numeroMaquinaria)}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-usuario": usuarioActual
+                },
+                body: JSON.stringify(progObj)
+            }).catch(e => console.warn("Sync prog PUT maquinaria:", e));
+        }
+
+        if (corssenFichas[numeroMaquinaria]) {
+            fetch(`/api/fichas/${encodeURIComponent(numeroMaquinaria)}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-usuario": usuarioActual
+                },
+                body: JSON.stringify(corssenFichas[numeroMaquinaria])
+            }).catch(e => console.warn("Sync ficha PUT maquinaria:", e));
+        }
+
+        if (typeof window !== "undefined" && typeof window.ejecutarAutoBackupSistema === "function") {
+            window.ejecutarAutoBackupSistema(`Alta y sincronización de maquinaria ${numeroMaquinaria}`, "AUTOMATICO", true);
+        }
+    } catch (eSyncMaq) {
+        console.warn("Error en sincronización remota de maquinaria:", eSyncMaq);
+    }
+
     poblarSelectorEquiposMantencion();
     poblarSelectorEquiposCompatiblesStock();
     renderizarSelectorFichas();
@@ -5265,6 +5338,40 @@ function registrarAuxiliarHerramientaMaritimo(e) {
 
     // 4. PERSISTIR DATOS Y ACTUALIZAR TODAS LAS VISTAS
     guardarTodo();
+
+    // Sincronización inmediata remota con Cloudflare y servidor Express
+    try {
+        const usuarioActual = sessionStorage.getItem("usuarioLogueado") || "admin";
+        const progObj = corssenPrograma.find(p => (p.cod || "").toUpperCase() === codigo.toUpperCase());
+        if (progObj) {
+            fetch(`/api/programa/${encodeURIComponent(codigo)}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-usuario": usuarioActual
+                },
+                body: JSON.stringify(progObj)
+            }).catch(e => console.warn("Sync prog PUT auxiliar:", e));
+        }
+
+        if (corssenFichas[codigo]) {
+            fetch(`/api/fichas/${encodeURIComponent(codigo)}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-usuario": usuarioActual
+                },
+                body: JSON.stringify(corssenFichas[codigo])
+            }).catch(e => console.warn("Sync ficha PUT auxiliar:", e));
+        }
+
+        if (typeof window !== "undefined" && typeof window.ejecutarAutoBackupSistema === "function") {
+            window.ejecutarAutoBackupSistema(`Alta y sincronización de equipo ${codigo}`, "AUTOMATICO", true);
+        }
+    } catch (eSyncAux) {
+        console.warn("Error en sincronización remota de equipo auxiliar:", eSyncAux);
+    }
+
     poblarSelectorEquiposMantencion();
     poblarSelectorEquiposCompatiblesStock();
     renderizarSelectorFichas();

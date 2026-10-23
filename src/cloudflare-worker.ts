@@ -544,41 +544,127 @@ export default {
         // ==========================================
         // SINCRONIZACIÓN NATIVA EN CLOUDFLARE D1
         // ==========================================
-        if (path === "/api/sync/fichas") {
-            if (request.method === "GET") {
-                if (env.DB) {
-                    const { results } = await env.DB.prepare("SELECT * FROM corssen_fichas").all();
-                    return jsonResponse({ fichas: results || [] });
+        // ==========================================
+        // SINCRONIZACIÓN NATIVA EN CLOUDFLARE D1 Y FICHAS TÉCNICAS
+        // ==========================================
+        if (path.startsWith("/api/fichas") || path === "/api/sync/fichas") {
+            const parts = path.split("/");
+            const cod = decodeURIComponent(parts[3] || "").trim().toUpperCase();
+
+            if (path === "/api/sync/fichas") {
+                if (request.method === "GET") {
+                    if (env.DB) {
+                        const { results } = await env.DB.prepare("SELECT * FROM corssen_fichas").all();
+                        return jsonResponse({ fichas: results || [] });
+                    }
+                    return jsonResponse({ fichas: [] });
                 }
-                return jsonResponse({ fichas: [] });
+                if (request.method === "POST") {
+                    const body: any = await request.json().catch(() => ({}));
+                    if (env.DB && body.fichas && typeof body.fichas === "object") {
+                        const batch = [];
+                        for (const [c, f] of Object.entries(body.fichas as Record<string, any>)) {
+                            batch.push(
+                                env.DB.prepare(
+                                    `INSERT OR REPLACE INTO corssen_fichas 
+                                    (cod, equipo, marca, modelo, motor, chasis_vin, numero_serie, capacidad, anio, filtros_json, especificaciones_json, actualizado_en)
+                                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
+                                ).bind(
+                                    c,
+                                    f.nombre || f.equipo || c,
+                                    f.marca || "",
+                                    f.modelo || "",
+                                    f.motor || "",
+                                    f.patente || f.chasis || f.vin || "",
+                                    f.serie || "",
+                                    f.capacidad || "",
+                                    String(f.anio || ""),
+                                    JSON.stringify(f.filtros || f.filtrosEquivalentes || []),
+                                    JSON.stringify(f)
+                                )
+                            );
+                        }
+                        if (batch.length > 0) {
+                            await env.DB.batch(batch);
+                        }
+                    }
+                    return jsonResponse({ status: "ok", mensaje: "Fichas técnicas sincronizadas en Cloudflare D1" });
+                }
             }
-            if (request.method === "POST") {
-                const body: any = await request.json().catch(() => ({}));
-                if (env.DB && body.fichas && typeof body.fichas === "object") {
-                    const batch = [];
-                    for (const [cod, f] of Object.entries(body.fichas as Record<string, any>)) {
-                        batch.push(
-                            env.DB.prepare(
-                                `INSERT OR REPLACE INTO corssen_fichas 
-                                (cod, equipo, marca, modelo, motor, chasis_vin, numero_serie, filtros_json, actualizado_en)
-                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
-                            ).bind(
-                                cod,
-                                f.equipo || cod,
-                                f.marca || "",
-                                f.modelo || "",
-                                f.motor || "",
-                                f.chasis || f.vin || "",
-                                f.serie || "",
-                                JSON.stringify(f.filtros || f.filtrosEquivalentes || [])
-                            )
-                        );
-                    }
-                    if (batch.length > 0) {
-                        await env.DB.batch(batch);
-                    }
+
+            if (request.method === "GET" && (!cod || cod === "")) {
+                const fichasMap: Record<string, any> = {};
+                if (env.DB) {
+                    try {
+                        const { results } = await env.DB.prepare("SELECT * FROM corssen_fichas").all();
+                        if (Array.isArray(results)) {
+                            results.forEach((r: any) => {
+                                let fData: any = {};
+                                try { if (r.especificaciones_json) fData = JSON.parse(r.especificaciones_json); } catch(_) {}
+                                fichasMap[r.cod] = { ...fData, codigo: r.cod, nombre: r.equipo || fData.nombre || r.cod };
+                            });
+                        }
+                    } catch(_) {}
                 }
-                return jsonResponse({ status: "ok", mensaje: "Fichas técnicas sincronizadas en Cloudflare D1" });
+                return jsonResponse(fichasMap);
+            }
+
+            if (request.method === "GET" && cod) {
+                if (env.DB) {
+                    try {
+                        const row: any = await env.DB.prepare("SELECT * FROM corssen_fichas WHERE UPPER(cod) = UPPER(?)").bind(cod).first();
+                        if (row) {
+                            let fData: any = {};
+                            try { if (row.especificaciones_json) fData = JSON.parse(row.especificaciones_json); } catch(_) {}
+                            return jsonResponse({ ...fData, codigo: row.cod, nombre: row.equipo || fData.nombre || row.cod });
+                        }
+                    } catch(_) {}
+                }
+                return jsonResponse({ error: `Ficha técnica no encontrada para ${cod}` }, 404);
+            }
+
+            if ((request.method === "PUT" || request.method === "POST") && cod) {
+                try {
+                    const body: any = await request.json();
+                    const datosFicha = { ...body, codigo: cod, actualizado_en: new Date().toISOString() };
+                    if (env.DB) {
+                        await env.DB.prepare(`
+                            INSERT INTO corssen_fichas 
+                            (cod, equipo, marca, modelo, motor, chasis_vin, numero_serie, capacidad, anio, filtros_json, especificaciones_json, actualizado_en)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                            ON CONFLICT(cod) DO UPDATE SET
+                              equipo=excluded.equipo, marca=excluded.marca, modelo=excluded.modelo,
+                              motor=excluded.motor, chasis_vin=excluded.chasis_vin, numero_serie=excluded.numero_serie,
+                              capacidad=excluded.capacidad, anio=excluded.anio,
+                              filtros_json=excluded.filtros_json, especificaciones_json=excluded.especificaciones_json,
+                              actualizado_en=CURRENT_TIMESTAMP
+                        `).bind(
+                            cod,
+                            datosFicha.nombre || cod,
+                            datosFicha.marca || "",
+                            datosFicha.modelo || "",
+                            datosFicha.motor || "",
+                            datosFicha.patente || datosFicha.chasis || "",
+                            datosFicha.serie || "",
+                            datosFicha.capacidad || "",
+                            String(datosFicha.anio || ""),
+                            JSON.stringify(datosFicha.filtros || []),
+                            JSON.stringify(datosFicha)
+                        ).run();
+                    }
+                    return jsonResponse({ mensaje: `Ficha técnica de ${cod} guardada con éxito en Cloudflare`, ficha: datosFicha });
+                } catch(errPut) {
+                    return jsonResponse({ mensaje: "Error guardando ficha", error: String(errPut) }, 500);
+                }
+            }
+
+            if (request.method === "DELETE" && cod) {
+                if (env.DB) {
+                    try {
+                        await env.DB.prepare("DELETE FROM corssen_fichas WHERE UPPER(cod) = UPPER(?)").bind(cod).run();
+                    } catch(_) {}
+                }
+                return jsonResponse({ mensaje: `Ficha técnica de ${cod} eliminada de Cloudflare` });
             }
         }
 

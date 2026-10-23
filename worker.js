@@ -116,6 +116,51 @@ export default {
       d1EstadoVerificado = true;
     }
 
+    // Función auxiliar para asegurar tablas corssen_fichas y corssen_programa en Cloudflare D1
+    let d1TablasFichasVerificadas = false;
+    async function asegurarTablasFichasD1(db) {
+      if (!db || d1TablasFichasVerificadas) return;
+      try {
+        await db.prepare(`
+          CREATE TABLE IF NOT EXISTS corssen_fichas (
+            cod TEXT PRIMARY KEY,
+            equipo TEXT NOT NULL,
+            marca TEXT,
+            modelo TEXT,
+            motor TEXT,
+            chasis_vin TEXT,
+            numero_serie TEXT,
+            capacidad TEXT,
+            anio TEXT,
+            ubicacion TEXT,
+            observaciones TEXT,
+            filtros_json TEXT,
+            especificaciones_json TEXT,
+            actualizado_en DATETIME DEFAULT CURRENT_TIMESTAMP
+          )
+        `).run();
+      } catch (_) {}
+      try {
+        await db.prepare(`
+          CREATE TABLE IF NOT EXISTS corssen_programa (
+            cod TEXT PRIMARY KEY,
+            equipo TEXT NOT NULL,
+            marca TEXT,
+            cat TEXT NOT NULL,
+            estado TEXT DEFAULT 'Operativo',
+            prioridad TEXT DEFAULT 'Media',
+            horometro TEXT,
+            frecuencia TEXT,
+            prox TEXT,
+            responsable TEXT,
+            observaciones TEXT,
+            actualizado_en DATETIME DEFAULT CURRENT_TIMESTAMP
+          )
+        `).run();
+      } catch (_) {}
+      d1TablasFichasVerificadas = true;
+    }
+
     // Función auxiliar para obtener lista unificada de usuarios (D1 -> KV -> Memoria)
     async function obtenerUsuarios() {
       // Mapas de estados y contraseñas de KV para persistencia y sincronización garantizada
@@ -1286,6 +1331,337 @@ export default {
       }
     }
 
+    // API Fichas Técnicas Multimarca - GET, PUT, POST, DELETE (/api/fichas y /api/fichas/:cod)
+    if (path.startsWith("/api/fichas") || path === "/api/sync/fichas") {
+      const parts = path.split("/");
+      const cod = decodeURIComponent(parts[3] || "").trim().toUpperCase();
+
+      // Sincronización masiva (/api/sync/fichas)
+      if (path === "/api/sync/fichas") {
+        if (request.method === "GET") {
+          let fichas = {};
+          if (env && env.DB) {
+            try {
+              await asegurarTablasFichasD1(env.DB);
+              const { results } = await env.DB.prepare("SELECT * FROM corssen_fichas").all();
+              if (Array.isArray(results)) {
+                results.forEach(r => {
+                  let f = {};
+                  try { if (r.especificaciones_json) f = JSON.parse(r.especificaciones_json); } catch(_) {}
+                  fichas[r.cod] = { ...f, codigo: r.cod, nombre: r.equipo || f.nombre || r.cod };
+                });
+              }
+            } catch(e) { console.warn("Error sync get fichas:", e); }
+          }
+          return new Response(JSON.stringify({ fichas }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
+        }
+        if (request.method === "POST") {
+          try {
+            const body = await request.json().catch(() => ({}));
+            if (env && env.DB && body.fichas && typeof body.fichas === "object") {
+              await asegurarTablasFichasD1(env.DB);
+              for (const [c, f] of Object.entries(body.fichas)) {
+                try {
+                  await env.DB.prepare(`
+                    INSERT INTO corssen_fichas (
+                      cod, equipo, marca, modelo, motor, chasis_vin, numero_serie,
+                      capacidad, anio, ubicacion, observaciones, filtros_json,
+                      especificaciones_json, actualizado_en
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                    ON CONFLICT(cod) DO UPDATE SET
+                      equipo=excluded.equipo, marca=excluded.marca, modelo=excluded.modelo,
+                      motor=excluded.motor, chasis_vin=excluded.chasis_vin, numero_serie=excluded.numero_serie,
+                      capacidad=excluded.capacidad, anio=excluded.anio, ubicacion=excluded.ubicacion,
+                      observaciones=excluded.observaciones, filtros_json=excluded.filtros_json,
+                      especificaciones_json=excluded.especificaciones_json, actualizado_en=CURRENT_TIMESTAMP
+                  `).bind(
+                    c, f.nombre || c, f.marca || "", f.modelo || "", f.motor || "",
+                    f.patente || f.chasis || "", f.serie || "", f.capacidad || "",
+                    String(f.anio || ""), f.ubicacion || "",
+                    Array.isArray(f.pendientes) ? f.pendientes.join("; ") : (f.observaciones || ""),
+                    JSON.stringify(f.filtros || []), JSON.stringify(f)
+                  ).run();
+                } catch(_) {}
+              }
+            }
+            return new Response(JSON.stringify({ status: "ok", mensaje: "Fichas técnicas sincronizadas en Cloudflare" }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" }
+            });
+          } catch(e) {
+            return new Response(JSON.stringify({ error: String(e) }), {
+              status: 500,
+              headers: { ...corsHeaders, "Content-Type": "application/json" }
+            });
+          }
+        }
+      }
+
+      // 1. GET /api/fichas - Obtener todas las fichas técnicas
+      if (request.method === "GET" && (!cod || cod === "")) {
+        let fichasMap = {};
+
+        // Intentar leer de D1
+        if (env && env.DB) {
+          try {
+            await asegurarTablasFichasD1(env.DB);
+            const { results } = await env.DB.prepare("SELECT * FROM corssen_fichas").all();
+            if (Array.isArray(results) && results.length > 0) {
+              results.forEach(row => {
+                if (!row.cod) return;
+                let fData = {};
+                if (row.especificaciones_json) {
+                  try { fData = JSON.parse(row.especificaciones_json); } catch (_) {}
+                }
+                fichasMap[row.cod] = {
+                  ...fData,
+                  codigo: row.cod,
+                  nombre: row.equipo || fData.nombre || row.cod,
+                  marca: row.marca || fData.marca || "",
+                  modelo: row.modelo || fData.modelo || "",
+                  motor: row.motor || fData.motor || "",
+                  patente: row.chasis_vin || fData.patente || "",
+                  capacidad: row.capacidad || fData.capacidad || "",
+                  anio: row.anio || fData.anio || "",
+                  ubicacion: row.ubicacion || fData.ubicacion || "",
+                  filtros: row.filtros_json ? (typeof row.filtros_json === "string" ? JSON.parse(row.filtros_json) : row.filtros_json) : (fData.filtros || []),
+                  actualizado_en: row.actualizado_en || fData.actualizado_en
+                };
+              });
+            }
+          } catch (eD1) {
+            console.warn("Error leyendo corssen_fichas en D1:", eD1);
+          }
+        }
+
+        // Si D1 no arrojó resultados o falló, recurrir a KV último backup
+        if (Object.keys(fichasMap).length === 0 && kv) {
+          try {
+            const ultimo = await kv.get("corssen_backup_ultimo", "json");
+            if (ultimo && ultimo.data && ultimo.data.corssen_fichas_v2 && typeof ultimo.data.corssen_fichas_v2 === "object") {
+              fichasMap = ultimo.data.corssen_fichas_v2;
+            }
+          } catch (eKV) {
+            console.warn("Error leyendo corssen_fichas en KV:", eKV);
+          }
+        }
+
+        return new Response(JSON.stringify(fichasMap), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+
+      // 2. GET /api/fichas/:cod - Obtener una ficha técnica específica
+      if (request.method === "GET" && cod) {
+        let fichaEncontrada = null;
+
+        if (env && env.DB) {
+          try {
+            await asegurarTablasFichasD1(env.DB);
+            const row = await env.DB.prepare("SELECT * FROM corssen_fichas WHERE UPPER(cod) = UPPER(?)").bind(cod).first();
+            if (row) {
+              let fData = {};
+              if (row.especificaciones_json) {
+                try { fData = JSON.parse(row.especificaciones_json); } catch (_) {}
+              }
+              fichaEncontrada = {
+                ...fData,
+                codigo: row.cod,
+                nombre: row.equipo || fData.nombre || row.cod,
+                marca: row.marca || fData.marca || "",
+                modelo: row.modelo || fData.modelo || "",
+                motor: row.motor || fData.motor || "",
+                patente: row.chasis_vin || fData.patente || "",
+                capacidad: row.capacidad || fData.capacidad || "",
+                anio: row.anio || fData.anio || "",
+                filtros: row.filtros_json ? (typeof row.filtros_json === "string" ? JSON.parse(row.filtros_json) : row.filtros_json) : (fData.filtros || [])
+              };
+            }
+          } catch (_) {}
+        }
+
+        if (!fichaEncontrada && kv) {
+          try {
+            const ultimo = await kv.get("corssen_backup_ultimo", "json");
+            if (ultimo?.data?.corssen_fichas_v2?.[cod]) {
+              fichaEncontrada = ultimo.data.corssen_fichas_v2[cod];
+            }
+          } catch (_) {}
+        }
+
+        if (fichaEncontrada) {
+          return new Response(JSON.stringify(fichaEncontrada), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
+        }
+        return new Response(JSON.stringify({ error: `Ficha técnica no encontrada para ${cod}` }), {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+
+      // 3. PUT o POST /api/fichas/:cod - Guardar o actualizar Ficha Técnica (camiones, maquinarias, vehículos)
+      if ((request.method === "PUT" || request.method === "POST") && cod) {
+        try {
+          const body = await request.json();
+          const datosFicha = {
+            ...body,
+            codigo: cod,
+            actualizado_en: new Date().toISOString()
+          };
+
+          // 3.1. Persistir en D1
+          if (env && env.DB) {
+            try {
+              await asegurarTablasFichasD1(env.DB);
+              await env.DB.prepare(`
+                INSERT INTO corssen_fichas (
+                  cod, equipo, marca, modelo, motor, chasis_vin, numero_serie,
+                  capacidad, anio, ubicacion, observaciones, filtros_json,
+                  especificaciones_json, actualizado_en
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                ON CONFLICT(cod) DO UPDATE SET
+                  equipo=excluded.equipo,
+                  marca=excluded.marca,
+                  modelo=excluded.modelo,
+                  motor=excluded.motor,
+                  chasis_vin=excluded.chasis_vin,
+                  numero_serie=excluded.numero_serie,
+                  capacidad=excluded.capacidad,
+                  anio=excluded.anio,
+                  ubicacion=excluded.ubicacion,
+                  observaciones=excluded.observaciones,
+                  filtros_json=excluded.filtros_json,
+                  especificaciones_json=excluded.especificaciones_json,
+                  actualizado_en=CURRENT_TIMESTAMP
+              `).bind(
+                cod,
+                datosFicha.nombre || cod,
+                datosFicha.marca || "",
+                datosFicha.modelo || "",
+                datosFicha.motor || "",
+                datosFicha.patente || datosFicha.chasis || "",
+                datosFicha.serie || "",
+                datosFicha.capacidad || "",
+                String(datosFicha.anio || ""),
+                datosFicha.ubicacion || "",
+                Array.isArray(datosFicha.pendientes) ? datosFicha.pendientes.join("; ") : (datosFicha.observaciones || ""),
+                JSON.stringify(datosFicha.filtros || []),
+                JSON.stringify(datosFicha)
+              ).run();
+            } catch (eD1) {
+              console.warn("Error guardando corssen_fichas en D1:", eD1);
+            }
+          }
+
+          // 3.2. Sincronizar en KV corssen_backup_ultimo
+          if (kv) {
+            try {
+              const ultimo = await kv.get("corssen_backup_ultimo", "json");
+              if (ultimo && ultimo.data) {
+                if (!ultimo.data.corssen_fichas_v2 || typeof ultimo.data.corssen_fichas_v2 !== "object") {
+                  ultimo.data.corssen_fichas_v2 = {};
+                }
+                ultimo.data.corssen_fichas_v2[cod] = datosFicha;
+                ultimo.timestamp = Date.now();
+                await kv.put("corssen_backup_ultimo", JSON.stringify(ultimo));
+              }
+            } catch (eKV) {
+              console.warn("Error actualizando KV corssen_backup_ultimo con ficha:", eKV);
+            }
+          }
+
+          // 3.3. Sincronizar en D1 corssen_backups
+          if (env && env.DB) {
+            try {
+              const rowBkp = await env.DB.prepare("SELECT id, data_json FROM corssen_backups ORDER BY timestamp DESC LIMIT 1").first();
+              if (rowBkp && rowBkp.id && rowBkp.data_json) {
+                const bData = typeof rowBkp.data_json === "string" ? JSON.parse(rowBkp.data_json) : rowBkp.data_json;
+                if (bData) {
+                  if (!bData.corssen_fichas_v2 || typeof bData.corssen_fichas_v2 !== "object") {
+                    bData.corssen_fichas_v2 = {};
+                  }
+                  bData.corssen_fichas_v2[cod] = datosFicha;
+                  await env.DB.prepare("UPDATE corssen_backups SET data_json = ?, timestamp = ? WHERE id = ?").bind(
+                    JSON.stringify(bData),
+                    Date.now(),
+                    rowBkp.id
+                  ).run();
+                }
+              }
+            } catch (eD1Bkp) {
+              console.warn("Error actualizando backup D1 con ficha:", eD1Bkp);
+            }
+          }
+
+          return new Response(JSON.stringify({
+            mensaje: `Ficha técnica de ${cod} guardada con éxito en Cloudflare`,
+            ficha: datosFicha
+          }), {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
+        } catch (errPut) {
+          return new Response(JSON.stringify({ mensaje: "Error guardando ficha técnica", error: String(errPut) }), {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
+        }
+      }
+
+      // 4. DELETE /api/fichas/:cod - Eliminar Ficha Técnica
+      if (request.method === "DELETE" && cod) {
+        try {
+          if (env && env.DB) {
+            try {
+              await asegurarTablasFichasD1(env.DB);
+              await env.DB.prepare("DELETE FROM corssen_fichas WHERE UPPER(cod) = UPPER(?)").bind(cod).run();
+            } catch (eD1) {
+              console.warn("Error eliminando corssen_fichas de D1:", eD1);
+            }
+          }
+
+          if (kv) {
+            try {
+              const ultimo = await kv.get("corssen_backup_ultimo", "json");
+              if (ultimo?.data?.corssen_fichas_v2?.[cod]) {
+                delete ultimo.data.corssen_fichas_v2[cod];
+                ultimo.timestamp = Date.now();
+                await kv.put("corssen_backup_ultimo", JSON.stringify(ultimo));
+              }
+            } catch (_) {}
+          }
+
+          if (env && env.DB) {
+            try {
+              const rowBkp = await env.DB.prepare("SELECT id, data_json FROM corssen_backups ORDER BY timestamp DESC LIMIT 1").first();
+              if (rowBkp && rowBkp.id && rowBkp.data_json) {
+                const bData = typeof rowBkp.data_json === "string" ? JSON.parse(rowBkp.data_json) : rowBkp.data_json;
+                if (bData?.corssen_fichas_v2?.[cod]) {
+                  delete bData.corssen_fichas_v2[cod];
+                  await env.DB.prepare("UPDATE corssen_backups SET data_json = ?, timestamp = ? WHERE id = ?").bind(
+                    JSON.stringify(bData),
+                    Date.now(),
+                    rowBkp.id
+                  ).run();
+                }
+              }
+            } catch (_) {}
+          }
+
+          return new Response(JSON.stringify({ mensaje: `Ficha técnica de ${cod} eliminada de Cloudflare` }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
+        } catch (errDel) {
+          return new Response(JSON.stringify({ mensaje: "Error eliminando ficha", error: String(errDel) }), {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
+        }
+      }
+    }
+
     // API Backup - Guardar Respaldo en la Nube KV y D1 (/api/backup/guardar)
     if (path === "/api/backup/guardar" && request.method === "POST") {
       try {
@@ -1533,13 +1909,14 @@ export default {
         });
       }
 
-      // Reconciliar con la tabla corssen_programa si es el último respaldo para asegurar datos 100% actualizados
+      // Reconciliar con las tablas corssen_programa y corssen_fichas si es el último respaldo para asegurar datos 100% actualizados
       if (bId === "ultimo" && backupData && backupData.data && env && env.DB) {
         try {
-          const { results } = await env.DB.prepare("SELECT * FROM corssen_programa").all();
-          if (Array.isArray(results) && results.length > 0) {
+          // 1. Reconciliar corssen_programa
+          const { results: progResults } = await env.DB.prepare("SELECT * FROM corssen_programa").all();
+          if (Array.isArray(progResults) && progResults.length > 0) {
             if (!Array.isArray(backupData.data.corssen_programa_v2)) backupData.data.corssen_programa_v2 = [];
-            results.forEach(progItem => {
+            progResults.forEach(progItem => {
               if (!progItem.cod) return;
               const pIdx = backupData.data.corssen_programa_v2.findIndex(p => String(p.cod).toLowerCase() === String(progItem.cod).toLowerCase());
               if (pIdx !== -1) {
@@ -1554,6 +1931,39 @@ export default {
                 }
               }
             });
+          }
+
+          // 2. Reconciliar corssen_fichas de Cloudflare D1
+          try {
+            await asegurarTablasFichasD1(env.DB);
+            const { results: fichasD1 } = await env.DB.prepare("SELECT * FROM corssen_fichas").all();
+            if (Array.isArray(fichasD1) && fichasD1.length > 0) {
+              if (!backupData.data.corssen_fichas_v2 || typeof backupData.data.corssen_fichas_v2 !== "object") {
+                backupData.data.corssen_fichas_v2 = {};
+              }
+              fichasD1.forEach(fRow => {
+                if (!fRow.cod) return;
+                let fData = {};
+                if (fRow.especificaciones_json) {
+                  try { fData = JSON.parse(fRow.especificaciones_json); } catch(_) {}
+                }
+                backupData.data.corssen_fichas_v2[fRow.cod] = {
+                  ...backupData.data.corssen_fichas_v2[fRow.cod],
+                  ...fData,
+                  codigo: fRow.cod,
+                  nombre: fRow.equipo || fData.nombre || fRow.cod,
+                  marca: fRow.marca || fData.marca || "",
+                  modelo: fRow.modelo || fData.modelo || "",
+                  motor: fRow.motor || fData.motor || "",
+                  patente: fRow.chasis_vin || fData.patente || "",
+                  capacidad: fRow.capacidad || fData.capacidad || "",
+                  anio: fRow.anio || fData.anio || "",
+                  filtros: fRow.filtros_json ? (typeof fRow.filtros_json === "string" ? JSON.parse(fRow.filtros_json) : fRow.filtros_json) : (fData.filtros || [])
+                };
+              });
+            }
+          } catch (eFichas) {
+            console.warn("Error reconciliando corssen_fichas:", eFichas);
           }
         } catch (_) {}
       }
