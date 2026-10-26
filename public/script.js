@@ -2533,14 +2533,9 @@ function actualizarPermisosFlotaRegistrada() {
         menuItemMaq.style.display = esAdmin ? "flex" : "none";
     }
 
-    // CONTROL ESTRICTO DE VISIBILIDAD: Módulo de Ventana y Alertas de Mantenimiento
+    // CONTROL ESTRICTO DE VISIBILIDAD: Módulo de Respaldos & Mantención y Ventana de Mantenimiento
     // Exclusivo para el usuario 'admin' (Administrador General). Oculto para Daniel y operadores.
-    const usuarioActual = (sessionStorage.getItem("usuarioLogueado") || "").toLowerCase().trim();
-    const esAdminGeneralExclusivo = (usuarioActual === "admin");
-    const menuItemMantenimiento = document.getElementById("menuItemVentanaMantenimiento");
-    if (menuItemMantenimiento) {
-        menuItemMantenimiento.style.display = esAdminGeneralExclusivo ? "flex" : "none";
-    }
+    actualizarPermisosModuloRespaldos();
 
     if (btnRegUnidad) {
         btnRegUnidad.style.display = esAdmin ? "inline-flex" : "none";
@@ -2552,6 +2547,34 @@ function actualizarPermisosFlotaRegistrada() {
         badgeAdmin.style.display = esAdmin ? "inline-flex" : "none";
     }
 }
+
+function actualizarPermisosModuloRespaldos() {
+    const usuarioActual = (sessionStorage.getItem("usuarioLogueado") || "").toLowerCase().trim();
+    // Exclusivo para el usuario 'admin' (Administrador General).
+    // Oculto explícitamente para el usuario Daniel y para cualquier rol de operador u otro usuario.
+    const esAdminGeneralExclusivo = (usuarioActual === "admin");
+
+    const menuItemRespaldos = document.getElementById("menuItemRespaldos");
+    if (menuItemRespaldos) {
+        menuItemRespaldos.style.display = esAdminGeneralExclusivo ? "flex" : "none";
+    }
+
+    const menuItemMantenimiento = document.getElementById("menuItemVentanaMantenimiento");
+    if (menuItemMantenimiento) {
+        menuItemMantenimiento.style.display = esAdminGeneralExclusivo ? "flex" : "none";
+    }
+
+    const seccionRespaldos = document.getElementById("respaldosMantencion");
+    if (seccionRespaldos) {
+        if (!esAdminGeneralExclusivo) {
+            seccionRespaldos.style.display = "none";
+            seccionRespaldos.classList.remove("active");
+        } else {
+            seccionRespaldos.style.removeProperty("display");
+        }
+    }
+}
+window.actualizarPermisosModuloRespaldos = actualizarPermisosModuloRespaldos;
 
 // -------------------------------------------------------------
 // FUNCIONES PARA MODAL DE EDICIÓN DE PROGRAMA MAESTRO (SOLO ADMIN)
@@ -7500,8 +7523,16 @@ function navegarSeccion(idSeccion) {
         renderizarMantenciones();
     }
 
-    if (idSeccion === "respaldosMantencion" && typeof window.renderizarModuloRespaldos === "function") {
-        window.renderizarModuloRespaldos();
+    if (idSeccion === "respaldosMantencion") {
+        const u = (sessionStorage.getItem("usuarioLogueado") || "").toLowerCase().trim();
+        if (u !== "admin") {
+            alert("⛔ Acceso Restringido: El módulo de Respaldos & Mantención es exclusivo para el Administrador General (admin).");
+            navegarSeccion("dashboard");
+            return;
+        }
+        if (typeof window.renderizarModuloRespaldos === "function") {
+            window.renderizarModuloRespaldos();
+        }
     }
 
     if ((idSeccion === "moduloAceite" || idSeccion === "dashboard") && typeof window.renderizarModuloAceite === "function") {
@@ -9732,7 +9763,10 @@ async function sincronizarConUltimoRespaldoNube(forzarRecarga = false) {
             renderizarFlotaRegistrada();
             actualizarPermisosFichasTecnicas();
             actualizarPermisosFlotaRegistrada();
-            if (typeof renderizarModuloRespaldos === "function") renderizarModuloRespaldos();
+            actualizarPermisosModuloRespaldos();
+            if (typeof renderizarModuloRespaldos === "function" && (sessionStorage.getItem("usuarioLogueado") || "").toLowerCase().trim() === "admin") {
+                renderizarModuloRespaldos();
+            }
 
             const elEstado = document.querySelector(".estado-sistema");
             if (elEstado) {
@@ -9781,11 +9815,19 @@ document.addEventListener("DOMContentLoaded", () => {
         if (btnAdmin) btnAdmin.style.display = "flex";
     }
 
-    // Visibilidad exclusiva de menú de Mantenimiento para usuario 'admin'
+    // Visibilidad exclusiva de menú de Respaldos & Mantención y Mantenimiento para usuario 'admin' (Administrador General)
     const esSuperAdminPrincipal = (usuarioLogueado || "").toLowerCase().trim() === "admin";
+    const menuItemRespaldos = document.getElementById("menuItemRespaldos");
+    if (menuItemRespaldos) {
+        menuItemRespaldos.style.display = esSuperAdminPrincipal ? "flex" : "none";
+    }
     const menuItemMantenimiento = document.getElementById("menuItemVentanaMantenimiento");
     if (menuItemMantenimiento) {
         menuItemMantenimiento.style.display = esSuperAdminPrincipal ? "flex" : "none";
+    }
+    const seccionRespaldos = document.getElementById("respaldosMantencion");
+    if (seccionRespaldos && !esSuperAdminPrincipal) {
+        seccionRespaldos.style.display = "none";
     }
 
     // Para clientes y operadores (cualquiera que NO sea el Administrador General 'admin', incluyendo a Daniel):
@@ -9833,6 +9875,7 @@ document.addEventListener("DOMContentLoaded", () => {
     renderizarDetalleFichaTecnica();
     actualizarPermisosFichasTecnicas();
     actualizarPermisosFlotaRegistrada();
+    actualizarPermisosModuloRespaldos();
     renderizarTablasOriginales();
 
     // Eventos de Navegación del Menú

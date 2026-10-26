@@ -619,6 +619,10 @@ async function ejecutarPruebas() {
         'usuarios.html ya no contiene seccionControlCuota ni cardStatCuota (trasladado exitosamente)', 'Cuota fuera de usuarios');
     assert(scriptContent.includes('cargarEstadoServicioCuota') && scriptContent.includes('abrirModalSuspensionGeneral'), 
         'script.js contiene funciones cliente para control de cuota mensual y suspensión', 'Script Cuota');
+    assert(indexHtml.includes('id="menuItemRespaldos"') && indexHtml.includes('style="display:none;"'), 
+        'index.html contiene menuItemRespaldos oculto por defecto con style="display:none;"', 'RBAC Respaldos');
+    assert(scriptContent.includes('actualizarPermisosModuloRespaldos') && scriptContent.includes('El módulo de Respaldos & Mantención es exclusivo para el Administrador General (admin)'), 
+        'script.js restringe y oculta Respaldos & Mantención para Daniel y operadores garantizando exclusividad de admin', 'RBAC Respaldos');
 
     // -------------------------------------------------------------
     // RESUMEN GENERAL DE PRUEBAS
