@@ -823,6 +823,111 @@ export default {
         }
 
         // Chat de Soporte Técnico en Vivo en la Aplicación
+        if (path === "/api/soporte/conversaciones") {
+            const bienvenida = [
+                {
+                    id: "MSG-INIT-001",
+                    usuario: "aron_soporte",
+                    nombre: "Aron Martinez (ServiTec Pro)",
+                    rol: "admin",
+                    texto: "👋 ¡Hola! Bienvenido al canal directo de soporte técnico de Corssen Logística.",
+                    timestamp: new Date().toISOString(),
+                    hora: "10:00",
+                    esSoporte: true
+                }
+            ];
+            let listaMensajes: any[] = bienvenida;
+            if (env.CORSSEN_STORAGE) {
+                try {
+                    const kv = await env.CORSSEN_STORAGE.get("corssen_soporte_chat", { type: "json" });
+                    if (kv && Array.isArray(kv)) listaMensajes = kv;
+                } catch (_) {}
+            }
+
+            const usuariosBase: Record<string, any> = {
+                "daniel": { usuario: "daniel", nombre: "Daniel Corssen", rol: "Operador / Jefe Flota", avatar: "👤" },
+                "rodrigo": { usuario: "rodrigo", nombre: "Rodrigo Silva", rol: "Mecánico de Terreno", avatar: "🔧" },
+                "operador": { usuario: "operador", nombre: "Operador Principal", rol: "Operador de Turno", avatar: "🚜" }
+            };
+
+            const conversaciones: Record<string, any> = {};
+            Object.values(usuariosBase).forEach(u => {
+                conversaciones[u.usuario] = {
+                    usuario: u.usuario,
+                    nombre: u.nombre,
+                    rol: u.rol,
+                    avatar: u.avatar,
+                    ultimoMensaje: "Canal de soporte en línea abierto.",
+                    ultimaHora: "Hoy",
+                    ultimoTimestamp: 0,
+                    sinLeer: 0,
+                    necesitaAtencion: false,
+                    totalMensajes: 0
+                };
+            });
+
+            listaMensajes.forEach(m => {
+                const uId = (!m.esSoporte ? m.usuario : m.destinatario) || "operador";
+                if (uId === "admin" || uId === "aron_soporte") return;
+                if (!conversaciones[uId]) {
+                    conversaciones[uId] = {
+                        usuario: uId,
+                        nombre: m.nombre || uId,
+                        rol: m.rol || "operador",
+                        avatar: "👤",
+                        ultimoMensaje: "",
+                        ultimaHora: "",
+                        ultimoTimestamp: 0,
+                        sinLeer: 0,
+                        necesitaAtencion: false,
+                        totalMensajes: 0
+                    };
+                }
+                const c = conversaciones[uId];
+                c.totalMensajes++;
+                c.ultimoMensaje = m.texto;
+                c.ultimaHora = m.hora || "";
+                c.ultimoTimestamp = new Date(m.timestamp || Date.now()).getTime();
+                if (!m.esSoporte && m.necesitaAtencionHumana && !m.leidoPorAdmin) {
+                    c.sinLeer++;
+                    c.necesitaAtencion = true;
+                }
+            });
+
+            const lista = Object.values(conversaciones).sort((a, b) => b.ultimoTimestamp - a.ultimoTimestamp);
+            return jsonResponse({
+                ok: true,
+                conversaciones: lista,
+                total: lista.length,
+                totalPendientes: lista.filter(c => c.necesitaAtencion).length
+            });
+        }
+
+        if (path === "/api/soporte/marcar-leido" && request.method === "POST") {
+            try {
+                const body: any = await request.json();
+                const usuarioTarget = (body.usuario || "").toLowerCase().trim();
+                let listaMensajes: any[] = [];
+                if (env.CORSSEN_STORAGE) {
+                    try {
+                        const kv = await env.CORSSEN_STORAGE.get("corssen_soporte_chat", { type: "json" });
+                        if (kv && Array.isArray(kv)) listaMensajes = kv;
+                    } catch (_) {}
+                }
+                listaMensajes.forEach(m => {
+                    if (!m.esSoporte && (!usuarioTarget || (m.usuario && m.usuario.toLowerCase() === usuarioTarget))) {
+                        m.leidoPorAdmin = true;
+                    }
+                });
+                if (env.CORSSEN_STORAGE) {
+                    await env.CORSSEN_STORAGE.put("corssen_soporte_chat", JSON.stringify(listaMensajes));
+                }
+                return jsonResponse({ ok: true, mensaje: "Mensajes marcados como leídos" });
+            } catch (err: any) {
+                return jsonResponse({ error: String(err) }, 500);
+            }
+        }
+
         if (path === "/api/soporte/mensajes" || path === "/api/chat/mensajes") {
             const bienvenida = [
                 {
@@ -847,13 +952,27 @@ export default {
             }
 
             if (request.method === "GET") {
+                const urlParams = url.searchParams;
+                const usuarioFiltro = (urlParams.get("usuario") || "").toLowerCase().trim();
+                let mensajes = listaMensajes;
+                if (usuarioFiltro && usuarioFiltro !== "admin" && usuarioFiltro !== "todos") {
+                    mensajes = listaMensajes.filter(m => 
+                        (m.usuario && m.usuario.toLowerCase() === usuarioFiltro) ||
+                        (m.destinatario && m.destinatario.toLowerCase() === usuarioFiltro) ||
+                        (m.id === "MSG-INIT-001")
+                    );
+                }
+                const pendientes = listaMensajes.filter(m => !m.esSoporte && m.necesitaAtencionHumana && !m.leidoPorAdmin);
+
                 return jsonResponse({
                     ok: true,
                     canal: "in_app_soporte_servitec",
                     agente: "Aron Martinez (ServiTec Pro)",
                     estado: "conectado",
-                    mensajes: listaMensajes,
-                    total: listaMensajes.length
+                    mensajes: mensajes,
+                    total: mensajes.length,
+                    pendientesAdminCount: pendientes.length,
+                    ultimosPendientes: pendientes.slice(-5)
                 });
             }
 
@@ -868,8 +987,12 @@ export default {
                     const idMsg = "MSG-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
                     const hora = new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
                     const esSoporte = Boolean(body.esSoporte || (body.rol === "admin" && (body.usuario === "admin" || body.usuario === "aron")));
-                    const remitente = body.usuario || (esSoporte ? "aron_soporte" : "operador");
-                    const nombreRemitente = body.nombre || (esSoporte ? "Aron Martinez (ServiTec Pro)" : (remitente === "daniel" ? "Daniel (Operador)" : "Operador"));
+                    const remitente = body.usuario || (esSoporte ? "admin" : "operador");
+                    const nombreRemitente = body.nombre || (esSoporte ? "Aron Martinez (Administrador General)" : (remitente === "daniel" ? "Daniel Corssen (Operador)" : (remitente === "rodrigo" ? "Rodrigo Silva (Mecánico)" : "Operador")));
+                    const destinatario = body.destinatario || (esSoporte ? "daniel" : "admin");
+
+                    const tLower = texto.toLowerCase();
+                    const pideAtencionHumana = tLower.includes("aron") || tLower.includes("humano") || tLower.includes("contacto") || tLower.includes("soporte") || tLower.includes("hablar") || tLower.includes("admin") || Boolean(body.necesitaAtencionHumana);
 
                     const nuevoMensaje = {
                         id: idMsg,
@@ -879,31 +1002,42 @@ export default {
                         texto: texto,
                         timestamp: new Date().toISOString(),
                         hora: hora,
-                        esSoporte: esSoporte
+                        esSoporte: esSoporte,
+                        destinatario: destinatario,
+                        necesitaAtencionHumana: !esSoporte && pideAtencionHumana,
+                        leidoPorAdmin: esSoporte ? true : false
                     };
                     listaMensajes.push(nuevoMensaje);
 
+                    if (esSoporte && destinatario) {
+                        listaMensajes.forEach(m => {
+                            if (m.usuario && m.usuario.toLowerCase() === destinatario.toLowerCase()) {
+                                m.leidoPorAdmin = true;
+                            }
+                        });
+                    }
+
                     let respuestaAutomatica: any = null;
                     if (!esSoporte) {
-                        const t = texto.toLowerCase();
                         let respuestaTexto = "";
                         let tituloContexto = "";
 
-                        if (t.includes("ficha") || t.includes("filtro") || t.includes("baldwin") || t.includes("donaldson") || (t.includes("aceite") && t.includes("motor"))) {
+                        if (tLower.includes("ficha") || tLower.includes("filtro") || tLower.includes("baldwin") || tLower.includes("donaldson") || (tLower.includes("aceite") && tLower.includes("motor"))) {
                             tituloContexto = "Fichas Técnicas & Filtros";
                             respuestaTexto = "En el módulo de Fichas Técnicas puedes consultar la matriz completa de equivalencias multimarca (Baldwin, Donaldson, Fleetguard y Mann). Los cambios guardados por el Administrador ya persisten en el servidor.";
-                        } else if (t.includes("camion") || t.includes("camioneta") || t.includes("flota") || t.includes("cmn-") || t.includes("cam-") || t.includes("patente")) {
+                        } else if (tLower.includes("camion") || tLower.includes("camioneta") || tLower.includes("flota") || tLower.includes("cmn-") || tLower.includes("cam-") || tLower.includes("patente")) {
                             tituloContexto = "Flota & Unidades Registradas";
                             respuestaTexto = "Las unidades dadas de alta (camionetas, camiones y maquinaria pesada) se sincronizan en la tabla de Flota Registrada y en el Programa Maestro.";
-                        } else if (t.includes("combustible") || t.includes("estanque") || t.includes("litro") || t.includes("diesel") || t.includes("400")) {
+                        } else if (tLower.includes("combustible") || tLower.includes("estanque") || tLower.includes("litro") || tLower.includes("diesel") || tLower.includes("400")) {
                             tituloContexto = "Control de Combustible (Estanque 400L)";
                             respuestaTexto = "El estanque de 400L descuenta en tiempo real los despachos realizados a cada equipo y emite alerta si el saldo baja de 100L.";
-                        } else if (t.includes("respaldo") || t.includes("backup") || t.includes("restaurar")) {
+                        } else if (tLower.includes("respaldo") || tLower.includes("backup") || tLower.includes("restaurar")) {
                             tituloContexto = "Puntos de Restauración y Respaldos";
                             respuestaTexto = "Los respaldos no se aplican automáticamente para no interrumpir tus labores. El Administrador General dispone del botón '🚀 Aplicar este Punto' para ejecutar restauraciones cuando sea necesario.";
                         } else {
-                            tituloContexto = "Canal de Soporte Directo";
-                            respuestaTexto = "✅ Recibido en tiempo real por el equipo de Soporte y Desarrollo ServiTec Pro. Aron Martinez ha recibido tu notificación en el sistema y atenderá tu solicitud a través de esta misma ventana.";
+                            tituloContexto = "Solicitud Transmitida al Administrador";
+                            respuestaTexto = `🔔 Tu consulta ha sido notificada en tiempo real a <strong>Aron Martinez (Administrador General)</strong>. Te responderá directamente a través de este chat interno en la plataforma.`;
+                            nuevoMensaje.necesitaAtencionHumana = true;
                         }
 
                         respuestaAutomatica = {
@@ -916,12 +1050,14 @@ export default {
                             timestamp: new Date().toISOString(),
                             hora: hora,
                             esSoporte: true,
-                            autoRespuesta: true
+                            autoRespuesta: true,
+                            destinatario: remitente,
+                            leidoPorAdmin: true
                         };
                         listaMensajes.push(respuestaAutomatica);
                     }
 
-                    if (listaMensajes.length > 150) listaMensajes = listaMensajes.slice(-150);
+                    if (listaMensajes.length > 200) listaMensajes = listaMensajes.slice(-200);
                     if (env.CORSSEN_STORAGE) {
                         try {
                             await env.CORSSEN_STORAGE.put("corssen_soporte_chat", JSON.stringify(listaMensajes));

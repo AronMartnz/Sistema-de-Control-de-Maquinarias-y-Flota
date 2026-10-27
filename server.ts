@@ -1560,17 +1560,132 @@ function guardarMensajesChatSoporte(mensajes: any[]): boolean {
 
 app.get(["/api/soporte/mensajes", "/api/chat/mensajes"], (req, res) => {
     try {
-        const mensajes = leerMensajesChatSoporte();
+        const todos = leerMensajesChatSoporte();
+        const usuarioFiltro = typeof req.query.usuario === "string" ? req.query.usuario.toLowerCase().trim() : "";
+        
+        let mensajes = todos;
+        if (usuarioFiltro && usuarioFiltro !== "admin" && usuarioFiltro !== "todos") {
+            mensajes = todos.filter(m => 
+                (m.usuario && m.usuario.toLowerCase() === usuarioFiltro) ||
+                (m.destinatario && m.destinatario.toLowerCase() === usuarioFiltro) ||
+                (m.id === "MSG-INIT-001")
+            );
+        }
+
+        const pendientesAdmin = todos.filter(m => !m.esSoporte && m.necesitaAtencionHumana && !m.leidoPorAdmin);
+
         res.json({
             ok: true,
             canal: "in_app_soporte_servitec",
             agente: "Aron Martinez (ServiTec Pro)",
             estado: "conectado",
             mensajes: mensajes,
-            total: mensajes.length
+            total: mensajes.length,
+            pendientesAdminCount: pendientesAdmin.length,
+            ultimosPendientes: pendientesAdmin.slice(-5)
         });
     } catch (err: any) {
         res.status(500).json({ error: "Error al consultar mensajes de soporte: " + err.message });
+    }
+});
+
+// Endpoint para el Centro de Mensajes del Administrador: Lista de conversaciones agrupadas por usuario
+app.get("/api/soporte/conversaciones", (req, res) => {
+    try {
+        const todos = leerMensajesChatSoporte();
+        
+        // Usuarios base para soporte
+        const usuariosBase: Record<string, { usuario: string; nombre: string; rol: string; avatar: string }> = {
+            "daniel": { usuario: "daniel", nombre: "Daniel Corssen", rol: "Operador / Jefe Flota", avatar: "👤" },
+            "rodrigo": { usuario: "rodrigo", nombre: "Rodrigo Silva", rol: "Mecánico de Terreno", avatar: "🔧" },
+            "operador": { usuario: "operador", nombre: "Operador Principal", rol: "Operador de Turno", avatar: "🚜" }
+        };
+
+        const conversaciones: Record<string, any> = {};
+
+        // Inicializar con usuarios base
+        Object.values(usuariosBase).forEach(u => {
+            conversaciones[u.usuario] = {
+                usuario: u.usuario,
+                nombre: u.nombre,
+                rol: u.rol,
+                avatar: u.avatar,
+                ultimoMensaje: "Canal de soporte en línea abierto.",
+                ultimaHora: "Hoy",
+                ultimoTimestamp: 0,
+                sinLeer: 0,
+                necesitaAtencion: false,
+                totalMensajes: 0
+            };
+        });
+
+        // Procesar mensajes cronológicos
+        todos.forEach(m => {
+            const uId = (!m.esSoporte ? m.usuario : m.destinatario) || "operador";
+            if (uId === "admin" || uId === "aron_soporte") return;
+
+            if (!conversaciones[uId]) {
+                conversaciones[uId] = {
+                    usuario: uId,
+                    nombre: m.nombre || uId,
+                    rol: m.rol || "operador",
+                    avatar: "👤",
+                    ultimoMensaje: "",
+                    ultimaHora: "",
+                    ultimoTimestamp: 0,
+                    sinLeer: 0,
+                    necesitaAtencion: false,
+                    totalMensajes: 0
+                };
+            }
+
+            const c = conversaciones[uId];
+            c.totalMensajes++;
+            c.ultimoMensaje = m.texto;
+            c.ultimaHora = m.hora || "";
+            c.ultimoTimestamp = new Date(m.timestamp || Date.now()).getTime();
+
+            if (!m.esSoporte && m.necesitaAtencionHumana && !m.leidoPorAdmin) {
+                c.sinLeer++;
+                c.necesitaAtencion = true;
+            }
+        });
+
+        const lista = Object.values(conversaciones).sort((a, b) => b.ultimoTimestamp - a.ultimoTimestamp);
+
+        res.json({
+            ok: true,
+            conversaciones: lista,
+            total: lista.length,
+            totalPendientes: lista.filter(c => c.necesitaAtencion).length
+        });
+    } catch (err: any) {
+        res.status(500).json({ error: "Error obteniendo conversaciones: " + err.message });
+    }
+});
+
+// Marcar conversación de un usuario como leída por el Administrador
+app.post("/api/soporte/marcar-leido", (req, res) => {
+    try {
+        const body = req.body || {};
+        const usuarioTarget = (body.usuario || "").toLowerCase().trim();
+        const todos = leerMensajesChatSoporte();
+
+        let modificados = 0;
+        todos.forEach(m => {
+            if (!m.esSoporte && (!usuarioTarget || (m.usuario && m.usuario.toLowerCase() === usuarioTarget))) {
+                m.leidoPorAdmin = true;
+                modificados++;
+            }
+        });
+
+        if (modificados > 0) {
+            guardarMensajesChatSoporte(todos);
+        }
+
+        res.json({ ok: true, mensaje: "Mensajes marcados como leídos", modificados });
+    } catch (err: any) {
+        res.status(500).json({ error: "Error al marcar leídos: " + err.message });
     }
 });
 
@@ -1586,8 +1701,12 @@ app.post(["/api/soporte/mensajes", "/api/chat/mensajes"], (req, res) => {
         const idMsg = "MSG-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
         const hora = new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
         const esSoporte = Boolean(body.esSoporte || (body.rol === "admin" && (body.usuario === "admin" || body.usuario === "aron")));
-        const remitente = body.usuario || (esSoporte ? "aron_soporte" : "operador");
-        const nombreRemitente = body.nombre || (esSoporte ? "Aron Martinez (ServiTec Pro)" : (remitente === "daniel" ? "Daniel (Operador)" : "Operador"));
+        const remitente = body.usuario || (esSoporte ? "admin" : "operador");
+        const nombreRemitente = body.nombre || (esSoporte ? "Aron Martinez (Administrador General)" : (remitente === "daniel" ? "Daniel Corssen (Operador)" : (remitente === "rodrigo" ? "Rodrigo Silva (Mecánico)" : "Operador")));
+        const destinatario = body.destinatario || (esSoporte ? "daniel" : "admin");
+
+        const tLower = texto.toLowerCase();
+        const pideAtencionHumana = tLower.includes("aron") || tLower.includes("humano") || tLower.includes("contacto") || tLower.includes("soporte") || tLower.includes("hablar") || tLower.includes("admin") || Boolean(body.necesitaAtencionHumana);
 
         const nuevoMensaje = {
             id: idMsg,
@@ -1597,33 +1716,45 @@ app.post(["/api/soporte/mensajes", "/api/chat/mensajes"], (req, res) => {
             texto: texto,
             timestamp: new Date().toISOString(),
             hora: hora,
-            esSoporte: esSoporte
+            esSoporte: esSoporte,
+            destinatario: destinatario,
+            necesitaAtencionHumana: !esSoporte && pideAtencionHumana,
+            leidoPorAdmin: esSoporte ? true : false
         };
 
         mensajes.push(nuevoMensaje);
 
-        // Si el mensaje fue enviado por el operador/Daniel, generar una respuesta o confirmación inmediata dentro del chat
+        // Si el admin respondió a un usuario, marcar mensajes previos de ese usuario como leídos
+        if (esSoporte && destinatario) {
+            mensajes.forEach(m => {
+                if (m.usuario && m.usuario.toLowerCase() === destinatario.toLowerCase()) {
+                    m.leidoPorAdmin = true;
+                }
+            });
+        }
+
+        // Si el mensaje fue enviado por el operador/Daniel/Rodrigo, evaluar si el bot ofrece contexto adicional
         let respuestaAutomatica = null;
         if (!esSoporte) {
-            const t = texto.toLowerCase();
             let respuestaTexto = "";
             let tituloContexto = "";
 
-            if (t.includes("ficha") || t.includes("filtro") || t.includes("baldwin") || t.includes("donaldson") || (t.includes("aceite") && t.includes("motor"))) {
+            if (tLower.includes("ficha") || tLower.includes("filtro") || tLower.includes("baldwin") || tLower.includes("donaldson") || (tLower.includes("aceite") && tLower.includes("motor"))) {
                 tituloContexto = "Fichas Técnicas & Filtros";
                 respuestaTexto = "En el módulo de Fichas Técnicas puedes consultar la matriz completa de equivalencias multimarca (Baldwin, Donaldson, Fleetguard y Mann). Los cambios guardados por el Administrador ya persisten en el servidor.";
-            } else if (t.includes("camion") || t.includes("camioneta") || t.includes("flota") || t.includes("cmn-") || t.includes("cam-") || t.includes("patente")) {
+            } else if (tLower.includes("camion") || tLower.includes("camioneta") || tLower.includes("flota") || tLower.includes("cmn-") || tLower.includes("cam-") || tLower.includes("patente")) {
                 tituloContexto = "Flota & Unidades Registradas";
                 respuestaTexto = "Las unidades dadas de alta (camionetas, camiones y maquinaria pesada) se sincronizan en la tabla de Flota Registrada y en el Programa Maestro.";
-            } else if (t.includes("combustible") || t.includes("estanque") || t.includes("litro") || t.includes("diesel") || t.includes("400")) {
+            } else if (tLower.includes("combustible") || tLower.includes("estanque") || tLower.includes("litro") || tLower.includes("diesel") || tLower.includes("400")) {
                 tituloContexto = "Control de Combustible (Estanque 400L)";
                 respuestaTexto = "El estanque de 400L descuenta en tiempo real los despachos realizados a cada equipo y emite alerta si el saldo baja de 100L.";
-            } else if (t.includes("respaldo") || t.includes("backup") || t.includes("restaurar")) {
+            } else if (tLower.includes("respaldo") || tLower.includes("backup") || tLower.includes("restaurar")) {
                 tituloContexto = "Puntos de Restauración y Respaldos";
                 respuestaTexto = "Los respaldos no se aplican automáticamente para no interrumpir tus labores. El Administrador General dispone del botón '🚀 Aplicar este Punto' para ejecutar restauraciones cuando sea necesario.";
             } else {
-                tituloContexto = "Canal de Soporte Directo";
-                respuestaTexto = "✅ Recibido en tiempo real por el equipo de Soporte y Desarrollo ServiTec Pro. Aron Martinez ha recibido tu notificación en el sistema y atenderá tu solicitud a través de esta misma ventana.";
+                tituloContexto = "Solicitud Transmitida al Administrador";
+                respuestaTexto = `🔔 Tu consulta ha sido notificada en tiempo real a <strong>Aron Martinez (Administrador General)</strong>. Te responderá directamente a través de este chat interno en la plataforma.`;
+                nuevoMensaje.necesitaAtencionHumana = true;
             }
 
             respuestaAutomatica = {
@@ -1636,13 +1767,15 @@ app.post(["/api/soporte/mensajes", "/api/chat/mensajes"], (req, res) => {
                 timestamp: new Date().toISOString(),
                 hora: new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" }),
                 esSoporte: true,
-                autoRespuesta: true
+                autoRespuesta: true,
+                destinatario: remitente,
+                leidoPorAdmin: true
             };
             mensajes.push(respuestaAutomatica);
         }
 
-        // Limitar historial a los últimos 150 mensajes
-        const mensajesGuardados = mensajes.length > 150 ? mensajes.slice(-150) : mensajes;
+        // Limitar historial a los últimos 200 mensajes
+        const mensajesGuardados = mensajes.length > 200 ? mensajes.slice(-200) : mensajes;
         guardarMensajesChatSoporte(mensajesGuardados);
 
         res.json({
@@ -1664,10 +1797,12 @@ app.delete(["/api/soporte/mensajes", "/api/chat/mensajes"], (req, res) => {
                 usuario: "aron_soporte",
                 nombre: "Aron Martinez (ServiTec Pro)",
                 rol: "admin",
-                texto: "👋 ¡Hola! Bienvenido al chat directo de soporte técnico de Corssen Logística. Puedes escribir tus dudas técnicas, requerimientos de flota o consultar por fallas aquí mismo sin salir del sistema.",
+                texto: "👋 ¡Hola! Bienvenido al canal directo de soporte técnico y comunicación interna de Corssen Logística. Puedes escribir tus dudas técnicas o requerimientos aquí mismo.",
                 timestamp: new Date().toISOString(),
                 hora: new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" }),
-                esSoporte: true
+                esSoporte: true,
+                destinatario: "todos",
+                leidoPorAdmin: true
             }
         ];
         guardarMensajesChatSoporte(bienvenida);

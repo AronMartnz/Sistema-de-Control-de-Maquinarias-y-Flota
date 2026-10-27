@@ -2573,6 +2573,22 @@ function actualizarPermisosModuloRespaldos() {
             seccionRespaldos.style.removeProperty("display");
         }
     }
+
+    // Control de visibilidad del Centro de Mensajes & Soporte Interno (Solo Admin)
+    const menuItemCentroSoporte = document.getElementById("menuItemCentroSoporte");
+    if (menuItemCentroSoporte) {
+        menuItemCentroSoporte.style.display = esAdminGeneralExclusivo ? "flex" : "none";
+    }
+
+    const seccionCentroSoporte = document.getElementById("centroSoporteInterno");
+    if (seccionCentroSoporte) {
+        if (!esAdminGeneralExclusivo) {
+            seccionCentroSoporte.style.display = "none";
+            seccionCentroSoporte.classList.remove("active");
+        } else {
+            seccionCentroSoporte.style.removeProperty("display");
+        }
+    }
 }
 window.actualizarPermisosModuloRespaldos = actualizarPermisosModuloRespaldos;
 
@@ -7565,6 +7581,18 @@ function navegarSeccion(idSeccion) {
         }
         if (typeof window.cargarModuloVentanaMantenimiento === "function") {
             window.cargarModuloVentanaMantenimiento();
+        }
+    }
+
+    if (idSeccion === "centroSoporteInterno") {
+        const u = (sessionStorage.getItem("usuarioLogueado") || "").toLowerCase().trim();
+        if (u !== "admin") {
+            alert("⛔ Acceso Restringido: El Centro de Mensajes & Soporte es exclusivo para el Administrador General (admin).");
+            navegarSeccion("dashboard");
+            return;
+        }
+        if (typeof window.cargarConversacionesAdmin === "function") {
+            window.cargarConversacionesAdmin(true);
         }
     }
 
@@ -12690,6 +12718,31 @@ async function cargarMensajesSoporteServidor(reproducirSonidoSiNuevos) {
         const resp = await fetch("/api/soporte/mensajes?t=" + Date.now());
         if (!resp.ok) return;
         const data = await resp.json();
+
+        // Verificación de solicitudes pendientes de soporte para Administrador General
+        const usuarioActualSop = (sessionStorage.getItem("usuarioLogueado") || "").toLowerCase().trim();
+        const esAdminActual = (usuarioActualSop === "admin");
+        if (esAdminActual) {
+            const countPendientes = typeof data.pendientesAdminCount === "number" ? data.pendientesAdminCount : 0;
+            const badgeMenu = document.getElementById("badgeUnreadSoporteMenu");
+            if (badgeMenu) {
+                if (countPendientes > 0) {
+                    badgeMenu.style.display = "inline-flex";
+                    badgeMenu.textContent = String(countPendientes);
+                } else {
+                    badgeMenu.style.display = "none";
+                    badgeMenu.textContent = "0";
+                }
+            }
+
+            if (countPendientes > 0 && Array.isArray(data.ultimosPendientes) && data.ultimosPendientes.length > 0) {
+                const primerPendiente = data.ultimosPendientes[0];
+                if (typeof window.mostrarToastSoporteAdmin === "function") {
+                    window.mostrarToastSoporteAdmin(primerPendiente);
+                }
+            }
+        }
+
         const mensajesNuevos = Array.isArray(data.mensajes) ? data.mensajes : [];
 
         if (mensajesNuevos.length === 0) return;
@@ -12886,3 +12939,280 @@ if (typeof document !== "undefined") {
         actualizarVisibilidadModoAdminChat();
     }
 }
+
+// =========================================================================
+// MÓDULO EXCLUSIVO ADMINISTRADOR: CENTRO DE MENSAJES & SOPORTE INTERNO
+// =========================================================================
+let operadorActivoChatAdmin = "daniel";
+let listaConversacionesCache = [];
+let ultimoToastNotificadoId = null;
+
+function mostrarToastSoporteAdmin(pendiente) {
+    if (!pendiente || pendiente.id === ultimoToastNotificadoId) return;
+    ultimoToastNotificadoId = pendiente.id;
+
+    const toast = document.getElementById("toastNotificacionSoporteAdmin");
+    if (!toast) return;
+
+    const tit = document.getElementById("toastSoporteTitulo");
+    const sub = document.getElementById("toastSoporteSubtitulo");
+    const msg = document.getElementById("toastSoporteMensajeTexto");
+
+    const nom = pendiente.nombre || pendiente.usuario || "Operador";
+    if (tit) tit.textContent = `🔔 Solicitud de Soporte: ${nom}`;
+    if (sub) sub.textContent = `Hora: ${pendiente.hora || 'Ahora'} • Requiere asistencia en app`;
+    if (msg) msg.textContent = `"${pendiente.texto || ''}"`;
+
+    toast.style.display = "block";
+    if (typeof reproducirChimeMensaje === "function") {
+        reproducirChimeMensaje();
+    }
+}
+window.mostrarToastSoporteAdmin = mostrarToastSoporteAdmin;
+
+window.cerrarToastSoporteAdmin = function() {
+    const toast = document.getElementById("toastNotificacionSoporteAdmin");
+    if (toast) toast.style.display = "none";
+};
+
+window.abrirModuloDesdeToastSoporte = function() {
+    window.cerrarToastSoporteAdmin();
+    navegarSeccion("centroSoporteInterno");
+    if (ultimoToastNotificadoId && Array.isArray(listaConversacionesCache)) {
+        const conv = listaConversacionesCache.find(c => c.necesitaAtencion);
+        if (conv) {
+            seleccionarConversacionAdmin(conv.usuario);
+        }
+    }
+};
+
+window.cargarConversacionesAdmin = async function(forzar) {
+    try {
+        const resp = await fetch("/api/soporte/conversaciones?t=" + Date.now(), {
+            headers: { "x-usuario": "admin" }
+        });
+        if (!resp.ok) return;
+        const data = await resp.json();
+        const lista = Array.isArray(data.conversaciones) ? data.conversaciones : [];
+        listaConversacionesCache = lista;
+
+        // Actualizar KPIs en pantalla
+        const kpiOp = document.getElementById("kpiOperadoresActivos");
+        const kpiPend = document.getElementById("kpiMensajesPendientes");
+        if (kpiOp) kpiOp.textContent = `${lista.length} Contactos`;
+        if (kpiPend) kpiPend.textContent = `${data.totalPendientes || 0} Pendientes`;
+
+        // Renderizar lista en columna izquierda
+        renderizarListaConversacionesAdmin(lista);
+
+        // Seleccionar por defecto el primer operador si no hay seleccionado
+        if (!operadorActivoChatAdmin && lista.length > 0) {
+            seleccionarConversacionAdmin(lista[0].usuario);
+        } else if (operadorActivoChatAdmin) {
+            cargarStreamMensajesOperador(operadorActivoChatAdmin);
+        }
+    } catch (e) {
+        console.error("Error al cargar conversaciones:", e);
+    }
+};
+
+function renderizarListaConversacionesAdmin(lista) {
+    const contenedor = document.getElementById("listaConversacionesAdmin");
+    if (!contenedor) return;
+
+    if (lista.length === 0) {
+        contenedor.innerHTML = `<div style="text-align:center; padding:20px; color:#94a3b8; font-size:12px;">No hay operadores registrados</div>`;
+        return;
+    }
+
+    contenedor.innerHTML = lista.map(c => {
+        const esActivo = (c.usuario === operadorActivoChatAdmin);
+        const estiloActivo = esActivo ? "background:#e0f2fe; border-color:#38bdf8;" : "background:#ffffff; border-color:#e2e8f0;";
+        const badgeAtencion = c.necesitaAtencion 
+            ? `<span style="background:#ef4444; color:#ffffff; font-size:10px; font-weight:800; padding:2px 6px; border-radius:10px;" class="soporte-pulso">Requiere Ayuda</span>`
+            : (c.sinLeer > 0 ? `<span style="background:#0284c7; color:#ffffff; font-size:10px; font-weight:700; padding:2px 6px; border-radius:10px;">${c.sinLeer} nuevos</span>` : "");
+
+        return `
+            <div onclick="seleccionarConversacionAdmin('${c.usuario}')" class="item-conversacion-admin" style="padding:10px 12px; border-radius:10px; border:1px solid; ${estiloActivo} cursor:pointer; display:flex; align-items:center; gap:10px; transition:all 0.2s ease;">
+                <div style="width:38px; height:38px; border-radius:50%; background:#f1f5f9; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;">
+                    ${c.avatar || "👤"}
+                </div>
+                <div style="flex:1; min-width:0;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2px;">
+                        <span style="font-weight:700; font-size:13px; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtmlSoporte(c.nombre)}</span>
+                        <span style="font-size:11px; color:#94a3b8; margin-left:6px;">${c.ultimaHora || ""}</span>
+                    </div>
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
+                        <span style="font-size:11.5px; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px;">${escapeHtmlSoporte(c.ultimoMensaje || "Sin mensajes")}</span>
+                        ${badgeAtencion}
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join("");
+}
+window.renderizarListaConversacionesAdmin = renderizarListaConversacionesAdmin;
+
+window.seleccionarConversacionAdmin = async function(usuarioId) {
+    operadorActivoChatAdmin = usuarioId;
+    const op = listaConversacionesCache.find(c => c.usuario === usuarioId);
+
+    // Actualizar cabecera activa
+    const avatar = document.getElementById("avatarOperadorActivo");
+    const nombre = document.getElementById("nombreOperadorActivo");
+    const rol = document.getElementById("rolOperadorActivo");
+    const btnResuelto = document.getElementById("btnMarcarResueltoAdmin");
+
+    if (avatar) avatar.textContent = op?.avatar || "👤";
+    if (nombre) nombre.textContent = op?.nombre || usuarioId;
+    if (rol) rol.textContent = `${op?.rol || 'Operador'} • Usuario: @${usuarioId}`;
+    if (btnResuelto) btnResuelto.style.display = "inline-flex";
+
+    // Re-renderizar lista para destacar seleccionado
+    renderizarListaConversacionesAdmin(listaConversacionesCache);
+
+    // Cargar mensajes de ese operador
+    await cargarStreamMensajesOperador(usuarioId);
+
+    // Marcar como leídos en el servidor
+    try {
+        await fetch("/api/soporte/marcar-leido", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "x-usuario": "admin" },
+            body: JSON.stringify({ usuario: usuarioId })
+        });
+        if (op) {
+            op.sinLeer = 0;
+            op.necesitaAtencion = false;
+        }
+        const kpiPend = document.getElementById("kpiMensajesPendientes");
+        if (kpiPend) {
+            const countRestante = listaConversacionesCache.filter(c => c.necesitaAtencion).length;
+            kpiPend.textContent = `${countRestante} Pendientes`;
+        }
+    } catch (_) {}
+};
+
+async function cargarStreamMensajesOperador(usuarioId) {
+    const stream = document.getElementById("streamMensajesAdmin");
+    if (!stream) return;
+
+    try {
+        const resp = await fetch(`/api/soporte/mensajes?usuario=${usuarioId}&t=` + Date.now());
+        if (!resp.ok) return;
+        const data = await resp.json();
+        const mensajes = Array.isArray(data.mensajes) ? data.mensajes : [];
+
+        if (mensajes.length === 0) {
+            stream.innerHTML = `
+                <div style="text-align:center; color:#94a3b8; font-size:13px; margin:auto; background:#ffffff; padding:18px 24px; border-radius:12px; border:1px solid #e2e8f0;">
+                    💬 No hay mensajes previos con este operador.<br>
+                    <span style="font-size:12px; color:#64748b;">Puedes escribirle una indicación o respuesta directa abajo.</span>
+                </div>
+            `;
+            return;
+        }
+
+        stream.innerHTML = mensajes.map(msg => {
+            const esAdminMsg = Boolean(msg.esSoporte);
+            const clase = esAdminMsg ? "chat-mensaje-globo chat-mensaje-usuario" : "chat-mensaje-globo chat-mensaje-bot";
+            const remitente = esAdminMsg ? "Tú (Aron Martinez - Soporte)" : (msg.nombre || usuarioId);
+            const check = esAdminMsg ? `<span style="color:#0284c7; font-size:11px;">✓✓</span>` : "";
+
+            return `
+                <div class="${clase}" id="admin-msg-${msg.id}">
+                    <div class="chat-remitente-nombre">${escapeHtmlSoporte(remitente)}</div>
+                    ${msg.tituloContexto ? `<div style="font-weight:700; color:#0f172a; margin-bottom:4px; font-size:12px;">${escapeHtmlSoporte(msg.tituloContexto)}</div>` : ""}
+                    <div style="font-size:13px; line-height:1.4;">${escapeHtmlSoporte(msg.texto)}</div>
+                    <div class="chat-hora">
+                        <span>${msg.hora || ""}</span>
+                        ${check}
+                    </div>
+                </div>
+            `;
+        }).join("");
+
+        stream.scrollTop = stream.scrollHeight;
+    } catch (e) {
+        console.error("Error al cargar stream de operador:", e);
+    }
+}
+window.cargarStreamMensajesOperador = cargarStreamMensajesOperador;
+
+window.enviarMensajeAdminAOperador = async function(e) {
+    if (e) e.preventDefault();
+    const input = document.getElementById("inputTextoAdminOperador");
+    if (!input) return;
+    const texto = input.value.trim();
+    if (!texto) return;
+    input.value = "";
+
+    const usuarioTarget = operadorActivoChatAdmin || "daniel";
+
+    try {
+        const payload = {
+            texto: texto,
+            usuario: "admin",
+            nombre: "Aron Martinez (Administrador General)",
+            rol: "admin",
+            esSoporte: true,
+            destinatario: usuarioTarget
+        };
+
+        const resp = await fetch("/api/soporte/mensajes", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "x-usuario": "admin"
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (resp.ok) {
+            if (typeof reproducirChimeMensaje === "function") {
+                reproducirChimeMensaje();
+            }
+            await cargarStreamMensajesOperador(usuarioTarget);
+            await window.cargarConversacionesAdmin(false);
+        }
+    } catch (err) {
+        console.error("Error al enviar respuesta de admin:", err);
+    }
+};
+
+window.inyectarTextoAdmin = function(txt) {
+    const input = document.getElementById("inputTextoAdminOperador");
+    if (input) {
+        input.value = txt;
+        input.focus();
+    }
+};
+
+window.marcarConversacionActivaResuelta = async function() {
+    if (!operadorActivoChatAdmin) return;
+    try {
+        await fetch("/api/soporte/marcar-leido", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "x-usuario": "admin" },
+            body: JSON.stringify({ usuario: operadorActivoChatAdmin })
+        });
+        alert(`✅ Conversación con ${operadorActivoChatAdmin} marcada como atendida y resuelta.`);
+        await window.cargarConversacionesAdmin(true);
+    } catch (e) {
+        console.error(e);
+    }
+};
+
+window.filtrarOperadoresChatAdmin = function(busqueda) {
+    const q = (busqueda || "").toLowerCase().trim();
+    if (!q) {
+        renderizarListaConversacionesAdmin(listaConversacionesCache);
+        return;
+    }
+    const filtrados = listaConversacionesCache.filter(c => 
+        (c.nombre || "").toLowerCase().includes(q) ||
+        (c.usuario || "").toLowerCase().includes(q) ||
+        (c.rol || "").toLowerCase().includes(q)
+    );
+    renderizarListaConversacionesAdmin(filtrados);
+};

@@ -25,5 +25,14 @@
         "rol": "admin",
         "avatar": "avatar-admin",
         "estado": "activo"
+    },
+    {
+        "usuario": "rodrigo",
+        "password": "$2b$10$qac5xGf7UI3udD4j88V/O.OiWQUFBa5qJX3Yb.V5YpbmMR8FWzYL6",
+        "password_plana": "1234",
+        "nombre": "Rodrigo Silva",
+        "rol": "operador",
+        "avatar": "avatar-mecanico",
+        "estado": "activo"
     }
 ]

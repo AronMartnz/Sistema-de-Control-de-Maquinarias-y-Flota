@@ -404,6 +404,16 @@ async function ejecutarPruebas() {
         assert(ultimoMsg && ultimoMsg.esSoporte === true && ultimoMsg.nombre.includes('Aron Martinez'), 
             'Persistencia en tiempo real del diálogo bidireccional entre Operador y Soporte en la app', 'API / Chat Soporte');
 
+        // Endpoint exclusivo para Centro de Soporte del Administrador: Conversaciones agrupadas
+        const resConversaciones = await request('GET', '/api/soporte/conversaciones', { 'x-usuario': 'admin' });
+        assert(resConversaciones.status === 200 && Array.isArray(resConversaciones.body?.conversaciones) && resConversaciones.body?.conversaciones.length > 0,
+            'Administrador consulta lista consolidada de conversaciones de operadores (/api/soporte/conversaciones)', 'API / Chat Soporte Admin');
+
+        // Marcar conversación leída por el Administrador
+        const resMarcarLeido = await request('POST', '/api/soporte/marcar-leido', { 'x-usuario': 'admin' }, { usuario: 'daniel' });
+        assert(resMarcarLeido.status === 200 && resMarcarLeido.body?.ok === true,
+            'Administrador marca conversación de operador como leída y atendida (/api/soporte/marcar-leido)', 'API / Chat Soporte Admin');
+
     } catch (err) {
         assert(false, 'Falla inesperada en peticiones de API', 'API', err.message);
     }
@@ -661,6 +671,14 @@ async function ejecutarPruebas() {
         'Respaldos no se aplican solos: cada punto cuenta con botón profesional y modal para aplicar a petición manual', 'Respaldos a Petición');
     assert(indexHtml.includes('id="btnFlotanteSoporte"') && indexHtml.includes('id="ventanaChatSoporte"'), 
         'Dashboard contiene botón flotante de soporte y ventana de chat interactivo accesible para ambos roles', 'Widget Soporte');
+    assert(indexHtml.includes('id="menuItemCentroSoporte"') && indexHtml.includes('id="centroSoporteInterno"'), 
+        'index.html contiene Centro de Mensajes & Soporte Interno exclusivo para Administrador General', 'Admin Soporte');
+    assert(indexHtml.includes('id="toastNotificacionSoporteAdmin"'), 
+        'index.html incluye notificación flotante (toast) en tiempo real para Administrador General', 'Toast Soporte');
+    assert(!indexHtml.includes('btnLinkDirectoWhatsappHeader') && !indexHtml.includes('https://wa.me/56961405100?text='), 
+        'Eliminada redirección externa a WhatsApp: el chat ocurre 100% dentro de la plataforma', 'Chat In-App');
+    assert(scriptContent.includes('cargarConversacionesAdmin') && scriptContent.includes('mostrarToastSoporteAdmin'), 
+        'script.js contiene gestión completa de conversaciones de operadores y alertas en pantalla para Admin', 'Admin Soporte');
     assert(scriptContent.includes('BASE_CONOCIMIENTO_SOPORTE') && scriptContent.includes('toggleVentanaChatSoporte') && scriptContent.includes('cargarMensajesSoporteServidor'), 
         'script.js contiene motor de chat en vivo y soporte interactivo dentro de la aplicación con Aron Martinez (ServiTec Pro)', 'Widget Soporte');
 
