@@ -681,6 +681,8 @@ async function ejecutarPruebas() {
         'script.js contiene gestión completa de conversaciones de operadores y alertas en pantalla para Admin', 'Admin Soporte');
     assert(scriptContent.includes('BASE_CONOCIMIENTO_SOPORTE') && scriptContent.includes('toggleVentanaChatSoporte') && scriptContent.includes('cargarMensajesSoporteServidor'), 
         'script.js contiene motor de chat en vivo y soporte interactivo dentro de la aplicación con Aron Martinez (ServiTec Pro)', 'Widget Soporte');
+    assert(scriptContent.includes('generarEtiquetaRemitenteChat') && scriptContent.includes('chat-remitente-tag-usuario'), 
+        'Cada mensaje del chat muestra claramente el nombre y usuario de quien lo envía (@usuario)', 'Nombre Remitente Chat');
 
     // -------------------------------------------------------------
     // RESUMEN GENERAL DE PRUEBAS

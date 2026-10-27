@@ -1700,9 +1700,21 @@ app.post(["/api/soporte/mensajes", "/api/chat/mensajes"], (req, res) => {
         const mensajes = leerMensajesChatSoporte();
         const idMsg = "MSG-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
         const hora = new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
-        const esSoporte = Boolean(body.esSoporte || (body.rol === "admin" && (body.usuario === "admin" || body.usuario === "aron")));
-        const remitente = body.usuario || (esSoporte ? "admin" : "operador");
-        const nombreRemitente = body.nombre || (esSoporte ? "Aron Martinez (Administrador General)" : (remitente === "daniel" ? "Daniel Corssen (Operador)" : (remitente === "rodrigo" ? "Rodrigo Silva (Mecánico)" : "Operador")));
+        const remitente = String(body.usuario || req.headers["x-usuario"] || "operador").toLowerCase().trim();
+        const esSoporte = Boolean(body.esSoporte || remitente === "admin" || remitente === "aron");
+        
+        // Obtener nombre completo del remitente desde base de datos de usuarios
+        const usuarios = leerUsuarios() || [];
+        const usuarioEncontrado = usuarios.find(u => u.usuario.toLowerCase() === remitente);
+
+        let nombreRemitente = body.nombre || usuarioEncontrado?.nombre;
+        if (!nombreRemitente || nombreRemitente.trim() === "") {
+            if (remitente === "admin" || remitente === "aron") nombreRemitente = "Aron Martinez (Administrador General)";
+            else if (remitente === "daniel") nombreRemitente = "Daniel Corssen";
+            else if (remitente === "rodrigo") nombreRemitente = "Rodrigo Silva";
+            else nombreRemitente = "Operador Principal";
+        }
+
         const destinatario = body.destinatario || (esSoporte ? "daniel" : "admin");
 
         const tLower = texto.toLowerCase();
@@ -1712,7 +1724,7 @@ app.post(["/api/soporte/mensajes", "/api/chat/mensajes"], (req, res) => {
             id: idMsg,
             usuario: remitente,
             nombre: nombreRemitente,
-            rol: body.rol || (esSoporte ? "admin" : "operador"),
+            rol: usuarioEncontrado?.rol || body.rol || (esSoporte ? "admin" : "operador"),
             texto: texto,
             timestamp: new Date().toISOString(),
             hora: hora,

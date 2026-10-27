@@ -12685,16 +12685,17 @@ window.toggleVentanaChatSoporte = function(forzarEstado) {
 function actualizarVisibilidadModoAdminChat() {
     const barraAdmin = document.getElementById("barraModoAdminSoporte");
     const input = document.getElementById("inputPreguntaSoporte");
-    const esAdmin = esUsuarioAdministrador();
+    const usuarioLog = (sessionStorage.getItem("usuarioLogueado") || "").toLowerCase().trim();
+    const esAdmin = (usuarioLog === "admin");
 
     if (barraAdmin) {
         barraAdmin.style.display = esAdmin ? "flex" : "none";
     }
     if (input) {
         if (esAdmin) {
-            input.placeholder = "Escribe una respuesta como Aron Martinez (Soporte)...";
+            input.placeholder = "Escribe una respuesta como Aron Martinez (Administrador General)...";
         } else {
-            const nombre = sessionStorage.getItem("nombreUsuario") || "Operador";
+            const nombre = sessionStorage.getItem("nombreUsuario") || (usuarioLog === "daniel" ? "Daniel Corssen" : (usuarioLog === "rodrigo" ? "Rodrigo Silva" : "Operador"));
             input.placeholder = `Escribe tu consulta aquí a Aron Martinez, ${nombre}...`;
         }
     }
@@ -12774,21 +12775,50 @@ async function cargarMensajesSoporteServidor(reproducirSonidoSiNuevos) {
     } catch (_) {}
 }
 
+function generarEtiquetaRemitenteChat(msg, esMio) {
+    const usuarioId = String(msg.usuario || (msg.esSoporte ? "admin" : "operador")).toLowerCase().trim();
+    let nombre = msg.nombre || "";
+
+    if (!nombre || nombre === "Usuario" || nombre === "Operador") {
+        if (usuarioId === "admin" || usuarioId === "aron_soporte" || usuarioId === "aron") nombre = "Aron Martinez (Administrador General)";
+        else if (usuarioId === "daniel") nombre = "Daniel Corssen";
+        else if (usuarioId === "rodrigo") nombre = "Rodrigo Silva";
+        else if (usuarioId === "operador") nombre = "Operador Principal";
+        else nombre = usuarioId;
+    }
+
+    const esSoporteAdmin = (usuarioId === "admin" || usuarioId === "aron_soporte" || usuarioId === "aron" || Boolean(msg.esSoporte));
+    const icono = esSoporteAdmin ? "👨‍💻" : (usuarioId === "rodrigo" ? "🔧" : "👤");
+    const tag = usuarioId ? `<span class="chat-remitente-tag-usuario">@${escapeHtmlSoporte(usuarioId)}</span>` : "";
+    const prefijoTuyo = esMio ? `<span style="font-size:10.5px; color:#0369a1; font-weight:800; margin-right:3px;">(Tú)</span>` : "";
+
+    return `
+        <div class="chat-remitente-nombre">
+            <span>${icono}</span>
+            <span>${prefijoTuyo}${escapeHtmlSoporte(nombre)}</span>
+            ${tag}
+        </div>
+    `;
+}
+window.generarEtiquetaRemitenteChat = generarEtiquetaRemitenteChat;
+
 function renderizarMensajesEnPantalla(mensajes) {
     const cuerpo = document.getElementById("cuerpoChatSoporte");
     if (!cuerpo) return;
 
-    const esAdmin = esUsuarioAdministrador();
+    const miUsuario = (sessionStorage.getItem("usuarioLogueado") || "").toLowerCase().trim();
+    const esAdmin = (miUsuario === "admin");
 
     cuerpo.innerHTML = mensajes.map(msg => {
-        const esMio = (!msg.esSoporte && !esAdmin) || (msg.esSoporte && esAdmin);
+        const remitenteId = String(msg.usuario || "").toLowerCase().trim();
+        const esMio = (remitenteId && remitenteId === miUsuario) || (!remitenteId && !msg.esSoporte && !esAdmin) || (esAdmin && msg.esSoporte);
         const claseGlobo = esMio ? "chat-mensaje-globo chat-mensaje-usuario" : "chat-mensaje-globo chat-mensaje-bot";
-        const remitente = escapeHtmlSoporte(msg.nombre || (msg.esSoporte ? "Aron Martinez (ServiTec Pro)" : "Usuario"));
+        const remitenteHtml = generarEtiquetaRemitenteChat(msg, esMio);
         const checkmarks = esMio ? `<span style="color:#0284c7; font-size:11px;">✓✓</span>` : "";
 
         return `
             <div class="${claseGlobo}" id="msg-${msg.id}">
-                <div class="chat-remitente-nombre">${remitente}</div>
+                ${remitenteHtml}
                 ${msg.tituloContexto ? `<div style="font-weight:700; color:#0f172a; margin-bottom:4px; font-size:12px;">${escapeHtmlSoporte(msg.tituloContexto)}</div>` : ""}
                 <div style="font-size:13px; line-height:1.4;">${msg.texto}</div>
                 <div class="chat-hora">
@@ -12858,17 +12888,31 @@ async function enviarMensajeUsuarioSoporte(texto, idPreguntaRapida, forzarEsSopo
     if (!cuerpo) return;
 
     const horaActual = new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
-    const esAdmin = esUsuarioAdministrador();
-    const esSoporte = (typeof forzarEsSoporte === "boolean") ? forzarEsSoporte : esAdmin;
-    const usuarioActual = sessionStorage.getItem("usuarioLogueado") || (esAdmin ? "admin" : "operador");
-    const nombreActual = esSoporte ? "Aron Martinez (ServiTec Pro)" : (sessionStorage.getItem("nombreUsuario") || (usuarioActual === "daniel" ? "Daniel (Operador)" : "Operador"));
+    const usuarioActual = (sessionStorage.getItem("usuarioLogueado") || "").toLowerCase().trim() || "operador";
+    const esAdminGeneral = (usuarioActual === "admin");
+    const esSoporte = (typeof forzarEsSoporte === "boolean") ? forzarEsSoporte : esAdminGeneral;
+
+    let nombreActual = sessionStorage.getItem("nombreUsuario");
+    if (!nombreActual || esSoporte) {
+        if (usuarioActual === "admin" || usuarioActual === "aron") nombreActual = "Aron Martinez (Administrador General)";
+        else if (usuarioActual === "daniel") nombreActual = "Daniel Corssen";
+        else if (usuarioActual === "rodrigo") nombreActual = "Rodrigo Silva";
+        else nombreActual = "Operador Principal";
+    }
 
     const tempId = "temp-" + Date.now();
     const userDiv = document.createElement("div");
     userDiv.className = "chat-mensaje-globo chat-mensaje-usuario";
     userDiv.id = tempId;
+
+    const remitenteHtml = generarEtiquetaRemitenteChat({
+        usuario: usuarioActual,
+        nombre: nombreActual,
+        esSoporte: esSoporte
+    }, true);
+
     userDiv.innerHTML = `
-        <div class="chat-remitente-nombre">${escapeHtmlSoporte(nombreActual)}</div>
+        ${remitenteHtml}
         <div style="font-size:13px; line-height:1.4;">${escapeHtmlSoporte(texto)}</div>
         <div class="chat-hora">
             <span>${horaActual}</span>
@@ -12882,8 +12926,13 @@ async function enviarMensajeUsuarioSoporte(texto, idPreguntaRapida, forzarEsSopo
         const respObj = BASE_CONOCIMIENTO_SOPORTE[idPreguntaRapida];
         const botDiv = document.createElement("div");
         botDiv.className = "chat-mensaje-globo chat-mensaje-bot";
+        const botHtml = generarEtiquetaRemitenteChat({
+            usuario: "aron_soporte",
+            nombre: "Aron Martinez (ServiTec Pro)",
+            esSoporte: true
+        }, false);
         botDiv.innerHTML = `
-            <div class="chat-remitente-nombre">Aron Martinez (ServiTec Pro)</div>
+            ${botHtml}
             <div style="font-weight:700; color:#0f172a; margin-bottom:4px; font-size:12.5px;">${respObj.titulo}</div>
             <div style="font-size:13px; line-height:1.4;">${respObj.respuesta}</div>
             <div class="chat-hora">${horaActual}</div>
@@ -13114,14 +13163,14 @@ async function cargarStreamMensajesOperador(usuarioId) {
         }
 
         stream.innerHTML = mensajes.map(msg => {
-            const esAdminMsg = Boolean(msg.esSoporte);
+            const esAdminMsg = Boolean(msg.esSoporte || msg.usuario === "admin" || msg.usuario === "aron_soporte");
             const clase = esAdminMsg ? "chat-mensaje-globo chat-mensaje-usuario" : "chat-mensaje-globo chat-mensaje-bot";
-            const remitente = esAdminMsg ? "Tú (Aron Martinez - Soporte)" : (msg.nombre || usuarioId);
             const check = esAdminMsg ? `<span style="color:#0284c7; font-size:11px;">✓✓</span>` : "";
+            const remitenteHtml = generarEtiquetaRemitenteChat(msg, esAdminMsg);
 
             return `
                 <div class="${clase}" id="admin-msg-${msg.id}">
-                    <div class="chat-remitente-nombre">${escapeHtmlSoporte(remitente)}</div>
+                    ${remitenteHtml}
                     ${msg.tituloContexto ? `<div style="font-weight:700; color:#0f172a; margin-bottom:4px; font-size:12px;">${escapeHtmlSoporte(msg.tituloContexto)}</div>` : ""}
                     <div style="font-size:13px; line-height:1.4;">${escapeHtmlSoporte(msg.texto)}</div>
                     <div class="chat-hora">
