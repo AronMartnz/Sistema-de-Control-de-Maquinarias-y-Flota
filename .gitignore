@@ -12,3 +12,4 @@ coverage/
 bun.lock*
 package-lock.json
 backups/SNP-*.json
+.aistudio/

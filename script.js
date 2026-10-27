@@ -9686,9 +9686,9 @@ async function sincronizarConUltimoRespaldoNube(forzarRecarga = false) {
         const serverTs = Number(backup.timestamp || 0);
         const localTs = Number(localStorage.getItem("corssen_ultima_modificacion_ts") || 0);
 
-        // Si el respaldo de la nube es más reciente que el estado local (o se fuerza la recarga)
-        if (forzarRecarga || (serverTs > 0 && serverTs > localTs)) {
-            console.log(`☁️ Sincronizando estado más reciente desde la nube (Servidor: ${serverTs} vs Local: ${localTs})...`);
+        // Los respaldos NO se aplican automáticamente: solo cuando el usuario lo solicita explícitamente (forzarRecarga === true)
+        if (forzarRecarga) {
+            console.log(`☁️ Aplicando manualmente punto de respaldo desde la nube (Servidor: ${serverTs})...`);
             const data = backup.data;
 
             if (data.corssen_programa_v2) corssenPrograma = JSON.parse(JSON.stringify(data.corssen_programa_v2));
@@ -9775,11 +9775,21 @@ async function sincronizarConUltimoRespaldoNube(forzarRecarga = false) {
 
             // Reconciliar adicionalmente con el registro individual de programa para evitar sobreescritura de estados recién editados
             sincronizarProgramaDesdeServidor();
+            alert("✓ Punto de restauración aplicado exitosamente. El sistema se ha sincronizado con el respaldo de la nube.");
             return true;
-        } else if (localTs > 0 && localTs > serverTs) {
-            // El dispositivo local tiene cambios más recientes pendientes de subir a la nube
-            if (typeof window.ejecutarAutoBackupSistema === "function") {
-                window.ejecutarAutoBackupSistema("Sincronización de cambios pendientes", "AUTOMATICO", true);
+        } else {
+            // Modo no intrusivo: NO se aplica automáticamente para respetar el trabajo actual del usuario
+            if (serverTs > 0 && serverTs > localTs) {
+                console.log(`☁️ Respaldo en la nube disponible (${serverTs}). Esperando aplicación manual del usuario.`);
+                const elEstado = document.querySelector(".estado-sistema");
+                if (elEstado) {
+                    elEstado.innerHTML = `<span class="estado-punto" style="background:#3b82f6;"></span> Respaldo Nube Disponible <button class="btn-secundario" style="padding:2px 8px; font-size:10.5px; margin-left:6px; cursor:pointer;" onclick="sincronizarConUltimoRespaldoNube(true)" title="Aplicar este punto de respaldo">🚀 Aplicar</button>`;
+                }
+            } else if (localTs > 0 && localTs > serverTs) {
+                // El dispositivo local tiene cambios más recientes pendientes de subir a la nube
+                if (typeof window.ejecutarAutoBackupSistema === "function") {
+                    window.ejecutarAutoBackupSistema("Sincronización de cambios pendientes", "AUTOMATICO", true);
+                }
             }
         }
     } catch (err) {
@@ -10682,7 +10692,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <td>${badgeTipo}</td>
                     <td>
                         <strong style="color:#0f172a;">${s.motivo}</strong>
-                        <div style="font-size:11px; color:#64748b;">Por: ${s.usuario || 'Alexis Santos'}</div>
+                        <div style="font-size:11px; color:#64748b;">Por: ${s.usuario || 'Aron Martinez'}</div>
                     </td>
                     <td style="font-size:12px;">
                         <span title="Equipos en programa">${s.resumen?.totalPrograma || 0} Equipos</span> • 
@@ -10693,17 +10703,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     </td>
                     <td><span style="font-weight:700; color:#475569;">${tamanoAprox}</span></td>
                     <td style="text-align:center;">
-                        <div style="display:flex; gap:6px; justify-content:center; flex-wrap:wrap;">
-                            <button type="button" class="btn-primario" style="padding:4px 8px; font-size:11px; background:#2563eb; border-color:#2563eb;" onclick="restaurarSnapshotModoMerge('${s.id}')" title="Restaura datos borrados o perdidos SIN eliminar los datos nuevos ingresados hoy">
-                                🔄 Fusión Segura
+                        <div style="display:flex; gap:6px; justify-content:center; flex-wrap:wrap; align-items:center;">
+                            <button type="button" class="btn-primario btn-aplicar-punto" style="padding:6px 12px; font-size:11.5px; font-weight:700; background:#10b981; border-color:#10b981; color:#ffffff; border-radius:8px; display:inline-flex; align-items:center; gap:5px; box-shadow:0 2px 5px rgba(16,185,129,0.3); cursor:pointer;" onclick="abrirModalAplicarPunto('${s.id}')" title="Aplicar y restaurar este punto de respaldo en el sistema">
+                                🚀 Aplicar este Punto
                             </button>
-                            <button type="button" class="btn-secundario" style="padding:4px 8px; font-size:11px; color:#b91c1c; border-color:#fecaca;" onclick="restaurarSnapshotModoRollback('${s.id}')" title="Reemplaza el 100% de la base de datos dejando el sistema exactamente como estaba en este punto">
-                                ⚠️ Rollback Total
-                            </button>
-                            <button type="button" class="btn-secundario" style="padding:4px 8px; font-size:11px;" onclick="descargarSnapshotJSON('${s.id}')" title="Descargar este punto específico en archivo .JSON">
+                            <button type="button" class="btn-secundario" style="padding:5px 9px; font-size:11px;" onclick="descargarSnapshotJSON('${s.id}')" title="Descargar este punto específico en archivo .JSON">
                                 📥 JSON
                             </button>
-                            <button type="button" class="btn-peligro" style="padding:4px 8px; font-size:11px;" onclick="eliminarSnapshot('${s.id}')" title="Eliminar este punto de restauración">
+                            <button type="button" class="btn-peligro" style="padding:5px 7px; font-size:11px;" onclick="eliminarSnapshot('${s.id}')" title="Eliminar este punto de restauración">
                                 🗑️
                             </button>
                         </div>
@@ -10711,6 +10718,61 @@ document.addEventListener("DOMContentLoaded", () => {
                 </tr>
             `;
         }).join("");
+    };
+
+    // Control y modal para aplicar puntos de respaldo manualmente
+    let puntoSnapshotSeleccionadoParaAplicar = null;
+
+    window.abrirModalAplicarPunto = function(idSnapshot) {
+        const snapshots = obtenerSnapshots();
+        const snap = snapshots.find(s => s.id === idSnapshot);
+        if (!snap) return alert("Punto de restauración no encontrado.");
+
+        puntoSnapshotSeleccionadoParaAplicar = snap;
+
+        const infoCont = document.getElementById("detallePuntoRestaurarInfo");
+        if (infoCont) {
+            infoCont.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+                    <div>
+                        <span class="badge badge-verde" style="font-size:10.5px; padding:2px 8px;">ID: ${snap.id}</span>
+                        <h4 style="margin:6px 0 2px 0; font-size:15px; color:#0f172a; font-weight:800;">${snap.motivo}</h4>
+                        <div style="font-size:12px; color:#64748b;">📅 ${snap.fecha} a las ${snap.hora} • Guardado por: <strong>${snap.usuario || 'Aron Martinez'}</strong></div>
+                    </div>
+                </div>
+                <div style="display:flex; gap:10px; font-size:12px; color:#334155; background:#ffffff; padding:8px 12px; border-radius:8px; border:1px solid #e2e8f0; flex-wrap:wrap;">
+                    <span>📋 <strong>${snap.resumen?.totalPrograma || 0}</strong> Equipos</span>
+                    <span>🚚 <strong>${snap.resumen?.totalVehiculos || 0}</strong> Vehículos</span>
+                    <span>🏗️ <strong>${snap.resumen?.totalMaquinarias || 0}</strong> Maquinarias</span>
+                    <span>🔧 <strong>${snap.resumen?.totalMantenciones || 0}</strong> OTs</span>
+                    <span>📦 <strong>${snap.resumen?.totalStock || 0}</strong> Insumos</span>
+                </div>
+            `;
+        }
+
+        const modal = document.getElementById("modalAplicarPuntoRestauracion");
+        if (modal) modal.style.display = "flex";
+    };
+
+    window.cerrarModalAplicarPunto = function() {
+        puntoSnapshotSeleccionadoParaAplicar = null;
+        const modal = document.getElementById("modalAplicarPuntoRestauracion");
+        if (modal) modal.style.display = "none";
+    };
+
+    window.ejecutarAplicarPuntoSeleccionado = function() {
+        if (!puntoSnapshotSeleccionadoParaAplicar) return;
+        const snap = puntoSnapshotSeleccionadoParaAplicar;
+        const radio = document.querySelector('input[name="modoAplicarPuntoRadio"]:checked');
+        const modo = radio ? radio.value : "merge";
+
+        cerrarModalAplicarPunto();
+
+        if (modo === "merge") {
+            restaurarSnapshotModoMerge(snap.id);
+        } else {
+            restaurarSnapshotModoRollback(snap.id);
+        }
     };
 
     // Algoritmo de Fusión Inteligente (Smart Merge)
@@ -12385,4 +12447,298 @@ if (typeof document !== "undefined") {
         inicializarSistemaTema();
     }
 }
+
+// =========================================================
+// 13. WIDGET FLOTANTE DE SOPORTE INTELIGENTE & CHAT ESTILO WHATSAPP
+// =========================================================
+const NUMERO_WHATSAPP_SOPORTE = "56987654321"; // Aron Martinez / ServiTec Pro
+const NOMBRE_CONTACTO_SOPORTE = "Aron Martinez (ServiTec Pro)";
+
+let chatSoporteIniciado = false;
+
+const PREGUNTAS_RAPIDAS_SOPORTE = [
+    { id: "fichas", texto: "📋 Fichas Técnicas & Filtros" },
+    { id: "alta", texto: "🚚 Alta de Camión o Máquina" },
+    { id: "combustible", texto: "⛽ Combustible & Estanque 400L" },
+    { id: "aceite", texto: "🛢️ Tambor de Aceite 200L" },
+    { id: "mantenciones", texto: "🔧 Mantenciones & OTs" },
+    { id: "respaldos", texto: "💾 Respaldos del Sistema" },
+    { id: "roles", texto: "👤 Roles y Permisos" },
+    { id: "whatsapp", texto: "📲 Hablar con Aron por WhatsApp" }
+];
+
+const BASE_CONOCIMIENTO_SOPORTE = {
+    fichas: {
+        titulo: "📋 Módulo de Fichas Técnicas y Equivalencias Multimarca",
+        respuesta: `
+• <strong>Catálogo Oficial:</strong> Puedes consultar las especificaciones técnicas completas de cada camioneta, camión o grúa.<br>
+• <strong>Matriz de Filtros Multimarca:</strong> Cada unidad detalla sus filtros originales y equivalencias en Baldwin, Donaldson, Fleetguard y Mann.<br>
+• <strong>Nivel de Acceso:</strong> El <em>Administrador General</em> cuenta con el botón "Editar Ficha". Los <em>Operadores</em> tienen acceso en modo consulta.<br>
+• <strong>Exportación:</strong> Puedes descargar la ficha individual en PDF o exportarla a Excel (.xlsx).
+`
+    },
+    alta: {
+        titulo: "🚚 Registro y Sincronización de Flota",
+        respuesta: `
+• <strong>Camiones y Camionetas:</strong> Se registran con código oficial (ej: <code>CAM-05</code>), patente (ej: <code>TD-KP-72</code>), marca, modelo y kilometraje.<br>
+• <strong>Maquinarias y Grúas:</strong> Se registran con código (ej: <code>GHO-04</code>), horómetro, capacidad y modelo.<br>
+• <strong>Sincronización Automática:</strong> Al dar de alta una unidad en Fichas Técnicas o Flota, el sistema la incorpora de inmediato al <em>Programa Maestro</em> y a las tablas de <em>Flota Registrada</em>.<br>
+• <strong>Permisos:</strong> Función exclusiva para usuarios con rol de Administrador.
+`
+    },
+    combustible: {
+        titulo: "⛽ Control de Combustible y Estanque 400L",
+        respuesta: `
+• <strong>Estanque de 400 Litros:</strong> El sistema calcula el saldo en litros disponibles en tiempo real.<br>
+• <strong>Registro de Despachos:</strong> Cada carga resta litros del estanque y guarda fecha, conductor, equipo y kilometraje/horómetro.<br>
+• <strong>Recargas de Estanque:</strong> Si la empresa recarga el estanque con camión cisterna, se ingresa la recarga sumando litros al estanque.<br>
+• <strong>Alertas:</strong> El sistema avisa visualmente cuando el nivel baja de 100L (25%).
+`
+    },
+    aceite: {
+        titulo: "🛢️ Control de Aceite a Granel (2 Tambores 200L)",
+        respuesta: `
+• <strong>Monitoreo de Tambores:</strong> Control de tambores de 200L de aceite Valvoline Premium Blue 15W-40.<br>
+• <strong>Descuento por OT:</strong> Al completar una Orden de Trabajo que involucre cambio de aceite de motor, los litros utilizados se descuentan automáticamente del tambor activo.<br>
+• <strong>Costo Unitario:</strong> Calcula el gasto exacto por litro y acumulado por unidad.
+`
+    },
+    mantenciones: {
+        titulo: "🔧 Órdenes de Trabajo y Mantenimiento Preventivo",
+        respuesta: `
+• <strong>Semáforo Preventivo:</strong> Verde (Al día), Amarillo (Próximo a mantención dentro de 50 hrs / 1.000 km) y Rojo (Vencido o Urgente).<br>
+• <strong>Generación de OTs:</strong> Asigna labores, insumos utilizados, kilometraje/horómetro y técnico responsable.<br>
+• <strong>Comprobantes Oficiales:</strong> Cada OT completada cuenta con comprobante imprimible y descargable en PDF con firma técnica.
+`
+    },
+    respaldos: {
+        titulo: "💾 Respaldos y Puntos de Restauración",
+        respuesta: `
+• <strong>Acceso Exclusivo:</strong> Reservado únicamente para el <em>Administrador General (admin)</em>.<br>
+• <strong>No se aplican solos:</strong> Los respaldos se guardan de forma segura en la nube (Cloudflare), pero <u>no se aplican automáticamente</u> para no interferir con tu trabajo diario.<br>
+• <strong>Botón '🚀 Aplicar este Punto':</strong> Puedes restaurar manualmente cualquier punto eligiendo entre <em>Fusión Inteligente</em> (sin borrar lo nuevo) o <em>Rollback Total</em>.
+`
+    },
+    roles: {
+        titulo: "👤 Roles, Permisos y Accesos del Sistema",
+        respuesta: `
+• <strong>Administrador General (admin):</strong> Acceso total, centro de respaldos, control de cuotas, ventana de mantenimiento y edición de fichas maestras.<br>
+• <strong>Operador (operador / Daniel):</strong> Registro de despachos de combustible, control de stock, apertura de órdenes de trabajo y consulta de catálogo técnico.
+`
+    }
+};
+
+function escapeHtmlSoporte(str) {
+    if (!str) return "";
+    return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function obtenerRespuestaSoporte(texto) {
+    const t = (texto || "").toLowerCase().trim();
+
+    if (t.includes("whatsapp") || t.includes("hablar") || t.includes("aron") || t.includes("contacto") || t.includes("telefono") || t.includes("humano") || t.includes("soporte")) {
+        return {
+            tipo: "whatsapp",
+            mensaje: `Te redirijo directamente con <strong>${NOMBRE_CONTACTO_SOPORTE}</strong> para asistirte en tiempo real por WhatsApp:`
+        };
+    }
+
+    if (t.includes("ficha") || t.includes("filtro") || t.includes("manual") || t.includes("especificacion") || t.includes("baldwin") || t.includes("donaldson")) {
+        return BASE_CONOCIMIENTO_SOPORTE.fichas;
+    }
+    if (t.includes("alta") || t.includes("camion") || t.includes("vehiculo") || t.includes("maquinaria") || t.includes("grua") || t.includes("camioneta") || t.includes("patente")) {
+        return BASE_CONOCIMIENTO_SOPORTE.alta;
+    }
+    if (t.includes("combustible") || t.includes("estanque") || t.includes("tanque") || t.includes("petroleo") || t.includes("diesel") || t.includes("litros") || t.includes("carga")) {
+        return BASE_CONOCIMIENTO_SOPORTE.combustible;
+    }
+    if (t.includes("aceite") || t.includes("tambor") || t.includes("lubricante") || t.includes("15w40") || t.includes("valvoline")) {
+        return BASE_CONOCIMIENTO_SOPORTE.aceite;
+    }
+    if (t.includes("mantencion") || t.includes("ot") || t.includes("orden") || t.includes("preventiv") || t.includes("falla") || t.includes("semaforo")) {
+        return BASE_CONOCIMIENTO_SOPORTE.mantenciones;
+    }
+    if (t.includes("respaldo") || t.includes("backup") || t.includes("restaurar") || t.includes("punto") || t.includes("recuperar") || t.includes("nube")) {
+        return BASE_CONOCIMIENTO_SOPORTE.respaldos;
+    }
+    if (t.includes("rol") || t.includes("permiso") || t.includes("admin") || t.includes("operador") || t.includes("daniel") || t.includes("usuario") || t.includes("clave")) {
+        return BASE_CONOCIMIENTO_SOPORTE.roles;
+    }
+
+    // Si no hay coincidencia directa, derivar a WhatsApp
+    return {
+        tipo: "whatsapp_fallback",
+        mensaje: `🤖 No encontré una respuesta automatizada exacta para tu consulta: <em>"${escapeHtmlSoporte(texto)}"</em>.<br><br>Para resolverlo rápidamente, te derivo directamente con <strong>${NOMBRE_CONTACTO_SOPORTE}</strong> vía WhatsApp:`
+    };
+}
+
+window.toggleVentanaChatSoporte = function(forzarEstado) {
+    const ventana = document.getElementById("ventanaChatSoporte");
+    if (!ventana) return;
+
+    const estaVisible = ventana.style.display === "flex";
+    const nuevoEstado = (typeof forzarEstado === "boolean") ? forzarEstado : !estaVisible;
+
+    ventana.style.display = nuevoEstado ? "flex" : "none";
+
+    // Ocultar badge de notificación no leída al abrir
+    const badge = document.getElementById("badgeNotifSoporte");
+    if (badge && nuevoEstado) {
+        badge.style.display = "none";
+    }
+
+    if (nuevoEstado) {
+        if (!chatSoporteIniciado) {
+            inicializarChatSoporte();
+        }
+        setTimeout(() => {
+            document.getElementById("inputPreguntaSoporte")?.focus();
+        }, 150);
+    }
+};
+
+function inicializarChatSoporte() {
+    chatSoporteIniciado = true;
+    const cuerpo = document.getElementById("cuerpoChatSoporte");
+    if (!cuerpo) return;
+
+    const horaActual = new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
+    const nombreUsuario = sessionStorage.getItem("nombreUsuario") || sessionStorage.getItem("usuarioLogueado") || "Usuario";
+
+    cuerpo.innerHTML = `
+        <div class="chat-mensaje-globo chat-mensaje-bot">
+            <div>👋 ¡Hola, <strong>${nombreUsuario}</strong>! Bienvenido al Centro de Asistencia de <strong>ServiTec Pro</strong>.</div>
+            <div style="margin-top:6px; color:#475569;">Soy el asistente automatizado del Sistema de Flota y Maquinarias de <strong>Corssen Logística</strong>.</div>
+            <div class="chat-hora">${horaActual}</div>
+        </div>
+        <div class="chat-mensaje-globo chat-mensaje-bot">
+            <div>¿En qué te puedo orientar hoy? Puedes hacer clic en cualquiera de las consultas rápidas de abajo o escribir tu pregunta:</div>
+            <div class="chat-hora">${horaActual}</div>
+        </div>
+    `;
+
+    renderizarChipsPreguntasRapidas();
+}
+
+function renderizarChipsPreguntasRapidas() {
+    const chipsCont = document.getElementById("chipsPreguntasRapidas");
+    if (!chipsCont) return;
+
+    chipsCont.innerHTML = PREGUNTAS_RAPIDAS_SOPORTE.map(p => `
+        <button type="button" class="chip-pregunta" onclick="seleccionarChipSoporte('${p.id}', '${p.texto}')">
+            ${p.texto}
+        </button>
+    `).join("");
+}
+window.renderizarChipsPreguntasRapidas = renderizarChipsPreguntasRapidas;
+
+window.seleccionarChipSoporte = function(id, textoVisible) {
+    enviarMensajeUsuarioSoporte(textoVisible, id);
+};
+
+window.enviarMensajeChatSoporte = function(e) {
+    if (e) e.preventDefault();
+    const input = document.getElementById("inputPreguntaSoporte");
+    if (!input) return;
+    const texto = input.value.trim();
+    if (!texto) return;
+    input.value = "";
+    enviarMensajeUsuarioSoporte(texto, null);
+};
+
+function enviarMensajeUsuarioSoporte(texto, idPreguntaRapida) {
+    const cuerpo = document.getElementById("cuerpoChatSoporte");
+    if (!cuerpo) return;
+
+    const horaActual = new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
+
+    // Mensaje del usuario a la derecha
+    const userDiv = document.createElement("div");
+    userDiv.className = "chat-mensaje-globo chat-mensaje-usuario";
+    userDiv.innerHTML = `
+        <div>${escapeHtmlSoporte(texto)}</div>
+        <div class="chat-hora">${horaActual} <span style="color:#0284c7; font-size:11px;">✓✓</span></div>
+    `;
+    cuerpo.appendChild(userDiv);
+    cuerpo.scrollTop = cuerpo.scrollHeight;
+
+    // Indicador temporal escribiendo...
+    const escribiendoDiv = document.createElement("div");
+    escribiendoDiv.className = "chat-mensaje-globo chat-mensaje-bot";
+    escribiendoDiv.style.fontStyle = "italic";
+    escribiendoDiv.style.color = "#64748b";
+    escribiendoDiv.innerHTML = `<span>✍️ Soporte ServiTec Pro está respondiendo...</span>`;
+    cuerpo.appendChild(escribiendoDiv);
+    cuerpo.scrollTop = cuerpo.scrollHeight;
+
+    setTimeout(() => {
+        if (escribiendoDiv.parentNode) {
+            escribiendoDiv.parentNode.removeChild(escribiendoDiv);
+        }
+
+        let respObj = null;
+        if (idPreguntaRapida && BASE_CONOCIMIENTO_SOPORTE[idPreguntaRapida]) {
+            respObj = BASE_CONOCIMIENTO_SOPORTE[idPreguntaRapida];
+        } else if (idPreguntaRapida === "whatsapp") {
+            respObj = {
+                tipo: "whatsapp",
+                mensaje: `Te redirijo directamente con <strong>${NOMBRE_CONTACTO_SOPORTE}</strong> vía WhatsApp para brindarte atención personalizada:`
+            };
+        } else {
+            respObj = obtenerRespuestaSoporte(texto);
+        }
+
+        const botDiv = document.createElement("div");
+        botDiv.className = "chat-mensaje-globo chat-mensaje-bot";
+
+        let htmlRespuesta = "";
+        if (respObj.tipo === "whatsapp" || respObj.tipo === "whatsapp_fallback") {
+            const numeroWs = NUMERO_WHATSAPP_SOPORTE;
+            const mensajeWa = encodeURIComponent(`Hola Aron, te contacto desde el Sistema de Control de Flota CORSSEN. Mi usuario es "${sessionStorage.getItem('nombreUsuario') || 'Usuario'}" y tengo la siguiente consulta: ${texto}`);
+            htmlRespuesta = `
+                <div>${respObj.mensaje}</div>
+                <div style="background:#f0fdf4; border:1px solid #86efac; border-radius:10px; padding:10px; margin-top:8px;">
+                    <div style="font-size:12px; font-weight:800; color:#15803d; margin-bottom:4px;">📲 Asistencia Técnica Directa</div>
+                    <div style="font-size:11px; color:#166534; margin-bottom:8px;">Aron Martinez • Equipo de Soporte y Desarrollo ServiTec Pro</div>
+                    <a href="https://wa.me/${numeroWs}?text=${mensajeWa}" target="_blank" rel="noopener noreferrer" style="display:flex; align-items:center; justify-content:center; gap:6px; background:#25d366; color:#ffffff; font-weight:700; font-size:12px; padding:8px 12px; border-radius:18px; text-decoration:none; box-shadow:0 2px 6px rgba(37,211,102,0.4);">
+                        💬 Abrir Chat de WhatsApp con Aron
+                    </a>
+                </div>
+            `;
+        } else {
+            htmlRespuesta = `
+                <div style="font-weight:800; color:#0f172a; margin-bottom:4px; font-size:13px;">${respObj.titulo || "Orientación del Sistema"}</div>
+                <div>${respObj.respuesta}</div>
+                <div style="margin-top:8px; padding-top:6px; border-top:1px dashed #e2e8f0; font-size:11px; color:#64748b;">
+                    ¿Requieres más ayuda? Puedes escribir otra duda o 
+                    <a href="javascript:void(0)" onclick="seleccionarChipSoporte('whatsapp', 'Hablar con Aron por WhatsApp')" style="color:#059669; font-weight:700; text-decoration:underline;">chatear con Aron por WhatsApp</a>.
+                </div>
+            `;
+        }
+
+        botDiv.innerHTML = `
+            ${htmlRespuesta}
+            <div class="chat-hora">${new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })}</div>
+        `;
+        cuerpo.appendChild(botDiv);
+        cuerpo.scrollTop = cuerpo.scrollHeight;
+    }, 350);
+}
+
+// Inicializar widget de soporte al cargar
+if (typeof document !== "undefined") {
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", () => {
+            renderizarChipsPreguntasRapidas();
+        });
+    } else {
+        renderizarChipsPreguntasRapidas();
+    }
+}
+
 

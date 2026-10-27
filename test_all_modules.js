@@ -623,6 +623,12 @@ async function ejecutarPruebas() {
         'index.html contiene menuItemRespaldos oculto por defecto con style="display:none;"', 'RBAC Respaldos');
     assert(scriptContent.includes('actualizarPermisosModuloRespaldos') && scriptContent.includes('El módulo de Respaldos & Mantención es exclusivo para el Administrador General (admin)'), 
         'script.js restringe y oculta Respaldos & Mantención para Daniel y operadores garantizando exclusividad de admin', 'RBAC Respaldos');
+    assert(indexHtml.includes('id="modalAplicarPuntoRestauracion"') && scriptContent.includes('abrirModalAplicarPunto') && scriptContent.includes('Aplicar este Punto'), 
+        'Respaldos no se aplican solos: cada punto cuenta con botón profesional y modal para aplicar a petición manual', 'Respaldos a Petición');
+    assert(indexHtml.includes('id="btnFlotanteSoporte"') && indexHtml.includes('id="ventanaChatSoporte"'), 
+        'Dashboard contiene botón flotante de soporte y ventana de chat interactivo accesible para ambos roles', 'Widget Soporte');
+    assert(scriptContent.includes('BASE_CONOCIMIENTO_SOPORTE') && scriptContent.includes('toggleVentanaChatSoporte') && scriptContent.includes('wa.me/'), 
+        'script.js contiene motor de respuestas automatizadas con derivación a WhatsApp con Aron Martinez (ServiTec Pro)', 'Widget Soporte');
 
     // -------------------------------------------------------------
     // RESUMEN GENERAL DE PRUEBAS
