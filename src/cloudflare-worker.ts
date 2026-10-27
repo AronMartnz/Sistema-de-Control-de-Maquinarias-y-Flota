@@ -822,6 +822,134 @@ export default {
             }
         }
 
+        // Chat de Soporte Técnico en Vivo en la Aplicación
+        if (path === "/api/soporte/mensajes" || path === "/api/chat/mensajes") {
+            const bienvenida = [
+                {
+                    id: "MSG-INIT-001",
+                    usuario: "aron_soporte",
+                    nombre: "Aron Martinez (ServiTec Pro)",
+                    rol: "admin",
+                    texto: "👋 ¡Hola! Bienvenido al chat directo de soporte técnico de Corssen Logística. Puedes escribir tus dudas técnicas, requerimientos de flota o consultar por fallas aquí mismo sin salir del sistema.",
+                    timestamp: new Date().toISOString(),
+                    hora: "10:00",
+                    esSoporte: true,
+                    origen: "sistema"
+                }
+            ];
+
+            let listaMensajes: any[] = bienvenida;
+            if (env.CORSSEN_STORAGE) {
+                try {
+                    const kv = await env.CORSSEN_STORAGE.get("corssen_soporte_chat", { type: "json" });
+                    if (kv && Array.isArray(kv)) listaMensajes = kv;
+                } catch (_) {}
+            }
+
+            if (request.method === "GET") {
+                return jsonResponse({
+                    ok: true,
+                    canal: "in_app_soporte_servitec",
+                    agente: "Aron Martinez (ServiTec Pro)",
+                    estado: "conectado",
+                    mensajes: listaMensajes,
+                    total: listaMensajes.length
+                });
+            }
+
+            if (request.method === "POST") {
+                try {
+                    const body: any = await request.json();
+                    const texto = (body.texto || "").trim();
+                    if (!texto) {
+                        return jsonResponse({ error: "El campo texto es obligatorio" }, 400);
+                    }
+
+                    const idMsg = "MSG-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+                    const hora = new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
+                    const esSoporte = Boolean(body.esSoporte || (body.rol === "admin" && (body.usuario === "admin" || body.usuario === "aron")));
+                    const remitente = body.usuario || (esSoporte ? "aron_soporte" : "operador");
+                    const nombreRemitente = body.nombre || (esSoporte ? "Aron Martinez (ServiTec Pro)" : (remitente === "daniel" ? "Daniel (Operador)" : "Operador"));
+
+                    const nuevoMensaje = {
+                        id: idMsg,
+                        usuario: remitente,
+                        nombre: nombreRemitente,
+                        rol: body.rol || (esSoporte ? "admin" : "operador"),
+                        texto: texto,
+                        timestamp: new Date().toISOString(),
+                        hora: hora,
+                        esSoporte: esSoporte
+                    };
+                    listaMensajes.push(nuevoMensaje);
+
+                    let respuestaAutomatica: any = null;
+                    if (!esSoporte) {
+                        const t = texto.toLowerCase();
+                        let respuestaTexto = "";
+                        let tituloContexto = "";
+
+                        if (t.includes("ficha") || t.includes("filtro") || t.includes("baldwin") || t.includes("donaldson") || (t.includes("aceite") && t.includes("motor"))) {
+                            tituloContexto = "Fichas Técnicas & Filtros";
+                            respuestaTexto = "En el módulo de Fichas Técnicas puedes consultar la matriz completa de equivalencias multimarca (Baldwin, Donaldson, Fleetguard y Mann). Los cambios guardados por el Administrador ya persisten en el servidor.";
+                        } else if (t.includes("camion") || t.includes("camioneta") || t.includes("flota") || t.includes("cmn-") || t.includes("cam-") || t.includes("patente")) {
+                            tituloContexto = "Flota & Unidades Registradas";
+                            respuestaTexto = "Las unidades dadas de alta (camionetas, camiones y maquinaria pesada) se sincronizan en la tabla de Flota Registrada y en el Programa Maestro.";
+                        } else if (t.includes("combustible") || t.includes("estanque") || t.includes("litro") || t.includes("diesel") || t.includes("400")) {
+                            tituloContexto = "Control de Combustible (Estanque 400L)";
+                            respuestaTexto = "El estanque de 400L descuenta en tiempo real los despachos realizados a cada equipo y emite alerta si el saldo baja de 100L.";
+                        } else if (t.includes("respaldo") || t.includes("backup") || t.includes("restaurar")) {
+                            tituloContexto = "Puntos de Restauración y Respaldos";
+                            respuestaTexto = "Los respaldos no se aplican automáticamente para no interrumpir tus labores. El Administrador General dispone del botón '🚀 Aplicar este Punto' para ejecutar restauraciones cuando sea necesario.";
+                        } else {
+                            tituloContexto = "Canal de Soporte Directo";
+                            respuestaTexto = "✅ Recibido en tiempo real por el equipo de Soporte y Desarrollo ServiTec Pro. Aron Martinez ha recibido tu notificación en el sistema y atenderá tu solicitud a través de esta misma ventana.";
+                        }
+
+                        respuestaAutomatica = {
+                            id: "MSG-RESP-" + Date.now(),
+                            usuario: "aron_soporte",
+                            nombre: "Aron Martinez (ServiTec Pro)",
+                            rol: "admin",
+                            texto: respuestaTexto,
+                            tituloContexto: tituloContexto,
+                            timestamp: new Date().toISOString(),
+                            hora: hora,
+                            esSoporte: true,
+                            autoRespuesta: true
+                        };
+                        listaMensajes.push(respuestaAutomatica);
+                    }
+
+                    if (listaMensajes.length > 150) listaMensajes = listaMensajes.slice(-150);
+                    if (env.CORSSEN_STORAGE) {
+                        try {
+                            await env.CORSSEN_STORAGE.put("corssen_soporte_chat", JSON.stringify(listaMensajes));
+                        } catch (_) {}
+                    }
+
+                    return jsonResponse({
+                        ok: true,
+                        mensajeEnviado: nuevoMensaje,
+                        respuestaInmediata: respuestaAutomatica,
+                        todosLosMensajes: listaMensajes
+                    });
+                } catch (errPost: any) {
+                    return jsonResponse({ error: "Error enviando mensaje: " + String(errPost) }, 500);
+                }
+            }
+
+            if (request.method === "DELETE") {
+                listaMensajes = bienvenida;
+                if (env.CORSSEN_STORAGE) {
+                    try {
+                        await env.CORSSEN_STORAGE.put("corssen_soporte_chat", JSON.stringify(listaMensajes));
+                    } catch (_) {}
+                }
+                return jsonResponse({ ok: true, mensaje: "Chat reiniciado", mensajes: bienvenida });
+            }
+        }
+
         // Servir activos estáticos desde Cloudflare Assets (HTML, CSS, JS, imágenes)
         if (env.ASSETS) {
             return env.ASSETS.fetch(request);

@@ -12449,12 +12449,16 @@ if (typeof document !== "undefined") {
 }
 
 // =========================================================
-// 13. WIDGET FLOTANTE DE SOPORTE INTELIGENTE & CHAT ESTILO WHATSAPP
+// 13. WIDGET FLOTANTE DE SOPORTE EN VIVO EN LA APLICACIÓN (SIN SALIR A OTRAS APPS)
 // =========================================================
 const NUMERO_WHATSAPP_SOPORTE = "56987654321"; // Aron Martinez / ServiTec Pro
 const NOMBRE_CONTACTO_SOPORTE = "Aron Martinez (ServiTec Pro)";
 
 let chatSoporteIniciado = false;
+let sonidoChatHabilitado = true;
+let intervaloPollingChatSoporte = null;
+let mensajesChatLocales = [];
+let ultimoTimestampChatVisto = 0;
 
 const PREGUNTAS_RAPIDAS_SOPORTE = [
     { id: "fichas", texto: "📋 Fichas Técnicas & Filtros" },
@@ -12464,7 +12468,7 @@ const PREGUNTAS_RAPIDAS_SOPORTE = [
     { id: "mantenciones", texto: "🔧 Mantenciones & OTs" },
     { id: "respaldos", texto: "💾 Respaldos del Sistema" },
     { id: "roles", texto: "👤 Roles y Permisos" },
-    { id: "whatsapp", texto: "📲 Hablar con Aron por WhatsApp" }
+    { id: "directo_aron", texto: "👨‍💻 Chatear con Aron Martinez" }
 ];
 
 const BASE_CONOCIMIENTO_SOPORTE = {
@@ -12525,6 +12529,14 @@ const BASE_CONOCIMIENTO_SOPORTE = {
 • <strong>Administrador General (admin):</strong> Acceso total, centro de respaldos, control de cuotas, ventana de mantenimiento y edición de fichas maestras.<br>
 • <strong>Operador (operador / Daniel):</strong> Registro de despachos de combustible, control de stock, apertura de órdenes de trabajo y consulta de catálogo técnico.
 `
+    },
+    directo_aron: {
+        titulo: "👨‍💻 Soporte Directo con Aron Martinez (ServiTec Pro)",
+        respuesta: `
+• <strong>Canal Interno en Vivo:</strong> Estás conectado en tiempo real al chat interno del sistema con Aron Martinez.<br>
+• <strong>Sin salir de la aplicación:</strong> No requieres abrir aplicaciones externas ni WhatsApp. Todo el diálogo queda respaldado en esta misma pantalla.<br>
+• <strong>Escribe tu mensaje:</strong> Puedes escribir tu duda o requerimiento técnico abajo y recibirás asistencia inmediata.
+`
     }
 };
 
@@ -12538,16 +12550,53 @@ function escapeHtmlSoporte(str) {
         .replace(/'/g, "&#039;");
 }
 
+function reproducirChimeMensaje() {
+    if (!sonidoChatHabilitado) return;
+    try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        if (ctx.state === "suspended") {
+            ctx.resume();
+        }
+        const osc1 = ctx.createOscillator();
+        const osc2 = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc1.type = "sine";
+        osc1.frequency.setValueAtTime(880, ctx.currentTime);
+        osc2.type = "sine";
+        osc2.frequency.setValueAtTime(1320, ctx.currentTime + 0.09);
+
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+
+        osc1.connect(gain);
+        osc2.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc1.start(ctx.currentTime);
+        osc1.stop(ctx.currentTime + 0.09);
+        osc2.start(ctx.currentTime + 0.09);
+        osc2.stop(ctx.currentTime + 0.25);
+    } catch (_) {}
+}
+
+window.toggleSonidoChatSoporte = function() {
+    sonidoChatHabilitado = !sonidoChatHabilitado;
+    const btn = document.getElementById("btnSonidoChatSoporte");
+    if (btn) {
+        btn.textContent = sonidoChatHabilitado ? "🔔" : "🔕";
+        btn.title = sonidoChatHabilitado ? "Sonido activado (clic para silenciar)" : "Sonido silenciado (clic para activar)";
+    }
+};
+
 function obtenerRespuestaSoporte(texto) {
     const t = (texto || "").toLowerCase().trim();
 
-    if (t.includes("whatsapp") || t.includes("hablar") || t.includes("aron") || t.includes("contacto") || t.includes("telefono") || t.includes("humano") || t.includes("soporte")) {
-        return {
-            tipo: "whatsapp",
-            mensaje: `Te redirijo directamente con <strong>${NOMBRE_CONTACTO_SOPORTE}</strong> para asistirte en tiempo real por WhatsApp:`
-        };
+    if (t.includes("aron") || t.includes("humano") || t.includes("contacto") || t.includes("soporte") || t.includes("hablar") || t.includes("ayuda directa") || t.includes("whatsapp")) {
+        return BASE_CONOCIMIENTO_SOPORTE.directo_aron;
     }
-
     if (t.includes("ficha") || t.includes("filtro") || t.includes("manual") || t.includes("especificacion") || t.includes("baldwin") || t.includes("donaldson")) {
         return BASE_CONOCIMIENTO_SOPORTE.fichas;
     }
@@ -12570,10 +12619,10 @@ function obtenerRespuestaSoporte(texto) {
         return BASE_CONOCIMIENTO_SOPORTE.roles;
     }
 
-    // Si no hay coincidencia directa, derivar a WhatsApp
     return {
-        tipo: "whatsapp_fallback",
-        mensaje: `🤖 No encontré una respuesta automatizada exacta para tu consulta: <em>"${escapeHtmlSoporte(texto)}"</em>.<br><br>Para resolverlo rápidamente, te derivo directamente con <strong>${NOMBRE_CONTACTO_SOPORTE}</strong> vía WhatsApp:`
+        tipo: "in_app_soporte_vivo",
+        titulo: "💬 Canal de Soporte ServiTec Pro",
+        respuesta: `✅ Tu consulta ha sido enviada al canal en vivo de <strong>Aron Martinez</strong>.<br><br>Estamos en línea dentro de la plataforma y te responderemos en esta misma ventana sin necesidad de salir.`
     };
 }
 
@@ -12586,43 +12635,118 @@ window.toggleVentanaChatSoporte = function(forzarEstado) {
 
     ventana.style.display = nuevoEstado ? "flex" : "none";
 
-    // Ocultar badge de notificación no leída al abrir
     const badge = document.getElementById("badgeNotifSoporte");
     if (badge && nuevoEstado) {
         badge.style.display = "none";
+        badge.textContent = "0";
     }
 
     if (nuevoEstado) {
         if (!chatSoporteIniciado) {
             inicializarChatSoporte();
+        } else {
+            cargarMensajesSoporteServidor(false);
         }
+        actualizarVisibilidadModoAdminChat();
         setTimeout(() => {
             document.getElementById("inputPreguntaSoporte")?.focus();
         }, 150);
     }
 };
 
-function inicializarChatSoporte() {
+function actualizarVisibilidadModoAdminChat() {
+    const barraAdmin = document.getElementById("barraModoAdminSoporte");
+    const input = document.getElementById("inputPreguntaSoporte");
+    const esAdmin = esUsuarioAdministrador();
+
+    if (barraAdmin) {
+        barraAdmin.style.display = esAdmin ? "flex" : "none";
+    }
+    if (input) {
+        if (esAdmin) {
+            input.placeholder = "Escribe una respuesta como Aron Martinez (Soporte)...";
+        } else {
+            const nombre = sessionStorage.getItem("nombreUsuario") || "Operador";
+            input.placeholder = `Escribe tu consulta aquí a Aron Martinez, ${nombre}...`;
+        }
+    }
+}
+
+async function inicializarChatSoporte() {
     chatSoporteIniciado = true;
+    renderizarChipsPreguntasRapidas();
+    actualizarVisibilidadModoAdminChat();
+    await cargarMensajesSoporteServidor(false);
+
+    if (!intervaloPollingChatSoporte) {
+        intervaloPollingChatSoporte = setInterval(() => {
+            cargarMensajesSoporteServidor(true);
+        }, 3500);
+    }
+}
+
+async function cargarMensajesSoporteServidor(reproducirSonidoSiNuevos) {
+    try {
+        const resp = await fetch("/api/soporte/mensajes?t=" + Date.now());
+        if (!resp.ok) return;
+        const data = await resp.json();
+        const mensajesNuevos = Array.isArray(data.mensajes) ? data.mensajes : [];
+
+        if (mensajesNuevos.length === 0) return;
+
+        const habiaMensajes = mensajesChatLocales.length > 0;
+        const totalPrevio = mensajesChatLocales.length;
+        const idUltimoPrevio = habiaMensajes ? mensajesChatLocales[mensajesChatLocales.length - 1].id : null;
+        const idUltimoNuevo = mensajesNuevos[mensajesNuevos.length - 1].id;
+
+        if (totalPrevio !== mensajesNuevos.length || idUltimoPrevio !== idUltimoNuevo) {
+            const esNuevoMensajeSoporte = mensajesNuevos[mensajesNuevos.length - 1].esSoporte;
+            mensajesChatLocales = mensajesNuevos;
+            renderizarMensajesEnPantalla(mensajesChatLocales);
+
+            if (reproducirSonidoSiNuevos && habiaMensajes && esNuevoMensajeSoporte) {
+                reproducirChimeMensaje();
+                const ventana = document.getElementById("ventanaChatSoporte");
+                const estaAbierta = ventana && ventana.style.display === "flex";
+                if (!estaAbierta) {
+                    const badge = document.getElementById("badgeNotifSoporte");
+                    if (badge) {
+                        badge.style.display = "flex";
+                        const cant = parseInt(badge.textContent || "0") + 1;
+                        badge.textContent = String(cant);
+                    }
+                }
+            }
+        }
+    } catch (_) {}
+}
+
+function renderizarMensajesEnPantalla(mensajes) {
     const cuerpo = document.getElementById("cuerpoChatSoporte");
     if (!cuerpo) return;
 
-    const horaActual = new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
-    const nombreUsuario = sessionStorage.getItem("nombreUsuario") || sessionStorage.getItem("usuarioLogueado") || "Usuario";
+    const esAdmin = esUsuarioAdministrador();
 
-    cuerpo.innerHTML = `
-        <div class="chat-mensaje-globo chat-mensaje-bot">
-            <div>👋 ¡Hola, <strong>${nombreUsuario}</strong>! Bienvenido al Centro de Asistencia de <strong>ServiTec Pro</strong>.</div>
-            <div style="margin-top:6px; color:#475569;">Soy el asistente automatizado del Sistema de Flota y Maquinarias de <strong>Corssen Logística</strong>.</div>
-            <div class="chat-hora">${horaActual}</div>
-        </div>
-        <div class="chat-mensaje-globo chat-mensaje-bot">
-            <div>¿En qué te puedo orientar hoy? Puedes hacer clic en cualquiera de las consultas rápidas de abajo o escribir tu pregunta:</div>
-            <div class="chat-hora">${horaActual}</div>
-        </div>
-    `;
+    cuerpo.innerHTML = mensajes.map(msg => {
+        const esMio = (!msg.esSoporte && !esAdmin) || (msg.esSoporte && esAdmin);
+        const claseGlobo = esMio ? "chat-mensaje-globo chat-mensaje-usuario" : "chat-mensaje-globo chat-mensaje-bot";
+        const remitente = escapeHtmlSoporte(msg.nombre || (msg.esSoporte ? "Aron Martinez (ServiTec Pro)" : "Usuario"));
+        const checkmarks = esMio ? `<span style="color:#0284c7; font-size:11px;">✓✓</span>` : "";
 
-    renderizarChipsPreguntasRapidas();
+        return `
+            <div class="${claseGlobo}" id="msg-${msg.id}">
+                <div class="chat-remitente-nombre">${remitente}</div>
+                ${msg.tituloContexto ? `<div style="font-weight:700; color:#0f172a; margin-bottom:4px; font-size:12px;">${escapeHtmlSoporte(msg.tituloContexto)}</div>` : ""}
+                <div style="font-size:13px; line-height:1.4;">${msg.texto}</div>
+                <div class="chat-hora">
+                    <span>${msg.hora || ""}</span>
+                    ${checkmarks}
+                </div>
+            </div>
+        `;
+    }).join("");
+
+    cuerpo.scrollTop = cuerpo.scrollHeight;
 }
 
 function renderizarChipsPreguntasRapidas() {
@@ -12638,6 +12762,14 @@ function renderizarChipsPreguntasRapidas() {
 window.renderizarChipsPreguntasRapidas = renderizarChipsPreguntasRapidas;
 
 window.seleccionarChipSoporte = function(id, textoVisible) {
+    if (id === "directo_aron") {
+        const input = document.getElementById("inputPreguntaSoporte");
+        if (input) {
+            input.value = "Hola Aron, necesito asistencia técnica con una unidad...";
+            input.focus();
+        }
+        return;
+    }
     enviarMensajeUsuarioSoporte(textoVisible, id);
 };
 
@@ -12651,83 +12783,95 @@ window.enviarMensajeChatSoporte = function(e) {
     enviarMensajeUsuarioSoporte(texto, null);
 };
 
-function enviarMensajeUsuarioSoporte(texto, idPreguntaRapida) {
+window.enviarRespuestaRapidaAdmin = function(textoRapido) {
+    enviarMensajeUsuarioSoporte(textoRapido, null, true);
+};
+
+window.reiniciarChatSoporteServidor = async function() {
+    if (!confirm("¿Deseas reiniciar el historial del chat de soporte?")) return;
+    try {
+        const resp = await fetch("/api/soporte/mensajes", {
+            method: "DELETE",
+            headers: { "x-usuario": "admin" }
+        });
+        if (resp.ok) {
+            await cargarMensajesSoporteServidor(false);
+        }
+    } catch (_) {}
+};
+
+async function enviarMensajeUsuarioSoporte(texto, idPreguntaRapida, forzarEsSoporte) {
     const cuerpo = document.getElementById("cuerpoChatSoporte");
     if (!cuerpo) return;
 
     const horaActual = new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
+    const esAdmin = esUsuarioAdministrador();
+    const esSoporte = (typeof forzarEsSoporte === "boolean") ? forzarEsSoporte : esAdmin;
+    const usuarioActual = sessionStorage.getItem("usuarioLogueado") || (esAdmin ? "admin" : "operador");
+    const nombreActual = esSoporte ? "Aron Martinez (ServiTec Pro)" : (sessionStorage.getItem("nombreUsuario") || (usuarioActual === "daniel" ? "Daniel (Operador)" : "Operador"));
 
-    // Mensaje del usuario a la derecha
+    const tempId = "temp-" + Date.now();
     const userDiv = document.createElement("div");
     userDiv.className = "chat-mensaje-globo chat-mensaje-usuario";
+    userDiv.id = tempId;
     userDiv.innerHTML = `
-        <div>${escapeHtmlSoporte(texto)}</div>
-        <div class="chat-hora">${horaActual} <span style="color:#0284c7; font-size:11px;">✓✓</span></div>
+        <div class="chat-remitente-nombre">${escapeHtmlSoporte(nombreActual)}</div>
+        <div style="font-size:13px; line-height:1.4;">${escapeHtmlSoporte(texto)}</div>
+        <div class="chat-hora">
+            <span>${horaActual}</span>
+            <span id="check-${tempId}" style="color:#94a3b8; font-size:11px;">✓</span>
+        </div>
     `;
     cuerpo.appendChild(userDiv);
     cuerpo.scrollTop = cuerpo.scrollHeight;
 
-    // Indicador temporal escribiendo...
-    const escribiendoDiv = document.createElement("div");
-    escribiendoDiv.className = "chat-mensaje-globo chat-mensaje-bot";
-    escribiendoDiv.style.fontStyle = "italic";
-    escribiendoDiv.style.color = "#64748b";
-    escribiendoDiv.innerHTML = `<span>✍️ Soporte ServiTec Pro está respondiendo...</span>`;
-    cuerpo.appendChild(escribiendoDiv);
-    cuerpo.scrollTop = cuerpo.scrollHeight;
-
-    setTimeout(() => {
-        if (escribiendoDiv.parentNode) {
-            escribiendoDiv.parentNode.removeChild(escribiendoDiv);
-        }
-
-        let respObj = null;
-        if (idPreguntaRapida && BASE_CONOCIMIENTO_SOPORTE[idPreguntaRapida]) {
-            respObj = BASE_CONOCIMIENTO_SOPORTE[idPreguntaRapida];
-        } else if (idPreguntaRapida === "whatsapp") {
-            respObj = {
-                tipo: "whatsapp",
-                mensaje: `Te redirijo directamente con <strong>${NOMBRE_CONTACTO_SOPORTE}</strong> vía WhatsApp para brindarte atención personalizada:`
-            };
-        } else {
-            respObj = obtenerRespuestaSoporte(texto);
-        }
-
+    if (idPreguntaRapida && BASE_CONOCIMIENTO_SOPORTE[idPreguntaRapida] && !esSoporte) {
+        const respObj = BASE_CONOCIMIENTO_SOPORTE[idPreguntaRapida];
         const botDiv = document.createElement("div");
         botDiv.className = "chat-mensaje-globo chat-mensaje-bot";
-
-        let htmlRespuesta = "";
-        if (respObj.tipo === "whatsapp" || respObj.tipo === "whatsapp_fallback") {
-            const numeroWs = NUMERO_WHATSAPP_SOPORTE;
-            const mensajeWa = encodeURIComponent(`Hola Aron, te contacto desde el Sistema de Control de Flota CORSSEN. Mi usuario es "${sessionStorage.getItem('nombreUsuario') || 'Usuario'}" y tengo la siguiente consulta: ${texto}`);
-            htmlRespuesta = `
-                <div>${respObj.mensaje}</div>
-                <div style="background:#f0fdf4; border:1px solid #86efac; border-radius:10px; padding:10px; margin-top:8px;">
-                    <div style="font-size:12px; font-weight:800; color:#15803d; margin-bottom:4px;">📲 Asistencia Técnica Directa</div>
-                    <div style="font-size:11px; color:#166534; margin-bottom:8px;">Aron Martinez • Equipo de Soporte y Desarrollo ServiTec Pro</div>
-                    <a href="https://wa.me/${numeroWs}?text=${mensajeWa}" target="_blank" rel="noopener noreferrer" style="display:flex; align-items:center; justify-content:center; gap:6px; background:#25d366; color:#ffffff; font-weight:700; font-size:12px; padding:8px 12px; border-radius:18px; text-decoration:none; box-shadow:0 2px 6px rgba(37,211,102,0.4);">
-                        💬 Abrir Chat de WhatsApp con Aron
-                    </a>
-                </div>
-            `;
-        } else {
-            htmlRespuesta = `
-                <div style="font-weight:800; color:#0f172a; margin-bottom:4px; font-size:13px;">${respObj.titulo || "Orientación del Sistema"}</div>
-                <div>${respObj.respuesta}</div>
-                <div style="margin-top:8px; padding-top:6px; border-top:1px dashed #e2e8f0; font-size:11px; color:#64748b;">
-                    ¿Requieres más ayuda? Puedes escribir otra duda o 
-                    <a href="javascript:void(0)" onclick="seleccionarChipSoporte('whatsapp', 'Hablar con Aron por WhatsApp')" style="color:#059669; font-weight:700; text-decoration:underline;">chatear con Aron por WhatsApp</a>.
-                </div>
-            `;
-        }
-
         botDiv.innerHTML = `
-            ${htmlRespuesta}
-            <div class="chat-hora">${new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })}</div>
+            <div class="chat-remitente-nombre">Aron Martinez (ServiTec Pro)</div>
+            <div style="font-weight:700; color:#0f172a; margin-bottom:4px; font-size:12.5px;">${respObj.titulo}</div>
+            <div style="font-size:13px; line-height:1.4;">${respObj.respuesta}</div>
+            <div class="chat-hora">${horaActual}</div>
         `;
         cuerpo.appendChild(botDiv);
         cuerpo.scrollTop = cuerpo.scrollHeight;
-    }, 350);
+    }
+
+    try {
+        const payload = {
+            texto: texto,
+            usuario: usuarioActual,
+            nombre: nombreActual,
+            rol: esAdmin ? "admin" : "operador",
+            esSoporte: esSoporte
+        };
+
+        const res = await fetch("/api/soporte/mensajes", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "x-usuario": usuarioActual
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+            const check = document.getElementById(`check-${tempId}`);
+            if (check) {
+                check.style.color = "#0284c7";
+                check.textContent = "✓✓";
+            }
+            reproducirChimeMensaje();
+
+            setTimeout(() => {
+                cargarMensajesSoporteServidor(false);
+            }, 300);
+        }
+    } catch (e) {
+        console.error("Error enviando mensaje a la API de soporte:", e);
+    }
 }
 
 // Inicializar widget de soporte al cargar
@@ -12735,10 +12879,10 @@ if (typeof document !== "undefined") {
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", () => {
             renderizarChipsPreguntasRapidas();
+            actualizarVisibilidadModoAdminChat();
         });
     } else {
         renderizarChipsPreguntasRapidas();
+        actualizarVisibilidadModoAdminChat();
     }
 }
-
-

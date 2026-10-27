@@ -1509,7 +1509,176 @@ app.get(["/descargar-servidor", "/api/descargar-servidor"], (req, res) => {
     return res.status(404).send("server.ts no encontrado");
 });
 
+// =========================================================
+// API DE CHAT EN VIVO DE SOPORTE TÉCNICO EN LA APLICACIÓN
+// Permite chatear en tiempo real sin salir a aplicaciones externas
+// =========================================================
+const archivoChatSoporte = path.join(process.cwd(), "soporte_mensajes.json");
+
+function leerMensajesChatSoporte(): any[] {
+    try {
+        if (!fs.existsSync(archivoChatSoporte)) {
+            const bienvenida = [
+                {
+                    id: "MSG-INIT-001",
+                    usuario: "aron_soporte",
+                    nombre: "Aron Martinez (ServiTec Pro)",
+                    rol: "admin",
+                    texto: "👋 ¡Hola! Bienvenido al chat directo de soporte técnico de Corssen Logística. Puedes escribir tus dudas técnicas, requerimientos de flota o consultar por fallas aquí mismo sin salir del sistema.",
+                    timestamp: new Date().toISOString(),
+                    hora: new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" }),
+                    esSoporte: true,
+                    origen: "sistema"
+                }
+            ];
+            fs.writeFileSync(archivoChatSoporte, JSON.stringify(bienvenida, null, 2), "utf8");
+            return bienvenida;
+        }
+        const data = fs.readFileSync(archivoChatSoporte, "utf8");
+        return JSON.parse(data);
+    } catch (e) {
+        console.error("Error leyendo soporte_mensajes.json:", e);
+        return [];
+    }
+}
+
+function guardarMensajesChatSoporte(mensajes: any[]): boolean {
+    try {
+        fs.writeFileSync(archivoChatSoporte, JSON.stringify(mensajes, null, 2), "utf8");
+        const publicDir = path.join(process.cwd(), "public");
+        if (fs.existsSync(publicDir)) {
+            try {
+                fs.writeFileSync(path.join(publicDir, "soporte_mensajes.json"), JSON.stringify(mensajes, null, 2), "utf8");
+            } catch (_) {}
+        }
+        return true;
+    } catch (e) {
+        console.error("Error guardando soporte_mensajes.json:", e);
+        return false;
+    }
+}
+
+app.get(["/api/soporte/mensajes", "/api/chat/mensajes"], (req, res) => {
+    try {
+        const mensajes = leerMensajesChatSoporte();
+        res.json({
+            ok: true,
+            canal: "in_app_soporte_servitec",
+            agente: "Aron Martinez (ServiTec Pro)",
+            estado: "conectado",
+            mensajes: mensajes,
+            total: mensajes.length
+        });
+    } catch (err: any) {
+        res.status(500).json({ error: "Error al consultar mensajes de soporte: " + err.message });
+    }
+});
+
+app.post(["/api/soporte/mensajes", "/api/chat/mensajes"], (req, res) => {
+    try {
+        const body = req.body || {};
+        const texto = (body.texto || "").trim();
+        if (!texto) {
+            return res.status(400).json({ error: "El campo texto es obligatorio" });
+        }
+
+        const mensajes = leerMensajesChatSoporte();
+        const idMsg = "MSG-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+        const hora = new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
+        const esSoporte = Boolean(body.esSoporte || (body.rol === "admin" && (body.usuario === "admin" || body.usuario === "aron")));
+        const remitente = body.usuario || (esSoporte ? "aron_soporte" : "operador");
+        const nombreRemitente = body.nombre || (esSoporte ? "Aron Martinez (ServiTec Pro)" : (remitente === "daniel" ? "Daniel (Operador)" : "Operador"));
+
+        const nuevoMensaje = {
+            id: idMsg,
+            usuario: remitente,
+            nombre: nombreRemitente,
+            rol: body.rol || (esSoporte ? "admin" : "operador"),
+            texto: texto,
+            timestamp: new Date().toISOString(),
+            hora: hora,
+            esSoporte: esSoporte
+        };
+
+        mensajes.push(nuevoMensaje);
+
+        // Si el mensaje fue enviado por el operador/Daniel, generar una respuesta o confirmación inmediata dentro del chat
+        let respuestaAutomatica = null;
+        if (!esSoporte) {
+            const t = texto.toLowerCase();
+            let respuestaTexto = "";
+            let tituloContexto = "";
+
+            if (t.includes("ficha") || t.includes("filtro") || t.includes("baldwin") || t.includes("donaldson") || (t.includes("aceite") && t.includes("motor"))) {
+                tituloContexto = "Fichas Técnicas & Filtros";
+                respuestaTexto = "En el módulo de Fichas Técnicas puedes consultar la matriz completa de equivalencias multimarca (Baldwin, Donaldson, Fleetguard y Mann). Los cambios guardados por el Administrador ya persisten en el servidor.";
+            } else if (t.includes("camion") || t.includes("camioneta") || t.includes("flota") || t.includes("cmn-") || t.includes("cam-") || t.includes("patente")) {
+                tituloContexto = "Flota & Unidades Registradas";
+                respuestaTexto = "Las unidades dadas de alta (camionetas, camiones y maquinaria pesada) se sincronizan en la tabla de Flota Registrada y en el Programa Maestro.";
+            } else if (t.includes("combustible") || t.includes("estanque") || t.includes("litro") || t.includes("diesel") || t.includes("400")) {
+                tituloContexto = "Control de Combustible (Estanque 400L)";
+                respuestaTexto = "El estanque de 400L descuenta en tiempo real los despachos realizados a cada equipo y emite alerta si el saldo baja de 100L.";
+            } else if (t.includes("respaldo") || t.includes("backup") || t.includes("restaurar")) {
+                tituloContexto = "Puntos de Restauración y Respaldos";
+                respuestaTexto = "Los respaldos no se aplican automáticamente para no interrumpir tus labores. El Administrador General dispone del botón '🚀 Aplicar este Punto' para ejecutar restauraciones cuando sea necesario.";
+            } else {
+                tituloContexto = "Canal de Soporte Directo";
+                respuestaTexto = "✅ Recibido en tiempo real por el equipo de Soporte y Desarrollo ServiTec Pro. Aron Martinez ha recibido tu notificación en el sistema y atenderá tu solicitud a través de esta misma ventana.";
+            }
+
+            respuestaAutomatica = {
+                id: "MSG-RESP-" + Date.now(),
+                usuario: "aron_soporte",
+                nombre: "Aron Martinez (ServiTec Pro)",
+                rol: "admin",
+                texto: respuestaTexto,
+                tituloContexto: tituloContexto,
+                timestamp: new Date().toISOString(),
+                hora: new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" }),
+                esSoporte: true,
+                autoRespuesta: true
+            };
+            mensajes.push(respuestaAutomatica);
+        }
+
+        // Limitar historial a los últimos 150 mensajes
+        const mensajesGuardados = mensajes.length > 150 ? mensajes.slice(-150) : mensajes;
+        guardarMensajesChatSoporte(mensajesGuardados);
+
+        res.json({
+            ok: true,
+            mensajeEnviado: nuevoMensaje,
+            respuestaInmediata: respuestaAutomatica,
+            todosLosMensajes: mensajesGuardados
+        });
+    } catch (err: any) {
+        res.status(500).json({ error: "Error enviando mensaje de soporte: " + err.message });
+    }
+});
+
+app.delete(["/api/soporte/mensajes", "/api/chat/mensajes"], (req, res) => {
+    try {
+        const bienvenida = [
+            {
+                id: "MSG-INIT-001",
+                usuario: "aron_soporte",
+                nombre: "Aron Martinez (ServiTec Pro)",
+                rol: "admin",
+                texto: "👋 ¡Hola! Bienvenido al chat directo de soporte técnico de Corssen Logística. Puedes escribir tus dudas técnicas, requerimientos de flota o consultar por fallas aquí mismo sin salir del sistema.",
+                timestamp: new Date().toISOString(),
+                hora: new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" }),
+                esSoporte: true
+            }
+        ];
+        guardarMensajesChatSoporte(bienvenida);
+        res.json({ ok: true, mensaje: "Historial de chat de soporte reiniciado con éxito", mensajes: bienvenida });
+    } catch (err: any) {
+        res.status(500).json({ error: "Error reiniciando chat: " + err.message });
+    }
+});
+
 // Middleware para deshabilitar caché en desarrollo y asegurar que siempre se carguen los cambios más recientes
+
 app.use((req, res, next) => {
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
     res.setHeader("Pragma", "no-cache");

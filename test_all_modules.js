@@ -370,6 +370,40 @@ async function ejecutarPruebas() {
         assert(resNotif.status === 200 && resNotif.body?.ok === true, 
             'Registro y confirmación de envío de aviso al cliente por WhatsApp/Email', 'API / Mantenimiento');
 
+        // -------------------------------------------------------------
+        // TESTS DEL CHAT EN VIVO DE SOPORTE EN LA APLICACIÓN (/api/soporte/mensajes)
+        // -------------------------------------------------------------
+        const resChatGet = await request('GET', '/api/soporte/mensajes');
+        assert(resChatGet.status === 200 && resChatGet.body?.ok === true && Array.isArray(resChatGet.body?.mensajes), 
+            'Consulta de mensajes del chat de soporte en la app (/api/soporte/mensajes)', 'API / Chat Soporte');
+
+        // Operador / Daniel envía mensaje solicitando soporte directamente en la app
+        const resChatMsgOp = await request('POST', '/api/soporte/mensajes', { 'x-usuario': 'daniel' }, {
+            texto: 'Hola Aron, necesito confirmar si la ficha del camión CMN-01 quedó guardada con éxito.',
+            usuario: 'daniel',
+            nombre: 'Daniel (Operador)',
+            rol: 'operador'
+        });
+        assert(resChatMsgOp.status === 200 && resChatMsgOp.body?.ok === true && resChatMsgOp.body?.mensajeEnviado?.texto.includes('CMN-01'), 
+            'Daniel u operador envía consulta técnica al chat de soporte sin salir de la app (200 OK)', 'API / Chat Soporte');
+
+        // Administrador / Aron Martinez responde directamente en el chat en vivo
+        const resChatMsgAdmin = await request('POST', '/api/soporte/mensajes', { 'x-usuario': 'admin' }, {
+            texto: 'Hola Daniel, la ficha técnica del CMN-01 ya fue revisada y confirmada en el servidor.',
+            usuario: 'admin',
+            nombre: 'Aron Martinez (ServiTec Pro)',
+            rol: 'admin',
+            esSoporte: true
+        });
+        assert(resChatMsgAdmin.status === 200 && resChatMsgAdmin.body?.ok === true && resChatMsgAdmin.body?.mensajeEnviado?.esSoporte === true, 
+            'Aron Martinez / Admin responde directamente al operador dentro de la aplicación (200 OK)', 'API / Chat Soporte');
+
+        // Verificar persistencia del hilo de chat en la API
+        const resChatHistorial = await request('GET', '/api/soporte/mensajes');
+        const ultimoMsg = resChatHistorial.body?.mensajes?.[resChatHistorial.body?.mensajes?.length - 1];
+        assert(ultimoMsg && ultimoMsg.esSoporte === true && ultimoMsg.nombre.includes('Aron Martinez'), 
+            'Persistencia en tiempo real del diálogo bidireccional entre Operador y Soporte en la app', 'API / Chat Soporte');
+
     } catch (err) {
         assert(false, 'Falla inesperada en peticiones de API', 'API', err.message);
     }
@@ -627,8 +661,8 @@ async function ejecutarPruebas() {
         'Respaldos no se aplican solos: cada punto cuenta con botón profesional y modal para aplicar a petición manual', 'Respaldos a Petición');
     assert(indexHtml.includes('id="btnFlotanteSoporte"') && indexHtml.includes('id="ventanaChatSoporte"'), 
         'Dashboard contiene botón flotante de soporte y ventana de chat interactivo accesible para ambos roles', 'Widget Soporte');
-    assert(scriptContent.includes('BASE_CONOCIMIENTO_SOPORTE') && scriptContent.includes('toggleVentanaChatSoporte') && scriptContent.includes('wa.me/'), 
-        'script.js contiene motor de respuestas automatizadas con derivación a WhatsApp con Aron Martinez (ServiTec Pro)', 'Widget Soporte');
+    assert(scriptContent.includes('BASE_CONOCIMIENTO_SOPORTE') && scriptContent.includes('toggleVentanaChatSoporte') && scriptContent.includes('cargarMensajesSoporteServidor'), 
+        'script.js contiene motor de chat en vivo y soporte interactivo dentro de la aplicación con Aron Martinez (ServiTec Pro)', 'Widget Soporte');
 
     // -------------------------------------------------------------
     // RESUMEN GENERAL DE PRUEBAS
