@@ -9770,7 +9770,7 @@ async function sincronizarConUltimoRespaldoNube(forzarRecarga = false) {
 
             const elEstado = document.querySelector(".estado-sistema");
             if (elEstado) {
-                elEstado.innerHTML = `<span class="estado-punto" style="background:#10b981;"></span> Sincronizado con ServiTec Pro`;
+                elEstado.innerHTML = `<span class="estado-punto" style="background:#10b981;"></span> Respaldo Nube ServiTec Pro`;
             }
 
             // Reconciliar adicionalmente con el registro individual de programa para evitar sobreescritura de estados recién editados
@@ -9783,7 +9783,7 @@ async function sincronizarConUltimoRespaldoNube(forzarRecarga = false) {
                 console.log(`☁️ Respaldo en la nube disponible (${serverTs}). Esperando aplicación manual del usuario.`);
                 const elEstado = document.querySelector(".estado-sistema");
                 if (elEstado) {
-                    elEstado.innerHTML = `<span class="estado-punto" style="background:#3b82f6;"></span> Respaldo Nube Disponible <button class="btn-secundario" style="padding:2px 8px; font-size:10.5px; margin-left:6px; cursor:pointer;" onclick="sincronizarConUltimoRespaldoNube(true)" title="Aplicar este punto de respaldo">🚀 Aplicar</button>`;
+                    elEstado.innerHTML = `<span class="estado-punto" style="background:#10b981;"></span> Respaldo Nube ServiTec Pro`;
                 }
             } else if (localTs > 0 && localTs > serverTs) {
                 // El dispositivo local tiene cambios más recientes pendientes de subir a la nube

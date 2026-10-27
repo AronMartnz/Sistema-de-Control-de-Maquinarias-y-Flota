@@ -41,5 +41,37 @@
     "timestamp": "2026-10-27T18:29:49.967Z",
     "hora": "06:29 p. m.",
     "esSoporte": true
+  },
+  {
+    "id": "MSG-1793126226687-408",
+    "usuario": "daniel",
+    "nombre": "Daniel (Operador)",
+    "rol": "operador",
+    "texto": "Hola Aron, necesito confirmar si la ficha del camión CMN-01 quedó guardada con éxito.",
+    "timestamp": "2026-10-27T18:37:06.688Z",
+    "hora": "06:37 p. m.",
+    "esSoporte": false
+  },
+  {
+    "id": "MSG-RESP-1793126226688",
+    "usuario": "aron_soporte",
+    "nombre": "Aron Martinez (ServiTec Pro)",
+    "rol": "admin",
+    "texto": "En el módulo de Fichas Técnicas puedes consultar la matriz completa de equivalencias multimarca (Baldwin, Donaldson, Fleetguard y Mann). Los cambios guardados por el Administrador ya persisten en el servidor.",
+    "tituloContexto": "Fichas Técnicas & Filtros",
+    "timestamp": "2026-10-27T18:37:06.688Z",
+    "hora": "06:37 p. m.",
+    "esSoporte": true,
+    "autoRespuesta": true
+  },
+  {
+    "id": "MSG-1793126226691-521",
+    "usuario": "admin",
+    "nombre": "Aron Martinez (ServiTec Pro)",
+    "rol": "admin",
+    "texto": "Hola Daniel, la ficha técnica del CMN-01 ya fue revisada y confirmada en el servidor.",
+    "timestamp": "2026-10-27T18:37:06.691Z",
+    "hora": "06:37 p. m.",
+    "esSoporte": true
   }
 ]
