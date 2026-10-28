@@ -10,14 +10,15 @@
     "preview": "node dist/server.cjs",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
-    "test": "node test_all_modules.js",
+    "test": "node --test test_platform.js test_support_chat.js test_business.js && node test_static_layout.js",
     "cf:dry-run": "wrangler deploy --dry-run",
     "deploy:cf": "wrangler deploy",
     "deploy:pages": "wrangler pages deploy public",
     "db:create": "wrangler d1 create corssen_db",
     "db:migrate:local": "wrangler d1 execute corssen_db --local --file=./migrations/0001_initial_schema.sql",
     "db:migrate:remote": "wrangler d1 execute corssen_db --remote --file=./migrations/0001_initial_schema.sql",
-    "push:github": "git add -A && git commit -m 'Sincronización de cambios desde AI Studio' && git push origin main"
+    "push:github": "git add -A && git commit -m 'Sincronización de cambios desde AI Studio' && git push origin main",
+    "test:legacy": "node test_all_modules.js"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

@@ -1146,35 +1146,10 @@
                 mostrarErrorAnimado(datos.mensaje || "Usuario o contraseña inválidos");
             }
         } catch (err) {
-            console.warn("Servidor backend no disponible, evaluando autenticación local:", err);
-            const uNorm = usuario.toLowerCase().trim();
-            const servicioSuspendidoLocal = localStorage.getItem("corssen_servicio_suspendido") === "true";
-
-            // Si el servicio de clientes está suspendido preventivamente por cuota y no es el administrador
-            if (uNorm !== "admin" && servicioSuspendidoLocal) {
-                mostrarAvisoAccesoSuspendido(
-                    "Acceso suspendido temporalmente por concepto de cuota mensual de respaldos y mantenimientos pendiente.",
-                    "Cuota mensual de respaldos y mantenimientos pendiente de pago"
-                );
-                return;
-            }
-
-            if ((uNorm === "admin" && (password === "admin" || password === "corssen2026")) ||
-                (uNorm === "operador" && (password === "1234" || password === "operador"))) {
-                const esAdmin = uNorm === "admin";
-                const datosLocales = {
-                    usuario: uNorm,
-                    nombre: esAdmin ? "Administrador General" : "Operador Principal",
-                    rol: esAdmin ? "admin" : "operador",
-                    avatar: esAdmin ? "avatar-admin" : "avatar-mecanico"
-                };
-                feedback.textContent = "✓ Credenciales correctas. Ingresando...";
-                feedback.style.color = "#16a34a";
-                ejecutarTransicionExitosa(datosLocales);
-                return;
-            }
-
-            mostrarErrorAnimado("Usuario o contraseña incorrectos. Acceso denegado.");
+            console.warn("No se pudo verificar la sesión con el servidor", err);
+            mostrarErrorAnimado("No se pudo conectar con el servidor. Verifica tu conexión e intenta nuevamente.");
+            boton.disabled = false;
+            boton.textContent = "Ingresar";
         }
     });
 
