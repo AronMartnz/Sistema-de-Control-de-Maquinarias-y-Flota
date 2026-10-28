@@ -4602,13 +4602,18 @@
     </div>
 
     <!-- Botón Flotante Profesional de Soporte & Chat en Vivo -->
-    <button type="button" id="btnFlotanteSoporte" class="btn-flotante-soporte" onclick="toggleVentanaChatSoporte()" title="Centro de Soporte Técnico ServiTec Pro & Chat en Vivo">
-        <span id="iconoBtnSoporte" style="display:flex; align-items:center; justify-content:center;">
+    <button type="button" id="btnFlotanteSoporte" class="btn-flotante-soporte" aria-label="Abrir chat de soporte ServiTec Pro" onclick="toggleVentanaChatSoporte()" title="Centro de Soporte Técnico ServiTec Pro & Chat en Vivo">
+        <span id="iconoBtnSoporte" class="soporte-giro" aria-hidden="true">
+            <span class="soporte-cara soporte-cara-original">
             <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
                 <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
                 <path d="M12 19h1a2 2 0 0 0 2-2v-1"></path>
             </svg>
+            </span>
+            <span class="soporte-cara soporte-cara-marca">
+                <img src="/assets/servitec-pro-original.png" alt="" width="1880" height="837" decoding="async">
+            </span>
         </span>
         <span id="badgeNotifSoporte" class="soporte-pulso" style="position:absolute; top:-2px; right:-2px; background:#ef4444; color:#ffffff; font-size:10px; font-weight:800; border-radius:50%; width:18px; height:18px; display:flex; align-items:center; justify-content:center; border:2px solid #ffffff;">1</span>
     </button>

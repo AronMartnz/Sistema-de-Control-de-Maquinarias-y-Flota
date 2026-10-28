@@ -4854,3 +4854,49 @@ a {
 }
 
 
+
+/* Two-sided support button: original headset and supplied full-resolution logo. */
+.btn-flotante-soporte { perspective: 700px; padding: 0; }
+.soporte-giro {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    transform-style: preserve-3d;
+    animation: soporte-vuelta 8s ease-in-out infinite;
+    pointer-events: none;
+}
+.soporte-cara {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: inherit;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+.soporte-cara-original { transform: rotateY(0deg) translateZ(1px); }
+.soporte-cara-marca {
+    background: #071321;
+    transform: rotateY(180deg) translateZ(1px);
+    overflow: hidden;
+}
+.soporte-cara-marca img {
+    display: block;
+    width: 54px;
+    height: auto;
+    max-height: 46px;
+    object-fit: contain;
+}
+.btn-flotante-soporte:hover .soporte-giro,
+.btn-flotante-soporte:focus-visible .soporte-giro { animation-play-state: paused; }
+@keyframes soporte-vuelta {
+    0%, 36% { transform: rotateY(0deg); }
+    45%, 83% { transform: rotateY(180deg); }
+    92%, 100% { transform: rotateY(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .soporte-giro { animation: none; }
+}
