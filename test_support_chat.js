@@ -1,8 +1,9 @@
+import ts from 'typescript';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {handleSupportChat} from './support-chat.js';
-import worker from './worker.js';
+import { application as worker } from './worker.js';
 import fs from 'node:fs';
 import vm from 'node:vm';
 function setup(legacy=[]) {
@@ -47,8 +48,8 @@ test('concurrent sends are stored independently',async()=>{
  assert.equal((await(await call(env,'admin','mensajes?usuario=daniel')).json()).mensajes.length,12);
 });
 test('widget sends without ReferenceError and rejects HTML success responses',async()=>{
- const source=fs.readFileSync('script.js','utf8');
- const fn=source.slice(source.indexOf('async function enviarMensajeUsuarioSoporte('),source.indexOf('// Inicializar widget de soporte al cargar'));
+ const source=['functions-core.js','functions-operations.js','script.js'].map(p=>fs.readFileSync(p,'utf8')).join('\n');
+ const ast=ts.createSourceFile('script.js',source,ts.ScriptTarget.Latest,true,ts.ScriptKind.JS);const fn=ast.statements.find(n=>ts.isFunctionDeclaration(n)&&n.name.text==='enviarMensajeUsuarioSoporte').getText(ast);
  let sent=0;const check={};const input={value:''};
  const context={sessionStorage:{getItem:()=> 'daniel'},document:{getElementById:id=>id==='inputPreguntaSoporte'?input:id.startsWith('check-')?check:{appendChild(){},scrollHeight:1},createElement:()=>({})},generarEtiquetaRemitenteChat:()=>'',escapeHtmlSoporte:s=>s,BASE_CONOCIMIENTO_SOPORTE:{},reproducirChimeMensaje(){},setTimeout(){},console,fetch:async()=>{sent++;return new Response('<html>fallback</html>',{headers:{'Content-Type':'text/html'}});}};
  check.style={};vm.createContext(context);vm.runInContext(fn,context);

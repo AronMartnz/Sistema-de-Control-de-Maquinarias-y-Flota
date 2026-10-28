@@ -1,3 +1,4 @@
+import { secureFetch } from "./platform.js";
 import bcrypt from "bcryptjs";
 import { handleSupportChat } from "./support-chat.js";
 /**
@@ -51,7 +52,7 @@ let GLOBAL_CONFIG_MANTENIMIENTO = {
   historialAvisos: []
 };
 
-export default {
+const application = {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const path = url.pathname;
@@ -266,7 +267,8 @@ export default {
     async function persistirUsuario(nuevoUsuario) {
       const uNorm = (nuevoUsuario.usuario || "").trim().toLowerCase();
       const uNombre = (nuevoUsuario.nombre || uNorm).trim();
-      const uPass = nuevoUsuario.password;
+      const configuredPassword = nuevoUsuario.password;
+      const uPass = configuredPassword && configuredPassword.startsWith("$2") ? configuredPassword : (configuredPassword ? await bcrypt.hash(configuredPassword, 12) : "");
       if (!uPass) throw new Error("Debes configurar una contraseña para la cuenta");
       const uRol = nuevoUsuario.rol || "operador";
       const uAvatar = nuevoUsuario.avatar || (uRol === "admin" ? "avatar-admin" : "avatar-mecanico");
@@ -301,7 +303,7 @@ export default {
             `).bind(uNorm, uPass, uNombre, uRol, uAvatar).run();
           }
         } catch (errD1) {
-          console.error("Error persistiendo usuario en D1:", errD1);
+          throw errD1;
         }
       }
 
@@ -345,6 +347,7 @@ export default {
       return new Response(JSON.stringify({
         status: "ok",
         mensaje: "SERVIDOR CLOUDFLARE DE CORSSEN OPERATIVO",
+        service: "CORSSEN",
         db: dbStatus,
         kv: kvStatus,
         timestamp: new Date().toISOString()
@@ -818,14 +821,13 @@ export default {
             uNombre = uNombre.replace(/Corsser/gi, "Corssen");
           }
           const uLower = (u.usuario || "").toLowerCase().trim();
-          const passVal = u.password_plana || (u.password || "");
           return {
             usuario: u.usuario,
             nombre: uNombre,
             rol: u.rol || "operador",
             avatar: u.avatar || (u.rol === "admin" ? "avatar-admin" : "avatar-mecanico"),
             estado: uLower === "admin" ? "activo" : (u.estado || "activo"),
-            ...(esAdminGeneral ? { password_visible: passVal } : {})
+
           };
         })), {
           headers: { ...corsHeaders, "Content-Type": "application/json" }
@@ -874,7 +876,7 @@ export default {
 
         return new Response(JSON.stringify({ 
           mensaje: `Usuario '${uNorm}' creado exitosamente en la base de datos de Cloudflare.`,
-          usuario: nuevo
+          usuario: usuarioPublico(nuevo)
         }), {
           status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" }
@@ -978,7 +980,9 @@ export default {
         }
 
         const body = await request.json().catch(() => ({}));
-        const nuevaPass = body.nuevaPassword;
+        const rawPassword = body.nuevaPassword;
+        if (!userTarget || !rawPassword) return new Response(JSON.stringify({mensaje:"Indica usuario y nueva contraseña"}), {status:400,headers:{"Content-Type":"application/json"}});
+        const nuevaPass = await bcrypt.hash(String(rawPassword), 12);
 
         if (userTarget && nuevaPass) {
           if (env && env.DB) {
@@ -1070,11 +1074,13 @@ export default {
         let listaActual = await obtenerUsuarios();
         let existeEnLista = listaActual.find(u => (u.usuario || "").toLowerCase() === userToUpdate);
 
+        if (!existeEnLista) return new Response(JSON.stringify({mensaje:"Usuario no encontrado"}), {status:404,headers:{"Content-Type":"application/json"}});
+        if (rol && !["admin","operador"].includes(rol)) return new Response(JSON.stringify({mensaje:"Rol inválido"}), {status:400,headers:{"Content-Type":"application/json"}});
         const usuarioActualizado = {
           usuario: userToUpdate,
           nombre: nombre,
           rol: (userToUpdate === "admin" ? "admin" : (rol || (existeEnLista && existeEnLista.rol) || "operador")),
-          password: (existeEnLista && existeEnLista.password) ? existeEnLista.password : "1234",
+          password: existeEnLista.password,
           avatar: (existeEnLista && existeEnLista.avatar) ? existeEnLista.avatar : (rol === "admin" ? "avatar-admin" : "avatar-mecanico")
         };
 
@@ -1083,7 +1089,7 @@ export default {
 
         return new Response(JSON.stringify({ 
           mensaje: `Datos de usuario '${userToUpdate}' actualizados correctamente`,
-          usuario: usuarioActualizado
+          usuario: usuarioPublico(usuarioActualizado)
         }), {
           status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" }
@@ -1635,8 +1641,9 @@ export default {
     if (path === "/api/backup/guardar" && request.method === "POST") {
       try {
         const body = await request.json();
+        body.data = {...(body.data || {}), ...await leerEstadoOperativo(env.DB)};
         const backupId = body.id || ("SNP-CLOUD-" + Date.now());
-        const timestamp = body.timestamp || Date.now();
+        const timestamp = Date.now();
         const fecha = body.fecha || new Date().toLocaleDateString("es-CL");
         const hora = body.hora || new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 
@@ -1670,7 +1677,7 @@ export default {
               JSON.stringify(body.data || {})
             ).run();
           } catch (eD1) {
-            console.warn("Error guardando backup en D1:", eD1);
+            throw eD1;
           }
         }
 
@@ -1999,55 +2006,16 @@ export default {
         } catch (_) {}
       }
 
+      if (bId === "ultimo" && backupData) backupData.data = {...(backupData.data || {}), ...await leerEstadoOperativo(env.DB)};
       return new Response(JSON.stringify(backupData), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" }
       });
     }
 
-    // Servir assets estáticos (con sincronización directa a GitHub para reflejar cambios instantáneos)
-    const GITHUB_REPO_RAW = "https://raw.githubusercontent.com/AronMartnz/Sistema-de-Control-de-Maquinarias-y-Flota/main";
+    if (path.startsWith("/api/")) return new Response(JSON.stringify({error:"Ruta API no encontrada"}), {status:404, headers:{"Content-Type":"application/json"}});
 
-    let targetFile = path;
-    if (targetFile === "/" || targetFile === "") targetFile = "/public/index.html";
-    else if (targetFile === "/usuarios") targetFile = "/public/usuarios.html";
-    else if (targetFile === "/login") targetFile = "/public/login.html";
-    else if (!targetFile.startsWith("/public/") && (targetFile.endsWith(".html") || targetFile.endsWith(".js") || targetFile.endsWith(".css") || targetFile.endsWith(".svg") || targetFile.endsWith(".ico") || targetFile.endsWith(".json"))) {
-      targetFile = "/public" + targetFile;
-    }
-
-    // Si es un archivo de la app web, intentar servir directamente desde GitHub para actualizar de inmediato
-    if (targetFile.startsWith("/public/")) {
-      try {
-        const ghResp = await fetch(GITHUB_REPO_RAW + targetFile + "?_t=" + Date.now(), {
-          headers: { "Cache-Control": "no-cache", "Pragma": "no-cache" },
-          cf: { cacheTtl: 0, cacheEverything: false }
-        });
-        if (ghResp.ok) {
-          let contentType = "text/plain; charset=utf-8";
-          if (targetFile.endsWith(".html")) contentType = "text/html; charset=utf-8";
-          else if (targetFile.endsWith(".js")) contentType = "application/javascript; charset=utf-8";
-          else if (targetFile.endsWith(".css")) contentType = "text/css; charset=utf-8";
-          else if (targetFile.endsWith(".svg")) contentType = "image/svg+xml";
-          else if (targetFile.endsWith(".json")) contentType = "application/json; charset=utf-8";
-          else if (targetFile.endsWith(".ico")) contentType = "image/x-icon";
-
-          const headers = new Headers(corsHeaders);
-          headers.set("Content-Type", contentType);
-          headers.set("Cache-Control", "no-cache, no-store, must-revalidate");
-          headers.set("Pragma", "no-cache");
-          headers.set("Expires", "0");
-
-          return new Response(ghResp.body, {
-            status: 200,
-            headers
-          });
-        }
-      } catch (errGh) {
-        console.warn("Error consultando assets de GitHub:", errGh);
-      }
-    }
-
+    // Serve the assets packaged with this deployment so UI and API stay on one version.
     // Fallback: Servir assets estáticos a través del binding de Cloudflare
     if (env && env.ASSETS) {
       let res = await env.ASSETS.fetch(request);
@@ -2119,6 +2087,8 @@ async function ejecutarRespaldoCronAutomatico(env) {
       }
     }
 
+    ultimoData = {...(ultimoData || {}), ...await leerEstadoOperativo(db)};
+
     if (!ultimoData) {
       ultimoData = {
         corssen_programa_v2: [],
@@ -2188,3 +2158,17 @@ async function ejecutarRespaldoCronAutomatico(env) {
 }
 
 
+
+export default {fetch: (request, env, ctx) => secureFetch(request, env, ctx, application), scheduled: application.scheduled};
+
+export { application };
+
+async function leerEstadoOperativo(db) {
+  if (!db) return {};
+  const table = await db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='app_state'").first();
+  if (!table) return {};
+  const {results} = await db.prepare("SELECT key,value FROM app_state").all();
+  return Object.fromEntries(results.map(row => [row.key,JSON.parse(row.value)]));
+}
+
+function usuarioPublico(u) {return {usuario:u.usuario,nombre:u.nombre,rol:u.rol,avatar:u.avatar,estado:u.estado||"activo"};}
