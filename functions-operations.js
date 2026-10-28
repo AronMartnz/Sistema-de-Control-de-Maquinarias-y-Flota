@@ -4476,7 +4476,7 @@ function exportarKardexExcel() {
             "STOCK RESTANTE",
             "COSTO UNITARIO ($)",
             "TOTAL TRANSACCIÓN ($)",
-            "RESPONSABLE / OPERADOR"
+            "RESPONSABLE / OPERADOR", "STOCK ANTERIOR", "MOTIVO", "NOTA / REFERENCIA", "FECHA Y HORA"
         ]
     ];
 
@@ -4484,11 +4484,14 @@ function exportarKardexExcel() {
     let totalConsumoOTCLP = 0;
 
     (inventario || []).forEach(mov => {
+        const esAjuste = mov.tipo === "AJUSTE";
         const esIngreso = (mov.tipo === "INGRESO" || (mov.cantidad && mov.cantidad < 0));
         const cantAbs = Math.abs(mov.cantidad || 1);
         const costoTotal = Number(mov.costoTotal || ((mov.costoUnitario || 0) * cantAbs));
 
-        if (esIngreso) {
+        if (esAjuste) {
+            // Inventory corrections are valued separately from purchases and OT consumption.
+        } else if (esIngreso) {
             totalIngresosCLP += costoTotal;
         } else {
             totalConsumoOTCLP += costoTotal;
@@ -4496,16 +4499,16 @@ function exportarKardexExcel() {
 
         datosKardex.push([
             mov.fecha || "-",
-            esIngreso ? "INGRESO / COMPRA" : "CONSUMO EN MANTENCIÓN OT",
+            esAjuste ? "AJUSTE DE STOCK" : esIngreso ? "INGRESO / COMPRA" : "CONSUMO EN MANTENCIÓN OT",
             mov.folioOT || (esIngreso ? "Ingreso Bodega" : "OT General"),
             mov.codigoEquipo ? `${mov.codigoEquipo} - ${mov.equipoNombre || ''}` : "Bodega General",
             mov.insumoDetalle || "-",
-            esIngreso ? cantAbs : -cantAbs,
+            esAjuste ? mov.delta : esIngreso ? cantAbs : -cantAbs,
             mov.medida || "UN",
             mov.stockRestante !== undefined ? mov.stockRestante : "-",
             mov.costoUnitario || 0,
             costoTotal,
-            mov.responsable || "Alexis Santos"
+            mov.responsable || "-", mov.stockAnterior ?? "", mov.motivo || "", mov.nota || "", mov.fechaHora || ""
         ]);
     });
 

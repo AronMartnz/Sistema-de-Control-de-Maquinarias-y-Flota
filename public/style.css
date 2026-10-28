@@ -4900,3 +4900,46 @@ a {
 @media (prefers-reduced-motion: reduce) {
     .soporte-giro { animation: none; }
 }
+/* Inventory workspace */
+#stockInsumos .titulo-panel h2{font-size:27px;letter-spacing:-.8px;margin-top:7px}
+.inventario-eyebrow{font-size:10px;font-weight:800;letter-spacing:1.8px;color:#54708e}
+.inventario-resumen{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;margin:24px 0 18px}
+.inventario-metrica{background:var(--bg-card,#fff);border:1px solid #dce4ef;border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:14px;box-shadow:0 4px 14px #172b4d05}
+.inventario-metrica>span{font-size:12px;font-weight:650;color:#596b83}
+.inventario-metrica>strong{font-size:30px;letter-spacing:-1px;line-height:1.2;font-variant-numeric:tabular-nums}
+.inventario-metrica>small{font-size:11px;color:#6b7d93}
+.inventario-metrica-principal{background:linear-gradient(125deg,#132b49,#1c4266);color:#fff;border-color:#173553}
+.inventario-metrica-principal>span,.inventario-metrica-principal>small{color:#c7d8e9}
+.inventario-metrica-alerta{background:#fffaf0;border-color:#f2dfb7;color:#8d5d0d}
+.inventario-metrica button{border:0;background:none;padding:0;text-align:left;color:#946318;font-size:11px;cursor:pointer}
+.inventario-aviso{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 18px;border:1px solid #f0dfb7;background:#fffbf2;border-radius:12px;color:#8d6324;font-size:12px;margin-bottom:20px}
+#stockInsumos .caja-blanca{border-radius:16px;box-shadow:0 3px 12px #152e4c04}
+#stockInsumos .tabla-general th{font-size:10px;letter-spacing:.5px;text-transform:uppercase;background:#f6f8fb}
+#stockInsumos .tabla-general td{padding-top:16px;padding-bottom:16px}
+#stockInsumos .tabla-general{min-width:1160px}
+#stockInsumos .tabla-general th:nth-child(3),#stockInsumos .tabla-general td:nth-child(3),#stockInsumos .tabla-general th:nth-child(4),#stockInsumos .tabla-general td:nth-child(4){display:none}
+.inventario-articulo{display:flex;align-items:center;gap:12px;background:none;border:0;padding:0;text-align:left;color:inherit;cursor:pointer;min-width:220px}
+.inventario-articulo img{object-fit:contain;background:#f1f5fa;border:1px solid #e4ebf3;border-radius:12px;flex-shrink:0}
+.inventario-articulo small{display:block;color:#718198;font-size:10px;margin-top:5px}
+.inventario-ajuste{white-space:nowrap;color:#1e5caa!important;border-color:#c7daf3!important;font-weight:600}
+#filtroEstadoStock{padding:9px 14px;border:1px solid #cbd5e1;border-radius:10px;font-size:13px;background:#fff;color:#334155}
+.inventario-dialog{border:1px solid #dae3ee;border-radius:20px;padding:30px;width:min(490px,calc(100vw - 40px));max-height:88vh;overflow:auto;color:#172b49;box-shadow:0 24px 90px #071b3b40}
+.inventario-dialog::backdrop{background:#10213b88;backdrop-filter:blur(3px)}
+.inventario-dialog h2{font-size:23px;margin:10px 0}
+.inventario-dialog p{font-size:13px;color:#61738b;line-height:1.6}
+.inventario-dialog label{display:block;font-size:12px;font-weight:600;margin-top:18px}
+.inventario-dialog input,.inventario-dialog select,.inventario-dialog textarea{display:block;box-sizing:border-box;width:100%;padding:11px;border:1px solid #cbd7e6;border-radius:9px;margin-top:8px;font:inherit;background:#fff;color:#172b49}
+.inventario-dialog-acciones{display:flex;justify-content:flex-end;gap:10px;margin-top:24px}
+.inventario-cerrar{float:right;border:0;background:none;font-size:25px;cursor:pointer;color:#64748b}
+.inventario-imagen-detalle{width:110px;height:110px;object-fit:contain;display:block;margin:0 auto 20px}
+.inventario-dialog dl{display:grid;grid-template-columns:1fr 1fr;gap:15px;font-size:13px;margin:25px 0}
+.inventario-dialog dd{margin:0;font-weight:650}
+.inventario-dialog dt{color:#64748b}
+.inventario-ayuda{font-size:10px!important;margin-top:20px}
+.inventario-auditoria{display:block;color:#64748b;font-size:10px;font-weight:400;margin-top:4px}
+@media(max-width:1100px){.inventario-resumen{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.inventario-resumen{grid-template-columns:1fr;gap:10px}.inventario-metrica{padding:18px}.inventario-aviso{align-items:flex-start;flex-direction:column}.inventario-dialog{padding:20px}}
+[data-theme="dark"] .inventario-metrica:not(.inventario-metrica-principal){background:#172336;color:#e5edf7;border-color:#334155}
+[data-theme="dark"] #stockInsumos .tabla-general th{background:#172336}
+
+[data-theme="dark"] .inventario-dialog,[data-theme="dark"] #filtroEstadoStock{background:#172336;color:#e5edf7;border-color:#334155}

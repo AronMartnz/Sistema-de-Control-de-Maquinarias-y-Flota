@@ -1097,7 +1097,7 @@ function renderizarStockInsumos() {
         const stock = item.stock || 0;
         const costo = item.costo || 0;
         valorTotalInventario += (stock * costo);
-        if (stock <= (item.stockMin || 1)) {
+        if (stock <= (item.stockMin ?? 1)) {
             itemsCriticos++;
         }
     });
@@ -1105,6 +1105,7 @@ function renderizarStockInsumos() {
     let totalGastosIngresos = 0;
     let totalConsumidoMantenciones = 0;
     (inventario || []).forEach(mov => {
+        if (mov.tipo === "AJUSTE") return;
         const cant = Math.abs(mov.cantidad || 1);
         const subtotal = mov.costoTotal || ((mov.costoUnitario || 0) * cant);
         if (mov.tipo === "INGRESO" || (mov.cantidad && mov.cantidad < 0)) {
@@ -1124,6 +1125,8 @@ function renderizarStockInsumos() {
     if (elKpiIngresos) elKpiIngresos.textContent = `$${totalGastosIngresos.toLocaleString('es-CL')}`;
     if (elKpiConsumido) elKpiConsumido.textContent = `$${totalConsumidoMantenciones.toLocaleString('es-CL')}`;
     if (elKpiCriticos) elKpiCriticos.textContent = `${itemsCriticos}`;
+    const aviso = document.getElementById("avisoStockCritico");
+    if (aviso) aviso.textContent = `${itemsCriticos} artículos requieren reposición. Revisa las existencias y planifica tu próximo abastecimiento.`;
     if (elBadgeValor) elBadgeValor.textContent = `Valor Total: $${valorTotalInventario.toLocaleString('es-CL')}`;
 
     // 2. Filtrar por categoría, texto y compatibilidad de equipo
@@ -1135,6 +1138,9 @@ function renderizarStockInsumos() {
             compat
         };
     }).filter(({ item, compat }) => {
+        const estado = document.getElementById("filtroEstadoStock")?.value || "TODOS";
+        if (estado === "CRITICO" && Number(item.stock || 0) > Number(item.stockMin ?? 1)) return false;
+        if (estado === "AGOTADO" && Number(item.stock || 0) !== 0) return false;
         // Filtro de Categoría
         if (filtroCat !== "TODAS") {
             const catItem = (item.categoria || "").toUpperCase();
@@ -1237,7 +1243,7 @@ function renderizarStockInsumos() {
     tbody.innerHTML = datosFiltrados.map(({ item, idxOriginal, compat }) => {
         let badgeStock = "badge-verde";
         if (item.stock === 0) badgeStock = "badge-rojo";
-        else if (item.stock <= (item.stockMin || 1)) badgeStock = "badge-naranja";
+        else if (item.stock <= (item.stockMin ?? 1)) badgeStock = "badge-naranja";
 
         const valorTotalLinea = (item.stock || 0) * (item.costo || 0);
 
@@ -1255,21 +1261,18 @@ function renderizarStockInsumos() {
 
         return `
             <tr ${filtroEquipo !== "TODOS" && compat.coincidenciaExacta ? 'style="background:#f8fafc;"' : ''}>
-                <td><strong>${item.detalle}</strong></td>
+                <td><button class="inventario-articulo" onclick="verDetalleInventario(${idxOriginal})"><img src="${imagenAutomaticaInsumo(item)}" alt="" width="48" height="48" loading="lazy"><span><strong>${textoSeguroInventario(item.detalle)}</strong><small>${textoSeguroInventario(item.marca)} · ${textoSeguroInventario(item.modelo)}</small></span></button></td>
                 <td><span class="badge badge-azul">${item.categoria}</span></td>
                 <td>${item.marca}</td>
                 <td><code>${item.modelo}</code></td>
                 <td>${item.medida}</td>
-                <td><span class="badge ${badgeStock}">${item.stock} ${item.stock <= (item.stockMin || 1) ? '(Crítico)' : ''}</span></td>
+                <td><span class="badge ${badgeStock}">${item.stock} ${Number(item.stock) === 0 ? '(Agotado)' : item.stock <= (item.stockMin ?? 1) ? '(Crítico)' : ''}</span></td>
                 <td>${item.proveedor || '-'}</td>
                 <td style="min-width:180px;">${compatHtml}</td>
                 <td><strong>$${(item.costo || 0).toLocaleString('es-CL')}</strong></td>
                 <td><strong style="color:#059669;">$${valorTotalLinea.toLocaleString('es-CL')}</strong></td>
                 <td>
-                    <div style="display:flex; gap:4px; align-items:center;">
-                        <button class="btn-secundario" style="padding:3px 8px; font-size:11px; font-weight:700;" onclick="ajustarStockInsumo(${idxOriginal}, 1)" title="Aumentar 1 unidad">+1</button>
-                        <button class="btn-secundario" style="padding:3px 8px; font-size:11px; font-weight:700;" onclick="ajustarStockInsumo(${idxOriginal}, -1)" title="Disminuir 1 unidad">-1</button>
-                    </div>
+                    <button class="btn-secundario inventario-ajuste" onclick="abrirAjusteInventario(${idxOriginal})">Ajustar stock</button>
                 </td>
             </tr>
         `;
@@ -1282,6 +1285,8 @@ function limpiarFiltrosStock() {
     const elEquipo = document.getElementById("selectEquipoCompatibleStock");
     const elOrden = document.getElementById("selectOrdenarStock");
 
+    const estado = document.getElementById("filtroEstadoStock");
+    if (estado) estado.value = "TODOS";
     if (elTexto) elTexto.value = "";
     if (elCat) elCat.value = "TODAS";
     if (elEquipo) elEquipo.value = "TODOS";
@@ -1309,14 +1314,8 @@ function filtrarStockPorEquipoDirecto(codEquipo) {
     renderizarStockInsumos();
 }
 
-function ajustarStockInsumo(idx, delta) {
-    if (corssenStock[idx]) {
-        corssenStock[idx].stock = Math.max(0, (corssenStock[idx].stock || 0) + delta);
-        guardarTodo();
-        renderizarStockInsumos();
-        poblarSelectorIngresoStock();
-        renderizarDashboard();
-    }
+function ajustarStockInsumo(idx) {
+    abrirAjusteInventario(idx);
 }
 
 function renderizarKardexMovimientos() {
@@ -1335,6 +1334,7 @@ function renderizarKardexMovimientos() {
     }
 
     tbody.innerHTML = inventario.map((mov) => {
+        const esAjuste = mov.tipo === "AJUSTE";
         const esIngreso = (mov.tipo === "INGRESO" || (mov.cantidad && mov.cantidad < 0));
         const cantAbs = Math.abs(mov.cantidad || 1);
         const costoTotalMov = mov.costoTotal || ((mov.costoUnitario || 0) * cantAbs);
@@ -1342,10 +1342,10 @@ function renderizarKardexMovimientos() {
             <tr>
                 <td><strong>${mov.fecha || '-'}</strong></td>
                 <td><span class="badge ${esIngreso ? 'badge-verde' : 'badge-azul'}">${mov.folioOT || (esIngreso ? 'Ingreso Bodega' : 'OT General')}</span></td>
-                <td><span class="badge ${esIngreso ? 'badge-verde' : 'badge-rojo'}">${esIngreso ? '📥 INGRESO' : '🛠️ CONSUMO OT'}</span></td>
+                <td><span class="badge ${esIngreso ? 'badge-verde' : 'badge-rojo'}">${esAjuste ? 'AJUSTE DE STOCK' : esIngreso ? '📥 INGRESO' : '🛠️ CONSUMO OT'}</span></td>
                 <td><strong>${mov.codigoEquipo || '-'}</strong> ${mov.equipoNombre ? `<br><small style="color:#64748b;">${mov.equipoNombre}</small>` : ''}</td>
-                <td><strong>${mov.insumoDetalle || '-'}</strong></td>
-                <td><strong>${esIngreso ? '+' : '-'}${cantAbs} ${mov.medida || 'UN'}</strong></td>
+                <td><strong>${textoSeguroInventario(mov.insumoDetalle || '-')}${esAjuste ? `<small class="inventario-auditoria">${textoSeguroInventario(mov.motivo)} · ${mov.stockAnterior} → ${mov.stockRestante}<br>${textoSeguroInventario(mov.nota || '')}</small>` : ''}</strong></td>
+                <td><strong>${esAjuste ? (mov.delta > 0 ? '+' : '−') : esIngreso ? '+' : '-'}${cantAbs} ${mov.medida || 'UN'}</strong></td>
                 <td><span class="badge badge-gris">${mov.stockRestante !== undefined ? mov.stockRestante + ' Disp.' : '-'}</span></td>
                 <td>$${(mov.costoUnitario || 0).toLocaleString('es-CL')}</td>
                 <td><strong style="color:${esIngreso ? '#059669' : '#b91c1c'};">$${costoTotalMov.toLocaleString('es-CL')}</strong></td>

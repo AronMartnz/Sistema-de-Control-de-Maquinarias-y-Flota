@@ -1198,53 +1198,29 @@
         ===================================================== -->
         <section class="panel" id="stockInsumos">
             <div class="titulo-panel">
-                <h2>Gestión de Inventario</h2>
-                <p>Control de existencias de lubricantes Valvoline, filtros Baldwin/Fleetguard/Tecfil, repuestos de taller, gastos acumulados y registro de consumos.</p>
+                <span class="inventario-eyebrow">CONTROL DE BODEGA</span><h2>Gestión de inventario</h2>
+                <p>Disponibilidad, valorización y trazabilidad de insumos.</p>
             </div>
 
-            <!-- RESUMEN FINANCIERO Y CONTROL DE GASTOS DE INSUMOS -->
-            <div class="grid-tarjetas" style="margin-bottom:22px;">
-                <div class="tarjeta-dash">
-                    <div class="tarjeta-icono" style="background:#eff6ff; color:#2563eb; font-size:22px;">💰</div>
-                    <div>
-                        <div class="numero" id="kpiStockValorTotal">$0</div>
-                        <div class="etiqueta">Valor Inventario en Bodega</div>
-                    </div>
-                </div>
-                <div class="tarjeta-dash">
-                    <div class="tarjeta-icono" style="background:#ecfdf5; color:#059669; font-size:22px;">📥</div>
-                    <div>
-                        <div class="numero" id="kpiStockTotalIngresos">$0</div>
-                        <div class="etiqueta">Gastos Totales Abastecimiento</div>
-                    </div>
-                </div>
-                <div class="tarjeta-dash">
-                    <div class="tarjeta-icono" style="background:#fef2f2; color:#dc2626; font-size:22px;">🛠️</div>
-                    <div>
-                        <div class="numero" id="kpiStockTotalConsumido">$0</div>
-                        <div class="etiqueta">Insumos Ocupados en OTs</div>
-                    </div>
-                </div>
-                <div class="tarjeta-dash">
-                    <div class="tarjeta-icono" style="background:#fffbeb; color:#d97706; font-size:22px;">⚠️</div>
-                    <div>
-                        <div class="numero" id="kpiStockCriticos">0</div>
-                        <div class="etiqueta">Insumos en Nivel Crítico</div>
-                    </div>
-                </div>
+            <div class="inventario-resumen">
+                <article class="inventario-metrica inventario-metrica-principal"><span>Valor del inventario</span><strong id="kpiStockValorTotal">$0</strong><small>Existencias valorizadas en bodega</small></article>
+                <article class="inventario-metrica"><span>Abastecimiento</span><strong id="kpiStockTotalIngresos">$0</strong><small>Ingresos de mercadería acumulados</small></article>
+                <article class="inventario-metrica"><span>Consumo en órdenes de trabajo</span><strong id="kpiStockTotalConsumido">$0</strong><small>Insumos utilizados en mantenciones</small></article>
+                <article class="inventario-metrica inventario-metrica-alerta"><span>Stock crítico</span><strong id="kpiStockCriticos">0</strong><button onclick="filtrarReposicionInventario()">Ver artículos para reponer →</button></article>
             </div>
+            <div class="inventario-aviso"><span id="avisoStockCritico">Revisando existencias…</span><button class="btn-secundario" onclick="filtrarReposicionInventario()">Ver reposición</button></div>
 
             <!-- Controles y Pestañas de Stock -->
             <div class="caja-blanca" style="margin-bottom:20px;">
                 <div class="caja-header" style="flex-wrap:wrap; gap:12px;">
                     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-                        <button class="btn-secundario btn-pestana-inventario active" data-tab="EXISTENCIAS">📦 Existencias en Bodega</button>
-                        <button class="btn-secundario btn-pestana-inventario" data-tab="MOVIMIENTOS">📋 Kárdex e Historial de Movimientos (<span id="contKardexTotal">0</span>)</button>
+                        <button class="btn-secundario btn-pestana-inventario active" data-tab="EXISTENCIAS">Existencias</button>
+                        <button class="btn-secundario btn-pestana-inventario" data-tab="MOVIMIENTOS">Movimientos (<span id="contKardexTotal">0</span>)</button>
                     </div>
 
                     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-                        <button class="btn-primario" onclick="abrirModalNuevoInsumo()" style="background:#0f172a; border-color:#0f172a; box-shadow:0 2px 8px rgba(15,23,42,0.2);">✨ Nuevo Insumo / Repuesto</button>
-                        <button class="btn-primario" onclick="abrirModalIngresoStock()">📥 Ingreso de Mercadería</button>
+                        <button class="btn-primario" onclick="abrirModalNuevoInsumo()" style="background:#0f172a; border-color:#0f172a; box-shadow:0 2px 8px rgba(15,23,42,0.2);">Nuevo artículo</button>
+                        <button class="btn-primario" onclick="abrirModalIngresoStock()">Registrar ingreso</button>
                         <button class="btn-secundario" onclick="exportarStockExcel()" title="Exportar existencias y valorización a archivo Excel nativo (.xlsx)">📊 Exportar Inventario Excel (.xlsx)</button>
                         <button class="btn-secundario" onclick="exportarKardexExcel()" title="Exportar historial de entradas y salidas a archivo Excel nativo (.xlsx)">📑 Exportar Historial Excel (.xlsx)</button>
                     </div>
@@ -1284,6 +1260,7 @@
                             <option value="COSTO_DESC">💲 Mayor Costo Unitario</option>
                         </select>
 
+                        <select id="filtroEstadoStock" aria-label="Estado de existencias" onchange="renderizarStockInsumos()"><option value="TODOS">Todos los estados</option><option value="CRITICO">Reposición / stock crítico</option><option value="AGOTADO">Agotados</option></select>
                         <!-- Búsqueda rápida por texto -->
                         <input type="text" id="inputBuscarStock" placeholder="🔍 Buscar insumo, código, marca..." style="padding:9px 14px; border:1.5px solid #cbd5e1; border-radius:10px; font-size:13px; min-width:220px; flex:1;">
 
@@ -4621,6 +4598,8 @@
 
 <script src="/functions-core.js"></script>
 <script src="/functions-operations.js"></script>
-<script src="/script.js?v=20261002_cf_dark_v3"></script>
+<script src="inventory-ui.js"></script>
+    <script src="/script.js?v=20261002_cf_dark_v3"></script>
+<dialog id="dialogInventario" class="inventario-dialog" aria-label="Gestión del artículo y ajuste de stock"><div id="contenidoDialogInventario"></div></dialog>
 </body>
 </html>
