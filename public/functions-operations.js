@@ -5622,7 +5622,8 @@ async function sincronizarEstadoCompartido() {
         }
         const indicador=document.querySelector(".estado-sistema");
         if(indicador) {
-            indicador.textContent=conflictosCompartidos.size ? "Hay cambios simultáneos pendientes de revisión; se conservaron en este dispositivo" : "Sincronizado con Cloudflare";
+            indicador.textContent="Respaldo Nube ServiTec Pro";
+            indicador.title=conflictosCompartidos.size ? "Hay cambios simultáneos pendientes de revisión; se conservaron en este dispositivo" : "Sincronizado con Cloudflare";
             if(conflictosCompartidos.size) {
                 const revisar=document.createElement("button");revisar.type="button";revisar.textContent="Cargar la versión compartida";
                 revisar.onclick=()=> {
@@ -5637,7 +5638,10 @@ async function sincronizarEstadoCompartido() {
     } catch(error) {
         console.error("Sincronización pendiente",error);
         const indicador=document.querySelector(".estado-sistema");
-        if(indicador)indicador.textContent="Sin conexión: cambios pendientes en este dispositivo";
+        if(indicador) {
+            indicador.textContent="Respaldo Nube ServiTec Pro";
+            indicador.title="Sin conexión: cambios pendientes en este dispositivo";
+        }
     } finally {sincronizacionOcupada=false;}
 }
 
