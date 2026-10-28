@@ -115,3 +115,15 @@ test('only authenticated general admin can reveal actual available passwords; ha
  const details=(await response.json()).usuarios;assert.equal(details.find(u=>u.usuario==='operador').clave,null);assert.equal(details.find(u=>u.usuario==='admin').clave,sql.prepare("SELECT password FROM usuarios WHERE usuario='admin'").get().password);
  assert.equal(details.some(u=>u.clave===hashed),false);
 });
+test('monthly history is shared by admin and operator, authenticated and read-only',async()=>{
+ const {call,login}=setup();const admin=await login('admin'),op=await login('operador');
+ assert.equal((await call('/api/inventory/monthly')).status,401);
+ await call('/api/state','GET',undefined,admin);
+ const stock=[{detalle:'Prueba',stock:10,costo:100}];
+ assert.equal((await call('/api/state','PUT',{entries:[{key:'corssen_stock_v2',value:stock,version:0},{key:'flota_inventario_v3',value:[],version:0}]},admin)).status,200);
+ const a=await(await call('/api/inventory/monthly','GET',undefined,admin)).json();const b=await(await call('/api/inventory/monthly','GET',undefined,op)).json();
+ assert.equal(a.months[0].value,1000);assert.equal(b.months[0].value,1000);assert.equal(a.months[0].opening,null);
+ assert.equal((await call('/api/inventory/monthly','POST',{value:0},op)).status,405);
+ assert.equal((await call('/api/state','PUT',{key:'corssen_stock_v2',value:[{stock:0}],version:0},op)).status,409);
+ const unchanged=await(await call('/api/inventory/monthly','GET',undefined,op)).json();assert.equal(unchanged.months[0].value,1000);
+});

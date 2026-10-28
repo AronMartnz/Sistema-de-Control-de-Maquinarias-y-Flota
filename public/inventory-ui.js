@@ -69,3 +69,43 @@ function guardarAjusteInventario(event) {
     renderizarDashboard();
     cerrarDialogInventario();
 }
+function mesInventarioActual(fecha = new Date()) {
+    const partes = new Intl.DateTimeFormat('en-CA', {timeZone:'America/Santiago',year:'numeric',month:'2-digit'}).formatToParts(fecha);
+    return `${partes.find(p=>p.type==='year').value}-${partes.find(p=>p.type==='month').value}`;
+}
+function mesMovimientoInventario(mov) {
+    if (mov.fechaHora) {const fecha=new Date(mov.fechaHora);if(!Number.isNaN(fecha.getTime()))return mesInventarioActual(fecha);}
+    return String(mov.fecha || '').slice(0,7);
+}
+function nombreMesInventario(mes) {
+    if (!/^\d{4}-\d{2}$/.test(mes)) return 'Sin período';
+    const [anio,numero] = mes.split('-').map(Number);
+    return new Intl.DateTimeFormat('es-CL',{month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(Date.UTC(anio,numero-1,15)));
+}
+function actualizarEncabezadoMesInventario(mes) {
+    const titulo=document.getElementById('tituloValorMesInventario');
+    const subtitulo=document.getElementById('subtituloValorMesInventario');
+    if(titulo)titulo.textContent=`Valor actual · ${nombreMesInventario(mes)}`;
+    if(subtitulo)subtitulo.textContent='Existencias disponibles valorizadas · Mes en curso';
+}
+async function cargarHistorialMensualInventario() {
+    const tbody=document.getElementById('tablaHistorialMensualInventario');
+    const estado=document.getElementById('estadoHistorialMensualInventario');
+    if(!tbody || tbody.dataset.cargando==='si')return;
+    tbody.dataset.cargando='si';
+    estado.textContent='Consultando registros mensuales compartidos…';
+    try {
+        const respuesta=await fetch('/api/inventory/monthly',{credentials:'same-origin',cache:'no-store'});
+        if(!respuesta.ok)throw new Error('Servicio de datos no disponible');
+        const datos=await respuesta.json();
+        if(!Array.isArray(datos.months))throw new Error('Respuesta mensual inválida');
+        const moneda=valor=>valor===null?'Sin registro':`$${Number(valor).toLocaleString('es-CL')}`;
+        const esc=textoSeguroInventario;
+        tbody.innerHTML=datos.months.map(m=>`<tr class="${m.status==='current'?'inventario-mes-actual':''}"><td><strong>${esc(nombreMesInventario(m.month))}</strong><small class="inventario-auditoria">${m.status==='current'?'Actualizado':'Último registro'}: ${esc(new Date(m.observedAt).toLocaleString('es-CL',{timeZone:'America/Santiago'}))}</small></td><td>${moneda(m.opening)}</td><td>${moneda(m.income)}</td><td>${moneda(m.consumption)}</td><td>${moneda(m.adjustments)}</td><td>${moneda(m.valuationDifference)}</td><td><strong>${moneda(m.value)}</strong></td><td>${moneda(m.variation)}</td><td><span class="badge ${m.status==='current'?'badge-azul':'badge-verde'}">${m.status==='current'?'En curso':'Cerrado'}</span>${m.partial?'<small class="inventario-auditoria">Sin saldo inicial verificable</small>':''}</td></tr>`).join('') || '<tr><td colspan="9">Todavía no hay registros mensuales de inventario.</td></tr>';
+        estado.textContent=datos.months.length?'El primer período comienza con el registro disponible. Los cierres se conservan automáticamente al cambiar de mes.':'El historial comenzará cuando existan datos de inventario sincronizados.';
+    } catch(error) {
+        estado.textContent='No se pudo actualizar el historial. El servicio de datos no está disponible; vuelve a intentarlo más tarde.';
+        // Never present an old row as the current server balance after a failed refresh.
+        tbody.innerHTML='<tr><td colspan="9">Historial temporalmente no disponible.</td></tr>';
+    } finally { delete tbody.dataset.cargando; }
+}

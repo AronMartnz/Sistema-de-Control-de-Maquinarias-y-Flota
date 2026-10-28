@@ -1,3 +1,4 @@
+import {captureInventoryMonth} from './inventory-monthly.js';
 import { secureFetch } from "./platform.js";
 import bcrypt from "bcryptjs";
 import { handleSupportChat } from "./support-chat.js";
@@ -2174,7 +2175,7 @@ async function ejecutarRespaldoCronAutomatico(env) {
 
 
 
-export default {fetch: (request, env, ctx) => secureFetch(request, env, ctx, application), scheduled: application.scheduled};
+export default {fetch: (request, env, ctx) => secureFetch(request, env, ctx, application), scheduled: async (event,env,ctx) => { try { await captureInventoryMonth(env.DB); } catch(error) { console.error("Monthly inventory capture failed",error); } return application.scheduled(event,env,ctx); }};
 
 export { application };
 

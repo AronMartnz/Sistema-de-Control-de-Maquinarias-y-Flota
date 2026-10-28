@@ -1203,9 +1203,9 @@
             </div>
 
             <div class="inventario-resumen">
-                <article class="inventario-metrica inventario-metrica-principal"><span>Valor del inventario</span><strong id="kpiStockValorTotal">$0</strong><small>Existencias valorizadas en bodega</small></article>
-                <article class="inventario-metrica"><span>Abastecimiento</span><strong id="kpiStockTotalIngresos">$0</strong><small>Ingresos de mercadería acumulados</small></article>
-                <article class="inventario-metrica"><span>Consumo en órdenes de trabajo</span><strong id="kpiStockTotalConsumido">$0</strong><small>Insumos utilizados en mantenciones</small></article>
+                <article class="inventario-metrica inventario-metrica-principal"><span id="tituloValorMesInventario">Valor actual del inventario</span><strong id="kpiStockValorTotal">$0</strong><small id="subtituloValorMesInventario">Mes en curso · Chile</small></article>
+                <article class="inventario-metrica"><span>Abastecimiento del mes</span><strong id="kpiStockTotalIngresos">$0</strong><small>Solo ingresos del mes en curso</small></article>
+                <article class="inventario-metrica"><span>Consumo en OT del mes</span><strong id="kpiStockTotalConsumido">$0</strong><small>Solo consumos del mes en curso</small></article>
                 <article class="inventario-metrica inventario-metrica-alerta"><span>Stock crítico</span><strong id="kpiStockCriticos">0</strong><button onclick="filtrarReposicionInventario()">Ver artículos para reponer →</button></article>
             </div>
             <div class="inventario-aviso"><span id="avisoStockCritico">Revisando existencias…</span><button class="btn-secundario" onclick="filtrarReposicionInventario()">Ver reposición</button></div>
@@ -1216,6 +1216,7 @@
                     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                         <button class="btn-secundario btn-pestana-inventario active" data-tab="EXISTENCIAS">Existencias</button>
                         <button class="btn-secundario btn-pestana-inventario" data-tab="MOVIMIENTOS">Movimientos (<span id="contKardexTotal">0</span>)</button>
+                        <button class="btn-secundario btn-pestana-inventario" data-tab="MENSUAL">Historial mensual</button>
                     </div>
 
                     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
@@ -1310,6 +1311,13 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+
+            <div class="caja-blanca seccion-inventario-bloque" id="bloqueInventarioMensual" style="display:none;margin-bottom:24px;">
+                <div class="caja-header"><div><h3>Historial del valor del inventario</h3><p>Valorización de existencias y movimientos por mes · Hora de Chile</p></div><button class="btn-secundario" onclick="cargarHistorialMensualInventario()">Actualizar historial</button></div>
+                <p id="estadoHistorialMensualInventario" class="inventario-mes-aviso" aria-live="polite">Cargando registros mensuales…</p>
+                <div class="tabla-responsive"><table class="tabla-general"><thead><tr><th>Período</th><th>Saldo inicial</th><th>Ingresos</th><th>Consumos OT</th><th>Ajustes de stock</th><th>Diferencia de valorización</th><th>Valor al cierre / actual</th><th>Variación</th><th>Estado</th></tr></thead><tbody id="tablaHistorialMensualInventario"></tbody></table></div>
+                <p class="inventario-mes-aviso">El valor actual incluye todas las existencias disponibles, aunque hayan ingresado antes del mes. Los cierres anteriores se conservan; los períodos sin registro no se estiman.</p>
             </div>
 
             <!-- VISTA 2: KÁRDEX DE MOVIMIENTOS Y SALIDAS POR MANTENCIÓN -->

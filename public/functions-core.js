@@ -834,7 +834,13 @@ function cambiarPestanaInventario(pestana) {
     const bloqueExistencias = document.getElementById("bloqueStockExistencias") || document.getElementById("bloqueInventarioExistencias");
     const bloqueKardex = document.getElementById("bloqueStockMovimientos") || document.getElementById("bloqueInventarioKardex");
 
-    if (pestana === "EXISTENCIAS") {
+    const bloqueMensual = document.getElementById("bloqueInventarioMensual");
+    if (bloqueMensual) bloqueMensual.style.display = pestana === "MENSUAL" ? "block" : "none";
+    if (pestana === "MENSUAL") {
+        if (bloqueExistencias) bloqueExistencias.style.display = "none";
+        if (bloqueKardex) bloqueKardex.style.display = "none";
+        cargarHistorialMensualInventario();
+    } else if (pestana === "EXISTENCIAS") {
         if (bloqueExistencias) bloqueExistencias.style.display = "block";
         if (bloqueKardex) bloqueKardex.style.display = "none";
         renderizarStockInsumos();
@@ -1102,18 +1108,17 @@ function renderizarStockInsumos() {
         }
     });
 
+    const periodoMes = mesInventarioActual();
     let totalGastosIngresos = 0;
     let totalConsumidoMantenciones = 0;
     (inventario || []).forEach(mov => {
-        if (mov.tipo === "AJUSTE") return;
-        const cant = Math.abs(mov.cantidad || 1);
-        const subtotal = mov.costoTotal || ((mov.costoUnitario || 0) * cant);
-        if (mov.tipo === "INGRESO" || (mov.cantidad && mov.cantidad < 0)) {
-            totalGastosIngresos += subtotal;
-        } else {
-            totalConsumidoMantenciones += subtotal;
-        }
+        if (mesMovimientoInventario(mov) !== periodoMes || mov.tipo === "AJUSTE") return;
+        const cant = Math.abs(Number(mov.cantidad ?? 1));
+        const subtotal = Number(mov.costoTotal ?? ((mov.costoUnitario || 0) * cant));
+        if (mov.tipo === "INGRESO" || Number(mov.cantidad) < 0) totalGastosIngresos += subtotal;
+        else totalConsumidoMantenciones += subtotal;
     });
+    actualizarEncabezadoMesInventario(periodoMes);
 
     const elKpiValor = document.getElementById("kpiStockValorTotal");
     const elKpiIngresos = document.getElementById("kpiStockTotalIngresos");

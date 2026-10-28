@@ -10,7 +10,7 @@
     "preview": "node dist/server.cjs",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
-    "test": "node --test test_platform.js test_support_chat.js test_business.js test_inventory.js && node test_static_layout.js",
+    "test": "node --test test_platform.js test_support_chat.js test_business.js test_inventory.js test_inventory_monthly.js && node test_static_layout.js",
     "cf:dry-run": "wrangler deploy --dry-run",
     "deploy:cf": "wrangler deploy",
     "deploy:pages": "wrangler pages deploy public",

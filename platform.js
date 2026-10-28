@@ -1,3 +1,4 @@
+import {ensureInventoryMonths,inventoryMonthStatement,inventoryMonthHistory} from './inventory-monthly.js';
 // Authentication and live shared state for the production Worker.
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'}});
 export const stateKeys=['corssen_programa_v2','corssen_stock_v2','corssen_fichas_v2','flota_vehiculos_v3','flota_maquinarias_v3','flota_cargas','flota_mantenciones_v3','flota_inventario_v3','corssen_tambores_aceite_v2','corssen_tambor_aceite_v1','corssen_historial_aceite_v1','corssen_tanque_combustible_v1','corssen_historial_recargas_comb_v1','corssen_kardex_v1'];
@@ -44,6 +45,10 @@ export async function secureFetch(request,env,ctx,app){
   if(!read && origin && origin!==url.origin)return json({error:'Origen no autorizado'},403);
   if(path==='/api/logout'){await db.prepare('DELETE FROM app_sessions WHERE token_hash=?').bind(await hash(token)).run();return new Response('{}',{headers:{'Content-Type':'application/json','Set-Cookie':'corssen_session=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0'}});}
   if(path==='/api/session')return json({usuario:user.usuario,rol:user.rol});
+  if(path==='/api/inventory/monthly'){
+   if(request.method!=='GET')return json({error:'Método no permitido'},405);
+   return json(await inventoryMonthHistory(db));
+  }
   if(path==='/api/usuarios/claves' && !general)return json({error:'Acceso exclusivo del administrador general'},403);
   const ownAvatar=path==='/api/perfil/avatar'||path===`/api/usuarios/${encodeURIComponent(user.usuario)}/avatar`;
   if(path.startsWith('/api/usuarios') && !admin && !ownAvatar)return json({error:'Acceso exclusivo de administración'},403);
@@ -105,6 +110,8 @@ async function liveState(request,db,user){
   statements.push(db.prepare('DELETE FROM app_state_guard WHERE id=?').bind(id));
   versions[key]=version+1;
  }
+ const trackInventory=changes.some(c=>['corssen_stock_v2','flota_inventario_v3'].includes(c.key));
+ if(trackInventory && statements.length){await ensureInventoryMonths(db);const now=new Date();statements.unshift(inventoryMonthStatement(db,now,true));statements.push(inventoryMonthStatement(db,now));}
  try {if(statements.length)await db.batch(statements);}
  catch(error){if(String(error).includes('CHECK constraint'))return json({error:'CONFLICTO'},409);throw error;}
  return json({ok:true,versions,version:body.key?versions[body.key]:undefined});
