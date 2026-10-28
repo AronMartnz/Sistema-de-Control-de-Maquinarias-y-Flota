@@ -827,6 +827,7 @@ const application = {
             rol: u.rol || "operador",
             avatar: u.avatar || (u.rol === "admin" ? "avatar-admin" : "avatar-mecanico"),
             estado: uLower === "admin" ? "activo" : (u.estado || "activo"),
+            ...(esAdminGeneral ? {password_recuperable: typeof u.password === "string" && u.password.length > 0 && !u.password.startsWith("$")} : {}),
 
           };
         })), {
@@ -838,6 +839,20 @@ const application = {
           headers: { ...corsHeaders, "Content-Type": "application/json" }
         });
       }
+    }
+
+    // Only the authenticated general administrator can explicitly reveal legacy
+    // configured plaintext credentials. Hashes are never returned as passwords.
+    if (path === "/api/usuarios/claves" && request.method === "GET") {
+      if ((request.headers.get("x-usuario") || "").toLowerCase() !== "admin") {
+        return new Response(JSON.stringify({mensaje:"Acceso exclusivo del administrador general"}), {status:403,headers:{"Content-Type":"application/json","Cache-Control":"no-store"}});
+      }
+      const users = await obtenerUsuarios();
+      return new Response(JSON.stringify({usuarios:users.map(u=>({
+        usuario:u.usuario,
+        disponible:typeof u.password === "string" && u.password.length > 0 && !u.password.startsWith("$"),
+        clave:typeof u.password === "string" && u.password.length > 0 && !u.password.startsWith("$") ? u.password : null
+      }))}),{headers:{"Content-Type":"application/json","Cache-Control":"no-store, private"}});
     }
 
     // API Usuarios - POST crear usuario

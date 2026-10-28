@@ -102,3 +102,16 @@ test('real client sync propagates between two sessions and preserves offline cha
  await second.sincronizarEstadoCompartido();assert.match(second.localStorage.getItem('corssen_sync_pendientes_operador'),/C-2/);
  second.offline=false;await second.sincronizarEstadoCompartido();await first.sincronizarEstadoCompartido();assert.equal(first.cargas.length,2);
 });
+import bcrypt from 'bcryptjs';
+test('only authenticated general admin can reveal actual available passwords; hashes and placeholders never appear',async()=>{
+ const {sql,call,login}=setup();const admin=await login('admin'),daniel=await login('daniel');
+ const previous=sql.prepare("SELECT password FROM usuarios WHERE usuario='operador'").get().password;
+ const hashed=await bcrypt.hash(previous,4);sql.prepare("UPDATE usuarios SET password=? WHERE usuario='operador'").run(hashed);
+ const op=await login('operador');
+ for(const cookie of [op,daniel])assert.equal((await call('/api/usuarios/claves','GET',undefined,cookie)).status,403);
+ assert.equal((await call('/api/usuarios/claves','GET',undefined,'',{'x-usuario':'admin'})).status,401);
+ const ordinary=await(await call('/api/usuarios','GET',undefined,admin)).json();assert.equal(ordinary.find(u=>u.usuario==='operador').password_recuperable,false);assert.equal(ordinary.find(u=>u.usuario==='admin').password_recuperable,true);assert.equal(ordinary.some(u=>'password' in u || 'password_visible' in u),false);
+ const response=await call('/api/usuarios/claves','GET',undefined,admin);assert.equal(response.status,200);assert.match(response.headers.get('Cache-Control'),/no-store/);
+ const details=(await response.json()).usuarios;assert.equal(details.find(u=>u.usuario==='operador').clave,null);assert.equal(details.find(u=>u.usuario==='admin').clave,sql.prepare("SELECT password FROM usuarios WHERE usuario='admin'").get().password);
+ assert.equal(details.some(u=>u.clave===hashed),false);
+});

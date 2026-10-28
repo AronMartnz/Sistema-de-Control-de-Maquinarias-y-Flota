@@ -1485,6 +1485,10 @@
             }
 
             listaUsuariosGlobal = usuarios;
+            clavesConsultadas.clear();
+            todasLasPasswordsVisibles=false;
+            const controlClaves=document.getElementById("btnToggleTodasPasswords");
+            if(controlClaves)controlClaves.textContent="👁️ Mostrar Contraseñas";
 
             // Sincronizar avatar actual del usuario conectado si vino del servidor
             const uActualEncontrado = usuarios.find(u => u.usuario.toLowerCase() === String(usuarioLogueado).toLowerCase().trim());
@@ -1530,14 +1534,13 @@
                 // Columna de contraseña visible para el Administrador General ('admin')
                 let columnaPasswordHtml = "";
                 if (esSuperAdminLogueado) {
-                    const uLower = (u.usuario || "").toLowerCase().trim();
-                    const claveTexto = u.password_visible || u.password_plana || (u.password && !u.password.startsWith("$2") ? u.password : (uLower === "admin" ? "admin123" : "1234"));
+                    const disponible = Boolean(u.password_recuperable);
                     columnaPasswordHtml = `
                         <td style="text-align:center;">
                             <div style="display:inline-flex; align-items:center; gap:6px; background:#f8fafc; padding:4px 8px; border-radius:8px; border:1px solid #cbd5e1; font-family:monospace; font-size:12.5px;">
-                                <span class="span-pwd-valor" id="pwd-val-${idx}" data-pwd="${escapeHtml(claveTexto)}" data-oculto="true" style="font-weight:700; color:#1e293b; min-width:62px; letter-spacing:1px;">••••••</span>
-                                <button type="button" class="btn-eye-pwd" onclick="alternarVisibilidadPasswordFila('${idx}')" title="Mostrar/Ocultar contraseña" style="background:transparent; border:none; cursor:pointer; font-size:14px; padding:0 2px;" id="btn-eye-${idx}">👁️</button>
-                                <button type="button" class="btn-copy-pwd" onclick="copiarClaveTexto('${escapeHtml(claveTexto)}')" title="Copiar contraseña" style="background:transparent; border:none; cursor:pointer; font-size:13px; padding:0 2px;">📋</button>
+                                <span class="span-pwd-valor" id="pwd-val-${idx}" data-disponible="${disponible}" data-oculto="true" title="${disponible ? 'Consultar clave configurada' : 'Guardada de forma protegida: no se puede recuperar. Usa Clave para establecer una nueva.'}" style="font-weight:700; color:#1e293b; min-width:62px; letter-spacing:1px;">${disponible ? "••••••" : "Protegida"}</span>
+                                <button type="button" class="btn-eye-pwd" onclick="alternarVisibilidadPasswordFila('${idx}')" title="Mostrar/Ocultar contraseña" style="background:transparent; border:none; cursor:pointer; font-size:14px; padding:0 2px;" id="btn-eye-${idx}" ${disponible ? "" : "disabled"}>👁️</button>
+                                <button type="button" class="btn-copy-pwd" ${disponible ? "" : "disabled"} onclick="copiarClaveUsuario('${idx}')" title="Copiar contraseña" style="background:transparent; border:none; cursor:pointer; font-size:13px; padding:0 2px;">📋</button>
                             </div>
                         </td>
                     `;
@@ -1737,60 +1740,63 @@
     }
 
     let todasLasPasswordsVisibles = false;
+    let clavesConsultadas = new Map();
 
-    function alternarVisibilidadPasswordFila(idx) {
-        const span = document.getElementById("pwd-val-" + idx);
-        const btn = document.getElementById("btn-eye-" + idx);
-        if (!span) return;
-        const esOculto = span.getAttribute("data-oculto") === "true";
-        if (esOculto) {
-            span.textContent = span.getAttribute("data-pwd") || "";
-            span.setAttribute("data-oculto", "false");
-            span.style.letterSpacing = "0.5px";
-            span.style.color = "#0369a1";
-            if (btn) btn.textContent = "🙈";
-        } else {
-            span.textContent = "••••••";
-            span.setAttribute("data-oculto", "true");
-            span.style.letterSpacing = "1px";
-            span.style.color = "#1e293b";
-            if (btn) btn.textContent = "👁️";
-        }
+    async function consultarClavesConfiguradas() {
+        const res = await fetch("/api/usuarios/claves", {cache:"no-store"});
+        if (!res.ok) throw new Error("No se pudieron consultar las claves. Verifica tu sesión de administrador general.");
+        const datos = await res.json();
+        clavesConsultadas = new Map(datos.usuarios.filter(u=>u.disponible).map(u=>[u.usuario,u.clave]));
     }
-
-    function toggleTodasLasPasswords() {
-        todasLasPasswordsVisibles = !todasLasPasswordsVisibles;
-        const spans = document.querySelectorAll(".span-pwd-valor");
-        spans.forEach((span, i) => {
-            const btn = document.getElementById("btn-eye-" + i);
-            if (todasLasPasswordsVisibles) {
-                span.textContent = span.getAttribute("data-pwd") || "";
-                span.setAttribute("data-oculto", "false");
-                span.style.letterSpacing = "0.5px";
-                span.style.color = "#0369a1";
-                if (btn) btn.textContent = "🙈";
-            } else {
-                span.textContent = "••••••";
-                span.setAttribute("data-oculto", "true");
-                span.style.letterSpacing = "1px";
-                span.style.color = "#1e293b";
-                if (btn) btn.textContent = "👁️";
-            }
-        });
-
-        const btnToggle = document.getElementById("btnToggleTodasPasswords");
-        if (btnToggle) {
-            btnToggle.innerHTML = todasLasPasswordsVisibles 
-                ? "🙈 Ocultar Contraseñas" 
-                : "👁️ Mostrar Contraseñas";
+    function mostrarClaveFila(idx, visible) {
+        const span=document.getElementById("pwd-val-"+idx),btn=document.getElementById("btn-eye-"+idx);
+        if(!span)return;
+        const usuario=listaUsuariosGlobal[Number(idx)];
+        const clave=usuario && clavesConsultadas.get(usuario.usuario);
+        if(!usuario?.password_recuperable || (visible && typeof clave!=="string")) {
+            span.textContent="Protegida";span.setAttribute("data-oculto","true");return;
         }
+        span.textContent=visible?clave:"••••••";
+        span.setAttribute("data-oculto",visible?"false":"true");
+        if(btn)btn.textContent=visible?"🙈":"👁️";
+    }
+    async function alternarVisibilidadPasswordFila(idx) {
+        const span=document.getElementById("pwd-val-"+idx);
+        if(!span || span.getAttribute("data-disponible")!=="true")return;
+        try {
+            const mostrar=span.getAttribute("data-oculto")==="true";
+            if(mostrar)await consultarClavesConfiguradas();
+            mostrarClaveFila(idx,mostrar);
+            if(!mostrar){const usuario=listaUsuariosGlobal[Number(idx)];if(usuario)clavesConsultadas.delete(usuario.usuario);}
+        } catch(error){alert(error.message);}
+    }
+    async function toggleTodasLasPasswords() {
+        try {
+            const mostrar=!todasLasPasswordsVisibles;
+            if(mostrar)await consultarClavesConfiguradas();
+            if(mostrar && !clavesConsultadas.size) {
+                alert("Las contraseñas están guardadas de forma protegida y no se pueden recuperar. Usa el botón Clave para establecer una nueva.");return;
+            }
+            todasLasPasswordsVisibles=mostrar;
+            document.querySelectorAll(".span-pwd-valor").forEach((span,i)=>mostrarClaveFila(i,mostrar));
+            if(!mostrar)clavesConsultadas.clear();
+            const btn=document.getElementById("btnToggleTodasPasswords");
+            if(btn)btn.textContent=mostrar?"🙈 Ocultar Contraseñas":"👁️ Mostrar Contraseñas";
+        } catch(error){alert(error.message);}
+    }
+    async function copiarClaveUsuario(idx) {
+        try {
+            await consultarClavesConfiguradas();
+            const usuario=listaUsuariosGlobal[Number(idx)],clave=usuario && clavesConsultadas.get(usuario.usuario);
+            if(typeof clave==="string")copiarClaveTexto(clave);
+        } catch(error){alert(error.message);}
     }
 
     function copiarClaveTexto(clave) {
         if (!clave) return;
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(clave).then(() => {
-                mostrarNotificacionFlotante("✓ Contraseña copiada: " + clave);
+                mostrarNotificacionFlotante("✓ Contraseña copiada");
             }).catch(() => {
                 fallbackCopiarClave(clave);
             });
@@ -1806,7 +1812,7 @@
         temp.select();
         document.execCommand("copy");
         document.body.removeChild(temp);
-        mostrarNotificacionFlotante("✓ Contraseña copiada: " + clave);
+        mostrarNotificacionFlotante("✓ Contraseña copiada");
     }
 
     function mostrarNotificacionFlotante(msg) {

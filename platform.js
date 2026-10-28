@@ -44,6 +44,7 @@ export async function secureFetch(request,env,ctx,app){
   if(!read && origin && origin!==url.origin)return json({error:'Origen no autorizado'},403);
   if(path==='/api/logout'){await db.prepare('DELETE FROM app_sessions WHERE token_hash=?').bind(await hash(token)).run();return new Response('{}',{headers:{'Content-Type':'application/json','Set-Cookie':'corssen_session=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0'}});}
   if(path==='/api/session')return json({usuario:user.usuario,rol:user.rol});
+  if(path==='/api/usuarios/claves' && !general)return json({error:'Acceso exclusivo del administrador general'},403);
   const ownAvatar=path==='/api/perfil/avatar'||path===`/api/usuarios/${encodeURIComponent(user.usuario)}/avatar`;
   if(path.startsWith('/api/usuarios') && !admin && !ownAvatar)return json({error:'Acceso exclusivo de administración'},403);
   if(!read && (path.startsWith('/api/programa')||path.startsWith('/api/fichas')||path==='/api/sync/fichas') && !admin)return json({error:'Acceso exclusivo de administración'},403);
