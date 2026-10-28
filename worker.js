@@ -1,37 +1,11 @@
+import bcrypt from "bcryptjs";
+import { handleSupportChat } from "./support-chat.js";
 /**
  * Cloudflare Worker Handler - CORSSEN LOGÍSTICA
  * Integración nativa con Cloudflare D1 (SQL Edge) y KV (CORSSEN_STORAGE)
  */
 
-let IN_MEMORY_USERS = [
-  {
-    usuario: "admin",
-    password: "admin123",
-    password_plana: "admin123",
-    nombre: "Administrador General",
-    rol: "admin",
-    avatar: "avatar-admin",
-    estado: "activo"
-  },
-  {
-    usuario: "operador",
-    password: "operador123",
-    password_plana: "1234",
-    nombre: "Operador Principal",
-    rol: "operador",
-    avatar: "avatar-mecanico",
-    estado: "activo"
-  },
-  {
-    usuario: "daniel",
-    password: "1234",
-    password_plana: "1234",
-    nombre: "Daniel corssen",
-    rol: "admin",
-    avatar: "avatar-admin",
-    estado: "activo"
-  }
-];
+let IN_MEMORY_USERS = [];
 
 let GLOBAL_CONFIG_SERVICIO = {
   estadoServicio: "activo",
@@ -92,6 +66,9 @@ export default {
     if (request.method === "OPTIONS") {
       return new Response(null, { headers: corsHeaders });
     }
+
+    const supportResponse = await handleSupportChat(request, env);
+    if (supportResponse) return supportResponse;
 
     // Bloquear acceso público directo a archivos de usuarios
     if (path.toLowerCase() === "/usuarios.json") {
@@ -198,7 +175,7 @@ export default {
               const uLower = (u.usuario || "").toLowerCase().trim();
               const estadoD1 = u.estado || "activo";
               const estadoFinal = (uLower === "admin") ? "activo" : (estadosKV[uLower] || estadoD1);
-              const passFinal = passwordsKV[uLower] || u.password_plana || (u.password && !u.password.startsWith("$2") ? u.password : (uLower === "admin" ? "admin123" : "1234"));
+              const passFinal = passwordsKV[uLower] || u.password_plana || (u.password || "");
               return {
                 ...u,
                 estado: estadoFinal,
@@ -219,7 +196,7 @@ export default {
           if (stored && Array.isArray(stored) && stored.length > 0) {
             const listaMapeada = stored.map(u => {
               const uLower = (u.usuario || "").toLowerCase().trim();
-              const passFinal = passwordsKV[uLower] || u.password_plana || (u.password && !u.password.startsWith("$2") ? u.password : (uLower === "admin" ? "admin123" : "1234"));
+              const passFinal = passwordsKV[uLower] || u.password_plana || (u.password || "");
               return {
                 ...u,
                 estado: (uLower === "admin") ? "activo" : (estadosKV[uLower] || u.estado || "activo"),
@@ -235,17 +212,8 @@ export default {
         }
       }
 
-      // 3. Fallback memoria
-      return IN_MEMORY_USERS.map(u => {
-        const uLower = (u.usuario || "").toLowerCase().trim();
-        const passFinal = passwordsKV[uLower] || u.password_plana || (u.password && !u.password.startsWith("$2") ? u.password : (uLower === "admin" ? "admin123" : "1234"));
-        return {
-          ...u,
-          estado: (uLower === "admin") ? "activo" : (estadosKV[uLower] || u.estado || "activo"),
-          password: passFinal,
-          password_plana: passFinal
-        };
-      });
+      // No authentication fallback when configured storage is unavailable.
+      return [];
     }
 
     // Funciones auxiliares para configuración global del servicio y cuota mensual
@@ -298,7 +266,8 @@ export default {
     async function persistirUsuario(nuevoUsuario) {
       const uNorm = (nuevoUsuario.usuario || "").trim().toLowerCase();
       const uNombre = (nuevoUsuario.nombre || uNorm).trim();
-      const uPass = nuevoUsuario.password || "1234";
+      const uPass = nuevoUsuario.password;
+      if (!uPass) throw new Error("Debes configurar una contraseña para la cuenta");
       const uRol = nuevoUsuario.rol || "operador";
       const uAvatar = nuevoUsuario.avatar || (uRol === "admin" ? "avatar-admin" : "avatar-mecanico");
       const uEstado = uNorm === "admin" ? "activo" : (nuevoUsuario.estado || "activo");
@@ -638,14 +607,13 @@ export default {
         const listaUsers = await obtenerUsuarios();
         const uFound = listaUsers.find(u => u.usuario.toLowerCase() === uNorm);
 
-        // Validación de contraseña
-        const passValida = 
-          (uNorm === "admin" && (passTrim === "admin" || passTrim === "admin123" || passTrim === "corssen2026")) ||
-          (uNorm === "operador" && (passTrim === "1234" || passTrim === "operador" || passTrim === "operador123")) ||
-          (uFound && (
-            uFound.password === passTrim ||
-            (uFound.password.startsWith("$2") && (passTrim === "admin123" || passTrim === "operador123" || passTrim === "admin" || passTrim === "operador"))
-          ));
+        // Only the credential configured in D1/KV is valid; no built-in overrides.
+        const storedPassword = uFound && uFound.password;
+        const passValida = Boolean(passTrim && storedPassword) && (
+          storedPassword.startsWith("$2")
+            ? await bcrypt.compare(passTrim, storedPassword)
+            : storedPassword === passTrim
+        );
 
         if (passValida) {
           // Solo el usuario 'admin' (Administrador General) es inmune a la suspensión por cuota
@@ -850,7 +818,7 @@ export default {
             uNombre = uNombre.replace(/Corsser/gi, "Corssen");
           }
           const uLower = (u.usuario || "").toLowerCase().trim();
-          const passVal = u.password_plana || (u.password && !u.password.startsWith("$2") ? u.password : (uLower === "admin" ? "admin123" : "1234"));
+          const passVal = u.password_plana || (u.password || "");
           return {
             usuario: u.usuario,
             nombre: uNombre,
@@ -890,7 +858,8 @@ export default {
             headers: { ...corsHeaders, "Content-Type": "application/json" }
           });
         }
-        const passLimpia = String(password || "1234").trim();
+        const passLimpia = String(password || "").trim();
+        if (!passLimpia) return new Response(JSON.stringify({mensaje: "Debes indicar una contraseña"}), {status:400, headers:{...corsHeaders, "Content-Type":"application/json"}});
         const nuevo = {
           usuario: uNorm,
           nombre: String(nombre).trim(),

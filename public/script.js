@@ -10257,11 +10257,19 @@ document.addEventListener("DOMContentLoaded", () => {
     // =========================================================
     // 13. CENTRO DE RESPALDOS, SNAPSHOTS Y MANTENCIÓN DEL SISTEMA
     // =========================================================
-    const CLAVE_MANTENCION_DEFAULT = "corssen2026";
     let backupFileCargadoData = null;
 
-    function obtenerClaveMantenimientoConfigurada() {
-        return localStorage.getItem("corssen_clave_mantenimiento") || CLAVE_MANTENCION_DEFAULT;
+    async function verificarCuentaMantenimiento(password) {
+        const usuario = (sessionStorage.getItem("usuarioLogueado") || "").toLowerCase().trim();
+        if (usuario !== "admin" || !password) return false;
+        try {
+            const resp = await fetch("/api/login", {
+                method: "POST", headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({usuario, password})
+            });
+            const cuenta = await resp.json();
+            return resp.ok && cuenta.usuario === usuario && cuenta.rol === "admin";
+        } catch (_) { return false; }
     }
 
     function estaModuloRespaldosDesbloqueado() {
@@ -10275,23 +10283,19 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    window.desbloquearModuloRespaldos = function(e) {
+    window.desbloquearModuloRespaldos = async function(e) {
         if (e) e.preventDefault();
         const input = document.getElementById("inputClaveMantenimiento");
         const msgError = document.getElementById("msgErrorClaveRespaldos");
         const claveIngresada = input ? input.value.trim() : "";
-        const claveReal = obtenerClaveMantenimientoConfigurada();
-        const esAdmin = (sessionStorage.getItem("usuarioLogueado") || "").toLowerCase().trim() === "admin";
-
-        // Permite la clave personalizada, la clave original o la clave admin para evitar bloqueos
-        if (claveIngresada === claveReal || claveIngresada === "corssen2026" || (esAdmin && (claveIngresada === "admin123" || claveIngresada === "1234"))) {
+        if (await verificarCuentaMantenimiento(claveIngresada)) {
             sessionStorage.setItem("corssen_modulo_respaldos_desbloqueado", "true");
             if (msgError) msgError.style.display = "none";
             if (input) input.value = "";
             sincronizarEstadoVisualModuloRespaldos();
         } else {
             if (msgError) {
-                msgError.textContent = "⚠️ Contraseña de mantención incorrecta. (Recuerde que puede ingresar con corssen2026 o su clave de admin).";
+                msgError.textContent = "⚠️ No se pudo verificar la cuenta. Ingresa tu contraseña actual de administrador.";
                 msgError.style.display = "block";
             }
         }
@@ -10343,57 +10347,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Modal Cambiar Clave
     window.abrirModalCambiarClaveMantenimiento = function() {
-        const modal = document.getElementById("modalCambiarClaveMantenimiento");
-        if (!modal) return;
-        const msg = document.getElementById("msgErrorCambioClaveMant");
-        if (msg) msg.style.display = "none";
-        document.getElementById("formCambiarClaveMantenimiento")?.reset();
-        const inputActual = document.getElementById("inputClaveActualMant");
-        if (inputActual) inputActual.placeholder = "Ingrese clave actual (o corssen2026 / admin123)";
-        modal.style.display = "flex";
+        alert("Los respaldos y el mantenimiento utilizan la cuenta de administrador. Gestiona su contraseña desde Administrar Usuarios; ya no se utiliza una clave local independiente.");
     };
-
     window.cerrarModalCambiarClaveMantenimiento = function() {
         const modal = document.getElementById("modalCambiarClaveMantenimiento");
         if (modal) modal.style.display = "none";
     };
-
     window.guardarNuevaClaveMantenimiento = function(e) {
-        e.preventDefault();
-        const actual = document.getElementById("inputClaveActualMant")?.value.trim();
-        const nueva = document.getElementById("inputClaveNuevaMant")?.value.trim();
-        const confirma = document.getElementById("inputClaveConfirmaMant")?.value.trim();
-        const msg = document.getElementById("msgErrorCambioClaveMant");
-
-        const claveReal = obtenerClaveMantenimientoConfigurada();
-        const esAdmin = (sessionStorage.getItem("usuarioLogueado") || "").toLowerCase().trim() === "admin";
-        if (actual !== claveReal && actual !== "corssen2026" && (!esAdmin || (actual !== "admin123" && actual !== "1234"))) {
-            if (msg) {
-                msg.textContent = "⚠️ La contraseña actual ingresada no coincide (recuerde que puede usar corssen2026 o su clave admin).";
-                msg.style.display = "block";
-            }
-            return;
-        }
-
-        if (nueva.length < 4) {
-            if (msg) {
-                msg.textContent = "⚠️ La nueva contraseña debe tener al menos 4 caracteres.";
-                msg.style.display = "block";
-            }
-            return;
-        }
-
-        if (nueva !== confirma) {
-            if (msg) {
-                msg.textContent = "⚠️ La confirmación de contraseña no coincide.";
-                msg.style.display = "block";
-            }
-            return;
-        }
-
-        localStorage.setItem("corssen_clave_mantenimiento", nueva);
-        alert("✓ Contraseña de mantenimiento actualizada exitosamente.");
+        if (e) e.preventDefault();
         cerrarModalCambiarClaveMantenimiento();
+        abrirModalCambiarClaveMantenimiento();
     };
 
     // =========================================================
@@ -12716,7 +12679,10 @@ async function inicializarChatSoporte() {
 
 async function cargarMensajesSoporteServidor(reproducirSonidoSiNuevos) {
     try {
-        const resp = await fetch("/api/soporte/mensajes?t=" + Date.now());
+        const usuarioChat = (sessionStorage.getItem("usuarioLogueado") || "operador").toLowerCase().trim();
+        const abierto = document.getElementById("ventanaChatSoporte")?.style.display === "flex" && document.visibilityState === "visible";
+        const filtro = usuarioChat === "admin" ? "" : "&usuario=" + encodeURIComponent(usuarioChat) + (abierto ? "&leido=1" : "");
+        const resp = await fetch("/api/soporte/mensajes?t=" + Date.now() + filtro, {headers: {"x-usuario": usuarioChat}});
         if (!resp.ok) return;
         const data = await resp.json();
 
@@ -12746,19 +12712,18 @@ async function cargarMensajesSoporteServidor(reproducirSonidoSiNuevos) {
 
         const mensajesNuevos = Array.isArray(data.mensajes) ? data.mensajes : [];
 
-        if (mensajesNuevos.length === 0) return;
+
 
         const habiaMensajes = mensajesChatLocales.length > 0;
-        const totalPrevio = mensajesChatLocales.length;
         const idUltimoPrevio = habiaMensajes ? mensajesChatLocales[mensajesChatLocales.length - 1].id : null;
-        const idUltimoNuevo = mensajesNuevos[mensajesNuevos.length - 1].id;
+        const idUltimoNuevo = mensajesNuevos[mensajesNuevos.length - 1]?.id;
 
-        if (totalPrevio !== mensajesNuevos.length || idUltimoPrevio !== idUltimoNuevo) {
-            const esNuevoMensajeSoporte = mensajesNuevos[mensajesNuevos.length - 1].esSoporte;
+        if (JSON.stringify(mensajesChatLocales) !== JSON.stringify(mensajesNuevos)) {
+            const esNuevoMensajeSoporte = mensajesNuevos[mensajesNuevos.length - 1]?.esSoporte;
             mensajesChatLocales = mensajesNuevos;
             renderizarMensajesEnPantalla(mensajesChatLocales);
 
-            if (reproducirSonidoSiNuevos && habiaMensajes && esNuevoMensajeSoporte) {
+            if (reproducirSonidoSiNuevos && habiaMensajes && esNuevoMensajeSoporte && idUltimoPrevio !== idUltimoNuevo) {
                 reproducirChimeMensaje();
                 const ventana = document.getElementById("ventanaChatSoporte");
                 const estaAbierta = ventana && ventana.style.display === "flex";
@@ -12802,6 +12767,11 @@ function generarEtiquetaRemitenteChat(msg, esMio) {
 }
 window.generarEtiquetaRemitenteChat = generarEtiquetaRemitenteChat;
 
+function etiquetaEstadoMensaje(msg) {
+    const leido = Boolean(msg.leidoPorDestinatario);
+    return `<span title="${leido ? "Leído por el destinatario" : "Guardado en el servidor"}" style="color:${leido ? "#0284c7" : "#64748b"}; font-size:11px;">✓✓</span>`;
+}
+
 function renderizarMensajesEnPantalla(mensajes) {
     const cuerpo = document.getElementById("cuerpoChatSoporte");
     if (!cuerpo) return;
@@ -12811,16 +12781,16 @@ function renderizarMensajesEnPantalla(mensajes) {
 
     cuerpo.innerHTML = mensajes.map(msg => {
         const remitenteId = String(msg.usuario || "").toLowerCase().trim();
-        const esMio = (remitenteId && remitenteId === miUsuario) || (!remitenteId && !msg.esSoporte && !esAdmin) || (esAdmin && msg.esSoporte);
+        const esMio = remitenteId === miUsuario;
         const claseGlobo = esMio ? "chat-mensaje-globo chat-mensaje-usuario" : "chat-mensaje-globo chat-mensaje-bot";
         const remitenteHtml = generarEtiquetaRemitenteChat(msg, esMio);
-        const checkmarks = esMio ? `<span style="color:#0284c7; font-size:11px;">✓✓</span>` : "";
+        const checkmarks = esMio ? etiquetaEstadoMensaje(msg) : "";
 
         return `
             <div class="${claseGlobo}" id="msg-${msg.id}">
                 ${remitenteHtml}
                 ${msg.tituloContexto ? `<div style="font-weight:700; color:#0f172a; margin-bottom:4px; font-size:12px;">${escapeHtmlSoporte(msg.tituloContexto)}</div>` : ""}
-                <div style="font-size:13px; line-height:1.4;">${msg.texto}</div>
+                <div style="font-size:13px; line-height:1.4;">${escapeHtmlSoporte(msg.texto)}</div>
                 <div class="chat-hora">
                     <span>${msg.hora || ""}</span>
                     ${checkmarks}
@@ -12946,7 +12916,8 @@ async function enviarMensajeUsuarioSoporte(texto, idPreguntaRapida, forzarEsSopo
             texto: texto,
             usuario: usuarioActual,
             nombre: nombreActual,
-            rol: esAdmin ? "admin" : "operador",
+            rol: esAdminGeneral ? "admin" : "operador",
+            destinatario: esSoporte ? operadorActivoChatAdmin : "admin",
             esSoporte: esSoporte
         };
 
@@ -12959,10 +12930,15 @@ async function enviarMensajeUsuarioSoporte(texto, idPreguntaRapida, forzarEsSopo
             body: JSON.stringify(payload)
         });
 
-        if (res.ok) {
+        const confirmacion = await res.json();
+        if (!res.ok || !confirmacion.ok || !confirmacion.guardado || !confirmacion.mensajeEnviado?.id) {
+            throw new Error(confirmacion.error || "El servidor no confirmó el guardado");
+        }
+        if (confirmacion.guardado) {
             const check = document.getElementById(`check-${tempId}`);
             if (check) {
-                check.style.color = "#0284c7";
+                check.style.color = "#64748b";
+                check.title = "Guardado en el servidor";
                 check.textContent = "✓✓";
             }
             reproducirChimeMensaje();
@@ -12973,6 +12949,10 @@ async function enviarMensajeUsuarioSoporte(texto, idPreguntaRapida, forzarEsSopo
         }
     } catch (e) {
         console.error("Error enviando mensaje a la API de soporte:", e);
+        const check = document.getElementById(`check-${tempId}`);
+        if (check) { check.textContent = "No enviado"; check.style.color = "#dc2626"; }
+        const input = document.getElementById("inputPreguntaSoporte");
+        if (input && !input.value) input.value = texto;
     }
 }
 
@@ -13147,7 +13127,8 @@ async function cargarStreamMensajesOperador(usuarioId) {
     if (!stream) return;
 
     try {
-        const resp = await fetch(`/api/soporte/mensajes?usuario=${usuarioId}&t=` + Date.now());
+        const visible = document.getElementById("centroSoporteInterno")?.classList.contains("active") && document.visibilityState === "visible";
+        const resp = await fetch(`/api/soporte/mensajes?usuario=${encodeURIComponent(usuarioId)}&t=` + Date.now() + (visible ? "&leido=1" : ""), {headers: {"x-usuario": "admin"}});
         if (!resp.ok) return;
         const data = await resp.json();
         const mensajes = Array.isArray(data.mensajes) ? data.mensajes : [];
@@ -13165,7 +13146,7 @@ async function cargarStreamMensajesOperador(usuarioId) {
         stream.innerHTML = mensajes.map(msg => {
             const esAdminMsg = Boolean(msg.esSoporte || msg.usuario === "admin" || msg.usuario === "aron_soporte");
             const clase = esAdminMsg ? "chat-mensaje-globo chat-mensaje-usuario" : "chat-mensaje-globo chat-mensaje-bot";
-            const check = esAdminMsg ? `<span style="color:#0284c7; font-size:11px;">✓✓</span>` : "";
+            const check = esAdminMsg ? etiquetaEstadoMensaje(msg) : "";
             const remitenteHtml = generarEtiquetaRemitenteChat(msg, esAdminMsg);
 
             return `
@@ -13217,7 +13198,9 @@ window.enviarMensajeAdminAOperador = async function(e) {
             body: JSON.stringify(payload)
         });
 
-        if (resp.ok) {
+        const confirmacion = await resp.json();
+        if (!resp.ok || !confirmacion.ok || !confirmacion.guardado) throw new Error(confirmacion.error || "No se confirmó el envío");
+        if (confirmacion.guardado) {
             if (typeof reproducirChimeMensaje === "function") {
                 reproducirChimeMensaje();
             }
@@ -13226,6 +13209,8 @@ window.enviarMensajeAdminAOperador = async function(e) {
         }
     } catch (err) {
         console.error("Error al enviar respuesta de admin:", err);
+        if (!input.value) input.value = texto;
+        alert("No se pudo enviar el mensaje. El texto se conservó para reintentar.");
     }
 };
 
@@ -13265,3 +13250,15 @@ window.filtrarOperadoresChatAdmin = function(busqueda) {
     );
     renderizarListaConversacionesAdmin(filtrados);
 };
+
+// Poll support notifications even when the floating widget has never been opened.
+if (typeof document !== "undefined") {
+    const iniciarAvisosSoporte = () => {
+        inicializarChatSoporte();
+        setInterval(() => {
+            if (sessionStorage.getItem("usuarioLogueado") === "admin") window.cargarConversacionesAdmin(false);
+        }, 3500);
+    };
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", iniciarAvisosSoporte);
+    else iniciarAvisosSoporte();
+}
