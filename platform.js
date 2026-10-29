@@ -1,3 +1,4 @@
+import {handleSystemUpdates} from './system-updates.js';
 import {ensureInventoryMonths,inventoryMonthStatement,inventoryMonthHistory} from './inventory-monthly.js';
 // Authentication and live shared state for the production Worker.
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'}});
@@ -45,6 +46,7 @@ export async function secureFetch(request,env,ctx,app){
   if(!read && origin && origin!==url.origin)return json({error:'Origen no autorizado'},403);
   if(path==='/api/logout'){await db.prepare('DELETE FROM app_sessions WHERE token_hash=?').bind(await hash(token)).run();return new Response('{}',{headers:{'Content-Type':'application/json','Set-Cookie':'corssen_session=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0'}});}
   if(path==='/api/session')return json({usuario:user.usuario,rol:user.rol});
+  if(path==='/api/updates'||path==='/api/updates/read')return await handleSystemUpdates(request,db,user);
   if(path==='/api/inventory/monthly'){
    if(request.method!=='GET')return json({error:'Método no permitido'},405);
    return json(await inventoryMonthHistory(db));
