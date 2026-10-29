@@ -3,6 +3,11 @@ function renderizarTablasOriginales() {
     renderizarModuloCombustible();
 }
 
+function esCargaEstanqueCombustible(carga) {
+    if (carga.origen) return carga.origen === 'ESTANQUE_400L';
+    return /estanque|corssen/i.test(carga.estacion || '');
+}
+
 function renderizarModuloCombustible() {
     renderizarCombustibleDashboard();
     const elNombre = document.getElementById("lblNombreTanqueCombustible");
@@ -17,10 +22,19 @@ function renderizarModuloCombustible() {
     const saldoActual = Math.max(0, estadoTanqueCombustible.actual !== undefined ? estadoTanqueCombustible.actual : capTotal);
     const porcentaje = Math.min(100, Math.max(0, (saldoActual / capTotal) * 100));
 
+    const litrosDisponibles=document.getElementById('lblSaldoDisponibleCombustible');
+    const capacidadTexto=document.getElementById('lblCapacidadCombustible');
+    const aviso=document.getElementById('avisoNivelCombustible');
+    if(litrosDisponibles)litrosDisponibles.textContent=`${saldoActual.toLocaleString('es-CL')} L`;
+    if(capacidadTexto)capacidadTexto.textContent=`Capacidad: ${capTotal} L`;
+    if(aviso)aviso.textContent=saldoActual<=80?'Nivel crítico. Planifica el próximo abastecimiento.':saldoActual<=160?'Nivel bajo. Revisa el próximo abastecimiento.':'Saldo disponible para despachos.';
+    const precioForm=document.getElementById('precioLitro');
+    if(precioForm && !precioForm.value && document.getElementById('selectOrigenCombustible')?.value==='ESTANQUE_400L')precioForm.value=estadoTanqueCombustible.costoPorLitro ?? 0;
+    calcularTotalCargaCombustibleForm();
     if (elNombre) elNombre.textContent = estadoTanqueCombustible.nombre || "Estanque Petróleo Diésel (400 Lts)";
-    if (elFecha) elFecha.textContent = estadoTanqueCombustible.fechaUltimaRecarga || "2026-02-27";
-    if (elProveedor) elProveedor.textContent = estadoTanqueCombustible.proveedor || "COPEC S.A.";
-    if (elFactura) elFactura.textContent = estadoTanqueCombustible.factura || "FAC-91823";
+    if (elFecha) elFecha.textContent = estadoTanqueCombustible.fechaUltimaRecarga || "Sin registrar";
+    if (elProveedor) elProveedor.textContent = estadoTanqueCombustible.proveedor || "Sin registrar";
+    if (elFactura) elFactura.textContent = estadoTanqueCombustible.factura || "Sin registrar";
 
     if (elPorcentaje) {
         elPorcentaje.textContent = `${porcentaje.toFixed(1)}% (${saldoActual.toFixed(1)} / ${capTotal} L)`;
@@ -63,7 +77,7 @@ function renderizarModuloCombustible() {
     const elKpiCostoL = document.getElementById("kpiCostoLitroComb");
     const elKpiRecargas = document.getElementById("kpiRecargasTanqueTotal");
 
-    const despachosTanque = (cargas || []).filter(c => (c.origen === "ESTANQUE_400L" || (c.estacion || "").toLowerCase().includes("estanque") || (c.estacion || "").toLowerCase().includes("corssen")));
+    const despachosTanque = (cargas || []).filter(esCargaEstanqueCombustible);
     const totalLitrosDespachados = despachosTanque.reduce((acc, c) => acc + Number(c.litros || 0), 0);
 
     if (elKpiDespachado) elKpiDespachado.textContent = `${totalLitrosDespachados.toFixed(1)} L`;
@@ -102,12 +116,12 @@ function renderizarModuloCombustible() {
     const datalist = document.getElementById("listaEquiposCombustibleDatalist");
     if (datalist) {
         const todosEquipos = [
-            ...(corssenPrograma || []).map(e => ({ cod: e.codigo, desc: `${e.codigo} - ${e.nombre}` })),
+            ...(corssenPrograma || []).map(e => ({ cod: e.cod || e.codigo, desc: `${e.cod || e.codigo} - ${e.equipo || e.nombre || "Equipo"}` })),
             ...(vehiculos || []).map(v => ({ cod: v.patente || v.codigo, desc: `${v.patente || v.codigo} - ${v.nombre || v.marca}` })),
             ...(maquinarias || []).map(m => ({ cod: m.numeroMaquinaria || m.id, desc: `${m.numeroMaquinaria || m.id} - ${m.tipoMaquinaria || m.marcaMaquinaria}` }))
         ];
-        const unicos = Array.from(new Map(todosEquipos.map(item => [item.cod, item])).values());
-        datalist.innerHTML = unicos.map(item => `<option value="${item.cod}">${item.desc}</option>`).join("");
+        const unicos = Array.from(new Map(todosEquipos.filter(item => item.cod).map(item => [item.cod, item])).values());
+        datalist.innerHTML = unicos.map(item => `<option value="${escapeHtmlSoporte(item.cod)}">${escapeHtmlSoporte(item.desc)}</option>`).join("");
     }
 
     // Contadores de pestañas
@@ -116,67 +130,14 @@ function renderizarModuloCombustible() {
     if (contDespachos) contDespachos.textContent = (cargas || []).length;
     if (contRecargas) contRecargas.textContent = (historialRecargasCombustible || []).length;
 
-    // Tabla 1: Despachos a Equipos
-    const tbodyCargas = document.getElementById("tablaCargas");
-    if (tbodyCargas) {
-        if (!cargas || cargas.length === 0) {
-            tbodyCargas.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:24px; color:#64748b;">No hay despachos de combustible registrados aún.</td></tr>`;
-        } else {
-            tbodyCargas.innerHTML = cargas.map((c) => {
-                const esEstanque = (c.origen === "ESTANQUE_400L" || (c.estacion || "").toLowerCase().includes("estanque"));
-                const badgeOrigen = esEstanque 
-                    ? `<span class="badge badge-verde" style="font-size:11px;">⛽ Estanque 400L</span>` 
-                    : `<span class="badge badge-azul" style="font-size:11px;">⛽ ${c.estacion || 'Estación Externa'}</span>`;
-                const saldoTexto = (c.saldoPosterior !== undefined && c.saldoPosterior !== null) ? `<span class="badge badge-gris">${Number(c.saldoPosterior).toFixed(1)} L</span>` : `-`;
+    const esc=escapeHtmlSoporte;
+    const money=value=>'$'+Number(value ?? 0).toLocaleString('es-CL');
+    const litros=value=>Number(value ?? 0).toLocaleString('es-CL')+' L';
+    const tbodyCargas=document.getElementById('tablaCargas');
+    if(tbodyCargas)tbodyCargas.innerHTML=(cargas || []).map(c=>`<tr><td><strong>${esc(c.patente || '-')}</strong><small>${esc(c.fecha || '-')}</small>${c.horometroKm?`<small>${esc(c.horometroKm)}</small>`:''}</td><td>${esc(c.conductor || 'Sin asignar')}</td><td><strong>${litros(c.litros)}</strong><small>${money(c.precioLitro)} / L</small></td><td class="combustible-importe">${money(c.total ?? (Number(c.litros || 0)*Number(c.precioLitro || 0)))}</td><td><span class="badge ${esCargaEstanqueCombustible(c)?'badge-verde':'badge-azul'}">${esCargaEstanqueCombustible(c)?'Estanque taller':esc(c.estacion || 'Estación externa')}</span></td><td>${c.saldoPosterior == null ? '-' : litros(c.saldoPosterior)}<details><summary>Opciones</summary><button type="button" class="btn-peligro" onclick="eliminarCargaCombustible(${esc(JSON.stringify(c.id))})">Eliminar despacho</button></details></td></tr>`).join('') || '<tr><td colspan="6">No hay despachos de combustible registrados.</td></tr>';
+    const tbodyRecargas=document.getElementById('tbodyHistorialRecargasTanque');
+    if(tbodyRecargas)tbodyRecargas.innerHTML=(historialRecargasCombustible || []).map(r=>`<tr><td><strong>${esc(r.fecha || '-')}</strong><small>${esc(r.id || '')}</small></td><td>${esc(r.proveedor || 'Sin registrar')}<small>${esc(r.responsable || 'Sin asignar')}</small></td><td><strong>+${litros(r.litrosCargados)}</strong><small>${money(r.costoPorLitro)} / L</small></td><td class="combustible-importe">${money(r.costoTotal)}</td><td>${esc(r.factura || '-')}</td><td>${r.saldoPosterior == null ? 'Sin registro' : litros(r.saldoPosterior)}<details><summary>Opciones</summary><button type="button" class="btn-peligro" onclick="eliminarRecargaCombustible(${esc(JSON.stringify(r.id))})">Eliminar recarga</button></details></td></tr>`).join('') || '<tr><td colspan="6">No hay recargas registradas.</td></tr>';
 
-                return `
-                    <tr>
-                        <td><strong>${c.fecha || '-'}</strong></td>
-                        <td>
-                            <strong>${c.patente || '-'}</strong>
-                            ${c.horometroKm ? `<br><small style="color:#64748b;">${c.horometroKm}</small>` : ''}
-                        </td>
-                        <td>${c.conductor || 'Alexis Santos'}</td>
-                        <td><strong style="color:#2563eb; font-size:14px;">${Number(c.litros || 0).toFixed(1)} Lts</strong></td>
-                        <td>$${Number(c.precioLitro || 0).toLocaleString('es-CL')}</td>
-                        <td><strong style="color:#059669;">$${Number(c.total || (c.litros * c.precioLitro)).toLocaleString('es-CL')}</strong></td>
-                        <td>${badgeOrigen}</td>
-                        <td>${saldoTexto}</td>
-                        <td style="text-align:center;">
-                            <button type="button" class="btn-peligro" onclick="eliminarCargaCombustible('${c.id}')" title="Eliminar despacho y reponer litros si correspondía al estanque" style="padding:4px 8px; font-size:11px;">🗑️</button>
-                        </td>
-                    </tr>
-                `;
-            }).join("");
-        }
-    }
-
-    // Tabla 2: Historial de Recargas del Estanque 400L
-    const tbodyRecargas = document.getElementById("tbodyHistorialRecargasTanque");
-    if (tbodyRecargas) {
-        if (!historialRecargasCombustible || historialRecargasCombustible.length === 0) {
-            tbodyRecargas.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:24px; color:#64748b;">No hay recargas registradas para el estanque de 400L.</td></tr>`;
-        } else {
-            tbodyRecargas.innerHTML = historialRecargasCombustible.map((r) => {
-                return `
-                    <tr>
-                        <td><strong>${r.fecha || '-'}</strong></td>
-                        <td><span class="badge badge-azul">${r.id || 'RECARGA'}</span></td>
-                        <td><strong style="color:#059669; font-size:14px;">+${Number(r.litrosCargados || 0).toFixed(1)} Lts</strong></td>
-                        <td>${r.proveedor || 'COPEC S.A.'}</td>
-                        <td><strong>${r.factura || '-'}</strong></td>
-                        <td>$${Number(r.costoPorLitro || 0).toLocaleString('es-CL')}</td>
-                        <td><strong style="color:#0f172a;">$${Number(r.costoTotal || 0).toLocaleString('es-CL')}</strong></td>
-                        <td>${r.responsable || 'Alexis Santos'}</td>
-                        <td><span class="badge badge-verde">${Number(r.saldoPosterior || 400).toFixed(1)} L</span></td>
-                        <td style="text-align:center;">
-                            <button type="button" class="btn-peligro" onclick="eliminarRecargaCombustible('${r.id}')" title="Eliminar registro de recarga" style="padding:4px 8px; font-size:11px;">🗑️</button>
-                        </td>
-                    </tr>
-                `;
-            }).join("");
-        }
-    }
 }
 
 function cambiarPestanaCombustible(pestana) {
@@ -227,7 +188,13 @@ function calcularTotalCargaCombustibleForm() {
     const inputTotal = document.getElementById("inputTotalCargaCombCalculado");
     if (inputTotal) {
         inputTotal.value = `$${Math.round(litros * precio).toLocaleString('es-CL')}`;
+    }    const saldoPosterior=document.getElementById('saldoPosteriorCargaPrevisto');
+    if(saldoPosterior){
+        const interno=document.getElementById('selectOrigenCombustible')?.value==='ESTANQUE_400L';
+        const saldo=Number(estadoTanqueCombustible.actual || 0);
+        saldoPosterior.textContent=!interno?'Sin descuento del estanque':litros>saldo?'Supera el saldo disponible':`Saldo posterior: ${(saldo-litros).toLocaleString('es-CL')} L`;
     }
+
 }
 
 function abrirModalRecargaTanque() {
