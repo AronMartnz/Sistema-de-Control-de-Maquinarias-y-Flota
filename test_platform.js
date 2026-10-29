@@ -134,3 +134,13 @@ test('a failed bot insert rolls back the user message instead of confirming a pa
  const result=await call('/api/soporte/mensajes','POST',{texto:'Cómo ajustar el stock'},op);assert.equal(result.status,503);
  assert.equal(sql.prepare('SELECT count(*) AS n FROM soporte_chat').get().n,0);
 });
+test('chat shows current profile photos for old messages and ignores forged message avatars',async()=>{
+ const {sql,call,login}=setup();const op=await login('operador'),admin=await login('admin'),other=await login('otro');
+ const photo='data:image/png;base64,aGVsbG8=';sql.prepare('UPDATE usuarios SET avatar=? WHERE usuario=?').run(photo,'operador');
+ await call('/api/soporte/mensajes','POST',{texto:'Consulta de prueba',avatar:'https://fake.invalid/avatar.png'},op);
+ let history=await(await call('/api/soporte/mensajes?usuario=operador','GET',undefined,admin)).json();assert.equal(history.perfiles.operador,photo);assert.equal(history.mensajes[0].avatar,undefined);
+ const updated='avatar-camion';sql.prepare('UPDATE usuarios SET avatar=? WHERE usuario=?').run(updated,'operador');
+ history=await(await call('/api/soporte/mensajes','GET',undefined,op)).json();assert.equal(history.perfiles.operador,updated);
+ const isolated=await(await call('/api/soporte/mensajes?usuario=operador','GET',undefined,other)).json();assert.equal(isolated.mensajes.length,0);
+ const conv=await(await call('/api/soporte/conversaciones','GET',undefined,admin)).json();assert.equal(conv.conversaciones.find(c=>c.usuario==='operador').avatar,updated);
+});

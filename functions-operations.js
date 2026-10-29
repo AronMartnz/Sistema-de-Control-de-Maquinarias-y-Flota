@@ -5209,7 +5209,7 @@ async function cargarMensajesSoporteServidor(reproducirSonidoSiNuevos) {
             }
         }
 
-        const mensajesNuevos = Array.isArray(data.mensajes) ? data.mensajes : [];
+        const mensajesNuevos = Array.isArray(data.mensajes) ? data.mensajes.map(m => ({...m, avatar:m.esBot ? null : (data.perfiles?.[String(m.usuario || "").toLowerCase()] || null)})) : [];
 
 
 
@@ -5239,6 +5239,15 @@ async function cargarMensajesSoporteServidor(reproducirSonidoSiNuevos) {
     } catch (_) {}
 }
 
+function avatarHtmlSoporte(avatar, esBot = false) {
+    if (esBot) return '<span class="chat-avatar-perfil chat-avatar-bot" aria-hidden="true">🤖</span>';
+    const valor = String(avatar || '').trim();
+    const presets = {"avatar-mecanico":"👷‍♂️","avatar-admin":"👨‍💼","avatar-grua-porta":"🏗️","avatar-horquilla":"🚜","avatar-camion":"🚚","avatar-maritimo":"⚓","avatar-panol":"🔧","avatar-supervisora":"👩‍💼","avatar-tecnica":"👷‍♀️","avatar-electrico":"⚡","avatar-seguridad":"🛡️","avatar-planificador":"📋","avatar-combustible":"⛽","avatar-ingeniero":"🧑‍💻","avatar-corssen":"🚢"};
+    const esImagen = /^data:image\/(?:png|jpe?g|webp|gif);base64,[a-z0-9+/=\s]+$/i.test(valor) || /^https?:\/\//i.test(valor) || /^\/(?!\/)/.test(valor);
+    if (esImagen) return `<span class="chat-avatar-perfil" aria-hidden="true"><img src="${escapeHtmlSoporte(valor)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span hidden>👤</span></span>`;
+    return `<span class="chat-avatar-perfil" aria-hidden="true">${escapeHtmlSoporte(presets[valor] || (valor && [...valor].length <= 4 ? valor : "👤"))}</span>`;
+}
+
 function generarEtiquetaRemitenteChat(msg, esMio) {
     const usuarioId = String(msg.usuario || (msg.esSoporte ? "admin" : "operador")).toLowerCase().trim();
     let nombre = msg.nombre || "";
@@ -5258,7 +5267,7 @@ function generarEtiquetaRemitenteChat(msg, esMio) {
 
     return `
         <div class="chat-remitente-nombre">
-            <span>${icono}</span>
+            ${avatarHtmlSoporte(msg.avatar, Boolean(msg.esBot))}
             <span>${prefijoTuyo}${escapeHtmlSoporte(nombre)}</span>
             ${tag}
         </div>
@@ -5336,7 +5345,8 @@ async function enviarMensajeUsuarioSoporte(texto, idPreguntaRapida, forzarEsSopo
     const remitenteHtml = generarEtiquetaRemitenteChat({
         usuario: usuarioActual,
         nombre: nombreActual,
-        esSoporte: esSoporte
+        esSoporte: esSoporte,
+        avatar: sessionStorage.getItem("avatarUsuario")
     }, true);
 
     userDiv.innerHTML = `
@@ -5437,7 +5447,7 @@ function renderizarListaConversacionesAdmin(lista) {
         return `
             <div onclick="seleccionarConversacionAdmin('${c.usuario}')" class="item-conversacion-admin" style="padding:10px 12px; border-radius:10px; border:1px solid; ${estiloActivo} cursor:pointer; display:flex; align-items:center; gap:10px; transition:all 0.2s ease;">
                 <div style="width:38px; height:38px; border-radius:50%; background:#f1f5f9; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;">
-                    ${c.avatar || "👤"}
+                    ${avatarHtmlSoporte(c.avatar)}
                 </div>
                 <div style="flex:1; min-width:0;">
                     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2px;">
@@ -5463,7 +5473,7 @@ async function cargarStreamMensajesOperador(usuarioId) {
         const resp = await fetch(`/api/soporte/mensajes?usuario=${encodeURIComponent(usuarioId)}&t=` + Date.now() + (visible ? "&leido=1" : ""), {headers: {"x-usuario": "admin"}});
         if (!resp.ok) return;
         const data = await resp.json();
-        const mensajes = Array.isArray(data.mensajes) ? data.mensajes : [];
+        const mensajes = Array.isArray(data.mensajes) ? data.mensajes.map(m => ({...m, avatar:m.esBot ? null : (data.perfiles?.[String(m.usuario || "").toLowerCase()] || null)})) : [];
 
         if (mensajes.length === 0) {
             stream.innerHTML = `

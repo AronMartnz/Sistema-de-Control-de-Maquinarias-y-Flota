@@ -51,14 +51,19 @@ export async function handleSupportChat(request, env) {
     if (isMessages && url.searchParams.get('leido') === '1' && target) await db.prepare('UPDATE soporte_chat SET leido=1 WHERE usuario=? AND destinatario=?').bind(admin?target:'admin',caller).run();
     const query = admin && (!target || target==='todos' || target==='admin') ? db.prepare('SELECT data,leido FROM soporte_chat ORDER BY rowid'):db.prepare('SELECT data,leido FROM soporte_chat WHERE usuario=? OR destinatario=? ORDER BY rowid').bind(target,target);
     const {results} = await query.all();
-    const mensajes = results.map(row => {const m=JSON.parse(row.data);return {...m,guardado:true,leidoPorDestinatario:!!row.leido,leidoPorAdmin:!m.esSoporte && !!row.leido};});
+    const parsed = results.map(row => ({...row,message:JSON.parse(row.data)}));
+    // Look up each sender once, rather than reading the same profile for every message.
+    const authors=[...new Set(parsed.filter(r=>!r.message.esBot).map(r=>String(r.message.usuario||'').toLowerCase()))];
+    const profiles=authors.length ? (await db.prepare(`SELECT usuario,avatar FROM usuarios WHERE lower(usuario) IN (${authors.map(()=>'?').join(',')})`).bind(...authors).all()).results : [];
+    const avatars=new Map(profiles.map(p=>[String(p.usuario).toLowerCase(),p.avatar]));
+    const mensajes = parsed.map(row => {const m=row.message;return {...m,guardado:true,leidoPorDestinatario:!!row.leido,leidoPorAdmin:!m.esSoporte && !!row.leido};});
     const pendientes = mensajes.filter(m => !m.esSoporte && !m.leidoPorAdmin);
     if (path === '/api/soporte/conversaciones') {
       const conversaciones = new Map(['daniel','rodrigo','operador'].map(usuario => [usuario,{usuario,nombre:usuario,rol:'operador',avatar:'👤',totalMensajes:0,sinLeer:0}]));
       for (const m of mensajes) {
         const usuario=m.esSoporte?m.destinatario:m.usuario;
         const c=conversaciones.get(usuario)||{usuario,nombre:m.nombre||usuario,rol:m.rol,avatar:'👤',totalMensajes:0,sinLeer:0};
-        if (!m.esSoporte) c.nombre=m.nombre||usuario;
+        if (!m.esSoporte) { c.nombre=m.nombre||usuario; c.avatar=avatars.get(String(m.usuario).toLowerCase()) || "👤"; }
         Object.assign(c,{ultimoMensaje:m.texto,ultimaHora:m.hora,ultimoTimestamp:Date.parse(m.timestamp)||0});
         c.totalMensajes++;
         if (!m.esSoporte && !m.leidoPorAdmin) c.sinLeer++;
@@ -68,7 +73,7 @@ export async function handleSupportChat(request, env) {
       const lista=[...conversaciones.values()].sort((a,b)=>(b.ultimoTimestamp||0)-(a.ultimoTimestamp||0));
       return reply({ok:true,conversaciones:lista,totalPendientes:lista.filter(c=>c.sinLeer).length});
     }
-    return reply({ok:true,mensajes,total:mensajes.length,pendientesAdminCount:admin?pendientes.length:0,ultimosPendientes:admin?pendientes.slice(-5):[]});
+    return reply({ok:true,mensajes,perfiles:Object.fromEntries(avatars),total:mensajes.length,pendientesAdminCount:admin?pendientes.length:0,ultimosPendientes:admin?pendientes.slice(-5):[]});
   } catch (error) {
     console.error('Support chat storage failed',error);
     return reply({ok:false,error:'No se pudo guardar o cargar el chat. Intenta nuevamente.'},503);

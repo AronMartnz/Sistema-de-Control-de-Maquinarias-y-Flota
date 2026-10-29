@@ -8,6 +8,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 function setup(legacy=[]) {
  const sqlite=new DatabaseSync(':memory:');
+ sqlite.exec('CREATE TABLE usuarios(usuario TEXT PRIMARY KEY,avatar TEXT)');
  const db={prepare(sql){const st=sqlite.prepare(sql);let values=[];return {bind(...args){values=args;return this;},async run(){st.run(...values);return {success:true};},async first(){return st.get(...values)||null;},async all(){return {results:st.all(...values)};}};},async batch(sts){for(const st of sts) await st.run();}};
  return {DB:db,CORSSEN_STORAGE:{get:async()=>legacy}};
 }
@@ -84,4 +85,8 @@ test('selected topic is validated and human guidance never promises immediate at
  const env=setup();const topic=await(await call(env,'daniel','','POST',{texto:'Ver instrucciones',temaSoporte:'mensual'})).json();assert.match(topic.mensajeBot.tituloContexto,/mensual/);
  const invalid=await(await call(env,'daniel','','POST',{texto:'Hola',temaSoporte:'__proto__'})).json();assert.equal(invalid.mensajeBot,null);
  const human=await(await call(env,'daniel','','POST',{texto:'Quiero hablar con Aron'})).json();assert.match(human.mensajeBot.texto,/disponibilidad/);assert.doesNotMatch(human.mensajeBot.texto,/inmediata|en línea/);
+});
+test('profile avatar markup supports photos/presets and escapes unsafe values with a fallback',()=>{
+ const text=fs.readFileSync('functions-operations.js','utf8');const ast=ts.createSourceFile('ops.js',text,ts.ScriptTarget.Latest,true,ts.ScriptKind.JS);const code=['escapeHtmlSoporte','avatarHtmlSoporte'].map(name=>ast.statements.find(n=>ts.isFunctionDeclaration(n)&&n.name.text===name).getText(ast)).join('\n');const ctx={};vm.createContext(ctx);vm.runInContext(code,ctx);
+ assert.match(ctx.avatarHtmlSoporte('avatar-camion'),/🚚/);assert.match(ctx.avatarHtmlSoporte('https://example.com/photo.png'),/<img/);assert.match(ctx.avatarHtmlSoporte('https://example.com/" onload="alert(1)'),/&quot;/);assert.doesNotMatch(ctx.avatarHtmlSoporte('javascript:alert(1)'),/<img/);assert.doesNotMatch(ctx.avatarHtmlSoporte('data:image/svg+xml;base64,abc'),/<img/);assert.match(ctx.avatarHtmlSoporte(null),/👤/);assert.match(ctx.avatarHtmlSoporte('avatar-admin',true),/🤖/);
 });
