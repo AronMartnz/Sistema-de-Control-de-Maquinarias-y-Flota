@@ -72,7 +72,9 @@
         <button type="button" class="btn-cerrar-sidebar-mobile" onclick="toggleMenuMobile(false)" aria-label="Cerrar Menú">✕</button>
     </div>
 
-    <nav class="menu">
+    <button id="btnContraerMenuLateral" type="button" class="btn-contraer-menu" aria-controls="menuModulosLateral" aria-expanded="true" aria-label="Ocultar menú lateral" title="Ocultar menú lateral"><span class="menu-toggle-icono" aria-hidden="true">‹</span><span class="menu-toggle-texto">Ocultar menú</span></button>
+
+    <nav class="menu" id="menuModulosLateral">
         <div class="menu-seccion-titulo">Planilla Maestra CORSSEN</div>
 
         <a href="#panelPrincipal" class="menu-item active">
@@ -4488,6 +4490,7 @@
 <script src="/functions-operations.js"></script>
 <script src="inventory-ui.js"></script>
     <script src="/support-bot.js"></script>
+    <script src="/sidebar-toggle.js"></script>
     <script src="/script.js?v=20261002_cf_dark_v3"></script>
 <dialog id="dialogInventario" class="inventario-dialog" aria-label="Gestión del artículo y ajuste de stock"><div id="contenidoDialogInventario"></div></dialog>
 </body>
