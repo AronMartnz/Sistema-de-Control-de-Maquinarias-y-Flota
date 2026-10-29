@@ -4314,83 +4314,15 @@ const PREGUNTAS_RAPIDAS_SOPORTE = [
     { id: "combustible", texto: "⛽ Combustible & Estanque 400L" },
     { id: "aceite", texto: "🛢️ Tambor de Aceite 200L" },
     { id: "mantenciones", texto: "🔧 Mantenciones & OTs" },
+    { id: "inventario", texto: "📦 Inventario y stock" },
+    { id: "mensual", texto: "📅 Historial mensual" },
+    { id: "sincronizacion", texto: "🔄 Sincronización y mensajes" },
     { id: "respaldos", texto: "💾 Respaldos del Sistema" },
     { id: "roles", texto: "👤 Roles y Permisos" },
     { id: "directo_aron", texto: "👨‍💻 Chatear con Aron Martinez" }
 ];
 
-const BASE_CONOCIMIENTO_SOPORTE = {
-    fichas: {
-        titulo: "📋 Módulo de Fichas Técnicas y Equivalencias Multimarca",
-        respuesta: `
-• <strong>Catálogo Oficial:</strong> Puedes consultar las especificaciones técnicas completas de cada camioneta, camión o grúa.<br>
-• <strong>Matriz de Filtros Multimarca:</strong> Cada unidad detalla sus filtros originales y equivalencias en Baldwin, Donaldson, Fleetguard y Mann.<br>
-• <strong>Nivel de Acceso:</strong> El <em>Administrador General</em> cuenta con el botón "Editar Ficha". Los <em>Operadores</em> tienen acceso en modo consulta.<br>
-• <strong>Exportación:</strong> Puedes descargar la ficha individual en PDF o exportarla a Excel (.xlsx).
-`
-    },
-    alta: {
-        titulo: "🚚 Registro y Sincronización de Flota",
-        respuesta: `
-• <strong>Camiones y Camionetas:</strong> Se registran con código oficial (ej: <code>CAM-05</code>), patente (ej: <code>TD-KP-72</code>), marca, modelo y kilometraje.<br>
-• <strong>Maquinarias y Grúas:</strong> Se registran con código (ej: <code>GHO-04</code>), horómetro, capacidad y modelo.<br>
-• <strong>Sincronización Automática:</strong> Al dar de alta una unidad en Fichas Técnicas o Flota, el sistema la incorpora de inmediato al <em>Programa Maestro</em> y a las tablas de <em>Flota Registrada</em>.<br>
-• <strong>Permisos:</strong> Función exclusiva para usuarios con rol de Administrador.
-`
-    },
-    combustible: {
-        titulo: "⛽ Control de Combustible y Estanque 400L",
-        respuesta: `
-• <strong>Estanque de 400 Litros:</strong> El sistema calcula el saldo en litros disponibles en tiempo real.<br>
-• <strong>Registro de Despachos:</strong> Cada carga resta litros del estanque y guarda fecha, conductor, equipo y kilometraje/horómetro.<br>
-• <strong>Recargas de Estanque:</strong> Si la empresa recarga el estanque con camión cisterna, se ingresa la recarga sumando litros al estanque.<br>
-• <strong>Alertas:</strong> El sistema avisa visualmente cuando el nivel baja de 100L (25%).
-`
-    },
-    aceite: {
-        titulo: "🛢️ Control de Aceite a Granel (2 Tambores 200L)",
-        respuesta: `
-• <strong>Monitoreo de Tambores:</strong> Control de tambores de 200L de aceite Valvoline Premium Blue 15W-40.<br>
-• <strong>Descuento por OT:</strong> Al completar una Orden de Trabajo que involucre cambio de aceite de motor, los litros utilizados se descuentan automáticamente del tambor activo.<br>
-• <strong>Costo Unitario:</strong> Calcula el gasto exacto por litro y acumulado por unidad.
-`
-    },
-    mantenciones: {
-        titulo: "🔧 Órdenes de Trabajo y Mantenimiento Preventivo",
-        respuesta: `
-• <strong>Semáforo Preventivo:</strong> Verde (Al día), Amarillo (Próximo a mantención dentro de 50 hrs / 1.000 km) y Rojo (Vencido o Urgente).<br>
-• <strong>Generación de OTs:</strong> Asigna labores, insumos utilizados, kilometraje/horómetro y técnico responsable.<br>
-• <strong>Comprobantes Oficiales:</strong> Cada OT completada cuenta con comprobante imprimible y descargable en PDF con firma técnica.
-`
-    },
-    respaldos: {
-        titulo: "💾 Respaldos y Puntos de Restauración",
-        respuesta: `
-• <strong>Acceso Exclusivo:</strong> Reservado únicamente para el <em>Administrador General (admin)</em>.<br>
-• <strong>No se aplican solos:</strong> Los respaldos se guardan de forma segura en la nube (Cloudflare), pero <u>no se aplican automáticamente</u> para no interferir con tu trabajo diario.<br>
-• <strong>Botón '🚀 Aplicar este Punto':</strong> Puedes restaurar manualmente cualquier punto eligiendo entre <em>Fusión Inteligente</em> (sin borrar lo nuevo) o <em>Rollback Total</em>.
-`
-    },
-    roles: {
-        titulo: "👤 Roles, Permisos y Accesos del Sistema",
-        respuesta: `
-• <strong>Administrador General (admin):</strong> Acceso total, centro de respaldos, control de cuotas, ventana de mantenimiento y edición de fichas maestras.<br>
-• <strong>Operador (operador / Daniel):</strong> Registro de despachos de combustible, control de stock, apertura de órdenes de trabajo y consulta de catálogo técnico.
-`
-    },
-    directo_aron: {
-        titulo: "👨‍💻 Soporte Directo con Aron Martinez (ServiTec Pro)",
-        respuesta: `
-• <strong>Canal Interno en Vivo:</strong> Estás conectado en tiempo real al chat interno del sistema con Aron Martinez.<br>
-• <strong>Sin salir de la aplicación:</strong> No requieres abrir aplicaciones externas ni WhatsApp. Todo el diálogo queda respaldado en esta misma pantalla.<br>
-• <strong>Escribe tu mensaje:</strong> Puedes escribir tu duda o requerimiento técnico abajo y recibirás asistencia inmediata.
-`
-    }
-};
-
-
-
-
+const BASE_CONOCIMIENTO_SOPORTE = SoporteBot.temas;
 
 window.toggleSonidoChatSoporte = function() {
     sonidoChatHabilitado = !sonidoChatHabilitado;
@@ -4448,6 +4380,11 @@ window.generarEtiquetaRemitenteChat = generarEtiquetaRemitenteChat;
 window.renderizarChipsPreguntasRapidas = renderizarChipsPreguntasRapidas;
 
 window.seleccionarChipSoporte = function(id, textoVisible) {
+    if ((sessionStorage.getItem("usuarioLogueado") || "").toLowerCase().trim() === "admin" && SoporteBot.temas[id]) {
+        const input = document.getElementById("inputPreguntaSoporte");
+        if (input) { input.value = SoporteBot.temas[id].respuesta; input.focus(); }
+        return;
+    }
     if (id === "directo_aron") {
         const input = document.getElementById("inputPreguntaSoporte");
         if (input) {
@@ -4470,7 +4407,8 @@ window.enviarMensajeChatSoporte = function(e) {
 };
 
 window.enviarRespuestaRapidaAdmin = function(textoRapido) {
-    enviarMensajeUsuarioSoporte(textoRapido, null, true);
+    const input = document.getElementById("inputPreguntaSoporte");
+    if (input) { input.value = textoRapido; input.focus(); }
 };
 
 window.reiniciarChatSoporteServidor = async function() {

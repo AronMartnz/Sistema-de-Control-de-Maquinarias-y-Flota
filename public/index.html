@@ -4540,10 +4540,10 @@
                 <div>
                     <div style="display:flex; align-items:center; gap:6px;">
                         <span style="font-weight:700; font-size:13.5px; line-height:1.2; color:#ffffff;">Soporte ServiTec Pro</span>
-                        <span style="background:#059669; color:#ffffff; font-size:9px; font-weight:800; padding:1px 5px; border-radius:8px;">EN VIVO EN APP</span>
+                        <span style="background:#059669; color:#ffffff; font-size:9px; font-weight:800; padding:1px 5px; border-radius:8px;">CHAT EN APP</span>
                     </div>
                     <div style="font-size:11px; color:#ccfbf1; display:flex; align-items:center; gap:4px;">
-                        <span>En línea</span> • <span>Aron Martinez</span>
+                        <span>Asistente automático</span> • <span>Soporte con Aron</span>
                     </div>
                 </div>
             </div>
@@ -4559,7 +4559,8 @@
                 <span>👨‍💻 Respondiendo como: <strong>Aron Martinez (Soporte ServiTec Pro)</strong></span>
                 <button type="button" onclick="reiniciarChatSoporteServidor()" style="background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; font-size:10px; font-weight:700; padding:1px 6px; border-radius:6px; cursor:pointer;" title="Reiniciar mensajes de prueba">Limpiar Chat</button>
             </div>
-            <div style="display:flex; gap:4px; overflow-x:auto; padding-bottom:2px;">
+            <span>Respuestas rápidas · revisar y enviar</span>
+            <div class="soporte-respuestas-admin">
                 <button type="button" class="btn-respuesta-rapida-admin" onclick="enviarRespuestaRapidaAdmin('✅ Ficha técnica revisada y guardada con éxito en el servidor.')">Ficha OK</button>
                 <button type="button" class="btn-respuesta-rapida-admin" onclick="enviarRespuestaRapidaAdmin('🚚 La unidad ya quedó sincronizada en la Flota Registrada y el Programa Maestro.')">Unidad en Flota</button>
                 <button type="button" class="btn-respuesta-rapida-admin" onclick="enviarRespuestaRapidaAdmin('⛽ Nivel de estanque 400L y despachos regularizados correctamente.')">Combustible OK</button>
@@ -4573,13 +4574,13 @@
         </div>
 
         <!-- Preguntas rápidas / Chips de orientación interactiva -->
-        <div id="chipsPreguntasRapidas" style="background:#ffffff; border-top:1px solid #e2e8f0; padding:8px 10px; display:flex; gap:6px; overflow-x:auto; white-space:nowrap; flex-shrink:0; scrollbar-width:thin;">
+        <div id="chipsPreguntasRapidas" aria-label="Temas de ayuda automática">
             <!-- Inyectado dinámicamente -->
         </div>
 
         <!-- Barra inferior de entrada de texto -->
         <form id="formChatSoporte" onsubmit="enviarMensajeChatSoporte(event)" style="background:#f0f2f5; padding:8px 12px; display:flex; align-items:center; gap:8px; border-top:1px solid #d1d5db; flex-shrink:0; margin:0;">
-            <input type="text" id="inputPreguntaSoporte" placeholder="Escribe tu consulta aquí a Aron Martinez..." autocomplete="off" style="flex:1; padding:10px 14px; border-radius:24px; border:1px solid #d1d5db; font-size:13px; outline:none; background:#ffffff;">
+            <input type="text" id="inputPreguntaSoporte" placeholder="Escribe tu consulta aquí..." autocomplete="off" style="flex:1; padding:10px 14px; border-radius:24px; border:1px solid #d1d5db; font-size:13px; outline:none; background:#ffffff;">
             <button type="submit" id="btnEnviarChatSoporte" style="width:38px; height:38px; border-radius:50%; background:#0f766e; color:#ffffff; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; transition:background 0.2s ease;" title="Enviar mensaje en el sistema">
                 ➤
             </button>
@@ -4607,6 +4608,7 @@
 <script src="/functions-core.js"></script>
 <script src="/functions-operations.js"></script>
 <script src="inventory-ui.js"></script>
+    <script src="/support-bot.js"></script>
     <script src="/script.js?v=20261002_cf_dark_v3"></script>
 <dialog id="dialogInventario" class="inventario-dialog" aria-label="Gestión del artículo y ajuste de stock"><div id="contenidoDialogInventario"></div></dialog>
 </body>

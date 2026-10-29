@@ -25,7 +25,7 @@ test('send, receive, read receipts, isolation and pending notifications',async()
  await call(env,'admin','','POST',{texto:'Recibido',destinatario:'daniel'});
  await call(env,'daniel','mensajes?leido=1');
  const messages=(await(await call(env,'admin','mensajes?usuario=daniel')).json()).mensajes;
- assert.equal(messages.length,2);assert.equal(messages[1].leidoPorDestinatario,true);
+ assert.equal(messages.length,3);assert.equal(messages[1].esBot,true);assert.equal(messages[2].leidoPorDestinatario,true);
 });
 test('storage failure never confirms a send; routes never return HTML',async()=>{
  assert.equal((await call({},'daniel','','POST',{texto:'Hola'})).status,503);
@@ -67,4 +67,21 @@ test('login accepts only configured credentials and verifies bcrypt hashes',asyn
  const noAccounts={CORSSEN_STORAGE:{get:async()=>null}};
  const response=await worker.fetch(new Request('https://test/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({usuario:'admin',password})}),noAccounts,{});
  assert.equal(response.status,401);
+});
+test('bot recognizes accents and complete words without matching unrelated substrings',()=>{
+ const detect=globalThis.SoporteBot.detectar;
+ assert.equal(detect('Necesito cambiar la contraseña'),'roles');assert.equal(detect('litros de aceite del camión'),'aceite');assert.equal(detect('historial mensual del inventario'),'mensual');assert.equal(detect('No llegan los mensajes'),'sincronizacion');assert.equal(detect('stock disponible'),'inventario');assert.equal(detect('foto del motor'),null);assert.equal(detect('hola, gracias'),null);
+});
+test('automatic guidance persists, remains isolated and never marks a request as read by Aron',async()=>{
+ const env=setup();const response=await(await call(env,'daniel','','POST',{texto:'Cómo ajustar el stock'})).json();
+ assert.equal(response.mensajeBot.esBot,true);assert.equal(response.mensajeBot.destinatario,'daniel');assert.match(response.mensajeBot.texto,/cantidad final/);
+ const history=await(await call(env,'daniel')).json();assert.equal(history.mensajes.length,2);assert.equal(history.mensajes[0].leidoPorAdmin,false);assert.equal(history.mensajes[1].nombre,'Asistente automático ServiTec Pro');
+ assert.equal((await(await call(env,'rodrigo')).json()).mensajes.length,0);
+ const pending=await(await call(env,'admin','conversaciones')).json();assert.equal(pending.totalPendientes,1);
+ const sent=await(await call(env,'admin','','POST',{texto:'Revisaré el inventario',destinatario:'daniel'})).json();assert.equal(sent.mensajeBot,null);
+});
+test('selected topic is validated and human guidance never promises immediate attention',async()=>{
+ const env=setup();const topic=await(await call(env,'daniel','','POST',{texto:'Ver instrucciones',temaSoporte:'mensual'})).json();assert.match(topic.mensajeBot.tituloContexto,/mensual/);
+ const invalid=await(await call(env,'daniel','','POST',{texto:'Hola',temaSoporte:'__proto__'})).json();assert.equal(invalid.mensajeBot,null);
+ const human=await(await call(env,'daniel','','POST',{texto:'Quiero hablar con Aron'})).json();assert.match(human.mensajeBot.texto,/disponibilidad/);assert.doesNotMatch(human.mensajeBot.texto,/inmediata|en línea/);
 });

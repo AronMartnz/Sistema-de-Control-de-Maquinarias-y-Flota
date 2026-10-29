@@ -1,3 +1,4 @@
+import './support-bot.js';
 export async function handleSupportChat(request, env) {
   const url = new URL(request.url), path = url.pathname;
   if (!path.startsWith('/api/soporte/') && path !== '/api/chat/mensajes') return null;
@@ -33,8 +34,12 @@ export async function handleSupportChat(request, env) {
       if (!destinatario || destinatario===caller) return reply({error:'Selecciona el destinatario'},400);
       const now = new Date();
       const message = {id:'MSG-'+crypto.randomUUID(),usuario:caller,destinatario,nombre:String(body.nombre || caller),rol:admin?'admin':'operador',texto,timestamp:now.toISOString(),hora:now.toLocaleTimeString('es-CL',{timeZone:'America/Santiago',hour:'2-digit',minute:'2-digit'}),esSoporte:admin,necesitaAtencionHumana:!admin,leidoPorAdmin:false,guardado:true,leidoPorDestinatario:false};
-      await db.prepare('INSERT INTO soporte_chat (id,usuario,destinatario,data) VALUES (?,?,?,?)').bind(message.id,caller,destinatario,JSON.stringify(message)).run();
-      return reply({ok:true,guardado:true,mensajeEnviado:message});
+      const tema=!admin ? (Object.hasOwn(SoporteBot.temas,body.temaSoporte || '') ? body.temaSoporte : SoporteBot.detectar(texto)) : null;
+      const ayuda=tema ? SoporteBot.temas[tema] : null;
+      const bot=ayuda ? {id:'BOT-'+crypto.randomUUID(),usuario:'asistente_servitec',destinatario:caller,nombre:'Asistente automático ServiTec Pro',rol:'bot',texto:ayuda.respuesta,tituloContexto:ayuda.titulo,timestamp:now.toISOString(),hora:message.hora,esSoporte:true,esBot:true,guardado:true,leidoPorDestinatario:false} : null;
+      const guardar=m=>db.prepare('INSERT INTO soporte_chat (id,usuario,destinatario,data) VALUES (?,?,?,?)').bind(m.id,m.usuario,m.destinatario,JSON.stringify(m));
+      await db.batch(bot ? [guardar(message),guardar(bot)] : [guardar(message)]);
+      return reply({ok:true,guardado:true,mensajeEnviado:message,mensajeBot:bot});
     }
     if (isMessages && request.method === 'DELETE') {
       if (!admin) return reply({error:'Acceso restringido'},403);

@@ -69,7 +69,7 @@ async function ejecutarPruebas() {
     // -------------------------------------------------------------
     console.log('\n🔹 MÓDULO 2: Integridad de Código y Parseo Client-Side');
     const scriptPath = path.join(process.cwd(), 'script.js');
-    const scriptContent = ['functions-core.js','functions-operations.js','script.js'].map(p=>fs.readFileSync(p,'utf8')).join('\n');
+    const scriptContent = ['functions-core.js','functions-operations.js','inventory-ui.js','support-bot.js','script.js'].map(p=>fs.readFileSync(p,'utf8')).join('\n');
     assert(scriptContent.length > 50000, 'script.js existe y contiene el código del sistema', 'Integridad');
 
     // Emular entorno DOM para script.js
@@ -139,7 +139,7 @@ async function ejecutarPruebas() {
         };
         `;
         const context = vm.createContext(sandbox);
-        for (const file of ['functions-core.js','functions-operations.js','script.js']) {
+        for (const file of ['functions-core.js','functions-operations.js','inventory-ui.js','support-bot.js','script.js']) {
             const contents=fs.readFileSync(file,'utf8')+(file==='script.js'?scriptExport.slice(scriptContent.length):'');
             new vm.Script(contents,{filename:file}).runInContext(context);
         }

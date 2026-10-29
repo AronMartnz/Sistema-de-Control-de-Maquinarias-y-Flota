@@ -24,6 +24,7 @@ const rootFiles = [
   'functions-core.js',
   'functions-operations.js',
   'inventory-ui.js',
+  'support-bot.js',
   'login.html',
   'usuarios.html',
   'logo.svg',

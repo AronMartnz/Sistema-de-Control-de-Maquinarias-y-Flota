@@ -5140,38 +5140,8 @@ function reproducirChimeMensaje() {
 }
 
 function obtenerRespuestaSoporte(texto) {
-    const t = (texto || "").toLowerCase().trim();
-
-    if (t.includes("aron") || t.includes("humano") || t.includes("contacto") || t.includes("soporte") || t.includes("hablar") || t.includes("ayuda directa") || t.includes("whatsapp")) {
-        return BASE_CONOCIMIENTO_SOPORTE.directo_aron;
-    }
-    if (t.includes("ficha") || t.includes("filtro") || t.includes("manual") || t.includes("especificacion") || t.includes("baldwin") || t.includes("donaldson")) {
-        return BASE_CONOCIMIENTO_SOPORTE.fichas;
-    }
-    if (t.includes("alta") || t.includes("camion") || t.includes("vehiculo") || t.includes("maquinaria") || t.includes("grua") || t.includes("camioneta") || t.includes("patente")) {
-        return BASE_CONOCIMIENTO_SOPORTE.alta;
-    }
-    if (t.includes("combustible") || t.includes("estanque") || t.includes("tanque") || t.includes("petroleo") || t.includes("diesel") || t.includes("litros") || t.includes("carga")) {
-        return BASE_CONOCIMIENTO_SOPORTE.combustible;
-    }
-    if (t.includes("aceite") || t.includes("tambor") || t.includes("lubricante") || t.includes("15w40") || t.includes("valvoline")) {
-        return BASE_CONOCIMIENTO_SOPORTE.aceite;
-    }
-    if (t.includes("mantencion") || t.includes("ot") || t.includes("orden") || t.includes("preventiv") || t.includes("falla") || t.includes("semaforo")) {
-        return BASE_CONOCIMIENTO_SOPORTE.mantenciones;
-    }
-    if (t.includes("respaldo") || t.includes("backup") || t.includes("restaurar") || t.includes("punto") || t.includes("recuperar") || t.includes("nube")) {
-        return BASE_CONOCIMIENTO_SOPORTE.respaldos;
-    }
-    if (t.includes("rol") || t.includes("permiso") || t.includes("admin") || t.includes("operador") || t.includes("daniel") || t.includes("usuario") || t.includes("clave")) {
-        return BASE_CONOCIMIENTO_SOPORTE.roles;
-    }
-
-    return {
-        tipo: "in_app_soporte_vivo",
-        titulo: "💬 Canal de Soporte ServiTec Pro",
-        respuesta: `✅ Tu consulta ha sido enviada al canal en vivo de <strong>Aron Martinez</strong>.<br><br>Estamos en línea dentro de la plataforma y te responderemos en esta misma ventana sin necesidad de salir.`
-    };
+    const tema = SoporteBot.detectar(texto);
+    return tema ? SoporteBot.temas[tema] : {titulo:"¿En qué módulo necesitas ayuda?",respuesta:"Indica el módulo, código de unidad o folio y qué ocurrió. Puedes seleccionar un tema de la lista o solicitar atención de Aron."};
 }
 
 function actualizarVisibilidadModoAdminChat() {
@@ -5282,7 +5252,7 @@ function generarEtiquetaRemitenteChat(msg, esMio) {
     }
 
     const esSoporteAdmin = (usuarioId === "admin" || usuarioId === "aron_soporte" || usuarioId === "aron" || Boolean(msg.esSoporte));
-    const icono = esSoporteAdmin ? "👨‍💻" : (usuarioId === "rodrigo" ? "🔧" : "👤");
+    const icono = msg.esBot ? "🤖" : esSoporteAdmin ? "👨‍💻" : (usuarioId === "rodrigo" ? "🔧" : "👤");
     const tag = usuarioId ? `<span class="chat-remitente-tag-usuario">@${escapeHtmlSoporte(usuarioId)}</span>` : "";
     const prefijoTuyo = esMio ? `<span style="font-size:10.5px; color:#0369a1; font-weight:800; margin-right:3px;">(Tú)</span>` : "";
 
@@ -5318,7 +5288,7 @@ function renderizarMensajesEnPantalla(mensajes) {
             <div class="${claseGlobo}" id="msg-${msg.id}">
                 ${remitenteHtml}
                 ${msg.tituloContexto ? `<div style="font-weight:700; color:#0f172a; margin-bottom:4px; font-size:12px;">${escapeHtmlSoporte(msg.tituloContexto)}</div>` : ""}
-                <div style="font-size:13px; line-height:1.4;">${escapeHtmlSoporte(msg.texto)}</div>
+                <div style="font-size:13px; line-height:1.5; white-space:pre-wrap; overflow-wrap:anywhere;">${escapeHtmlSoporte(msg.texto)}</div>
                 <div class="chat-hora">
                     <span>${msg.hora || ""}</span>
                     ${checkmarks}
@@ -5380,28 +5350,10 @@ async function enviarMensajeUsuarioSoporte(texto, idPreguntaRapida, forzarEsSopo
     cuerpo.appendChild(userDiv);
     cuerpo.scrollTop = cuerpo.scrollHeight;
 
-    if (idPreguntaRapida && BASE_CONOCIMIENTO_SOPORTE[idPreguntaRapida] && !esSoporte) {
-        const respObj = BASE_CONOCIMIENTO_SOPORTE[idPreguntaRapida];
-        const botDiv = document.createElement("div");
-        botDiv.className = "chat-mensaje-globo chat-mensaje-bot";
-        const botHtml = generarEtiquetaRemitenteChat({
-            usuario: "aron_soporte",
-            nombre: "Aron Martinez (ServiTec Pro)",
-            esSoporte: true
-        }, false);
-        botDiv.innerHTML = `
-            ${botHtml}
-            <div style="font-weight:700; color:#0f172a; margin-bottom:4px; font-size:12.5px;">${respObj.titulo}</div>
-            <div style="font-size:13px; line-height:1.4;">${respObj.respuesta}</div>
-            <div class="chat-hora">${horaActual}</div>
-        `;
-        cuerpo.appendChild(botDiv);
-        cuerpo.scrollTop = cuerpo.scrollHeight;
-    }
-
     try {
         const payload = {
             texto: texto,
+            temaSoporte: idPreguntaRapida || null,
             usuario: usuarioActual,
             nombre: nombreActual,
             rol: esAdminGeneral ? "admin" : "operador",

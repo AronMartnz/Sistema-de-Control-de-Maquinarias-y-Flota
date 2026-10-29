@@ -127,3 +127,10 @@ test('monthly history is shared by admin and operator, authenticated and read-on
  assert.equal((await call('/api/state','PUT',{key:'corssen_stock_v2',value:[{stock:0}],version:0},op)).status,409);
  const unchanged=await(await call('/api/inventory/monthly','GET',undefined,op)).json();assert.equal(unchanged.months[0].value,1000);
 });
+test('a failed bot insert rolls back the user message instead of confirming a partial send',async()=>{
+ const {sql,call,login}=setup();const op=await login('operador');
+ await call('/api/soporte/mensajes','GET',undefined,op);
+ sql.exec("CREATE TRIGGER reject_bot BEFORE INSERT ON soporte_chat WHEN NEW.usuario='asistente_servitec' BEGIN SELECT RAISE(ABORT,'simulated bot storage failure'); END");
+ const result=await call('/api/soporte/mensajes','POST',{texto:'Cómo ajustar el stock'},op);assert.equal(result.status,503);
+ assert.equal(sql.prepare('SELECT count(*) AS n FROM soporte_chat').get().n,0);
+});
