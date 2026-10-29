@@ -773,7 +773,7 @@
 
             } else {
 
-                mostrarErrorAnimado(datos.mensaje || "Usuario o contraseña inválidos");
+                mostrarErrorAnimado(datos.mensaje || (res.status >= 500 ? "El servidor no está disponible temporalmente. No es un error de contraseña." : res.ok ? "No se pudo confirmar la sesión. Intenta nuevamente." : "Usuario o contraseña inválidos"));
 
             }
 

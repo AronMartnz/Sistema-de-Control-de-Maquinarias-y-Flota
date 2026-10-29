@@ -65,7 +65,11 @@ export async function secureFetch(request,env,ctx,app){
   if((response.headers.get('Content-Type')||'').includes('text/html'))return json({error:'Ruta API no encontrada'},404);
   const outputHeaders=new Headers(response.headers);outputHeaders.set('Cache-Control','no-store');
   return new Response(response.body,{status:response.status,headers:outputHeaders});
- }catch(error){console.error('Platform request failed',error);return json({error:'No se pudo completar la operación'},503);}
+ }catch(error){
+  console.error('Platform request failed',error);
+  const quota=/exceeded.*(?:daily|row read)|daily.*(?:limit|quota)|D1.*free tier/i.test(String(error?.message||error));
+  return json(quota?{error:'CUPO_BASE_DATOS_AGOTADO',mensaje:'Cloudflare agotó el cupo diario de la base de datos. No es un error de contraseña. El servicio debe recuperar su cupo o ampliar el plan.'}:{error:'SERVICIO_NO_DISPONIBLE',mensaje:'No se pudo completar la operación con el servidor. Intenta nuevamente más tarde.'},503);
+ }
 }
 async function liveState(request,db,user){
  await db.prepare('CREATE TABLE IF NOT EXISTS app_state (key TEXT PRIMARY KEY, value TEXT NOT NULL, version INTEGER NOT NULL DEFAULT 1)').run();

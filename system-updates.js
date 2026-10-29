@@ -1,6 +1,6 @@
 // Publish a new id only with a new set of user-facing release notes. See UPDATES.md.
 export const currentRelease = {
-  "id": "corssen-2026-10-28-login-continuo-2",
+  "id": "corssen-2026-10-29-acceso-disponibilidad-3",
   "title": "Entrada al sistema más fluida",
   "description": "Corregimos la transición después de validar tus credenciales.",
   "sections": [
@@ -9,7 +9,8 @@ export const currentRelease = {
       "tag": "CORRECCIÓN",
       "items": [
         "El logo de Corssen permanece visible hasta que se abre el sistema, sin dejar una pantalla vacía al terminar la bienvenida.",
-        "El panel se muestra sin el desvanecimiento que provocaba el corte visual."
+        "El panel se muestra sin el desvanecimiento que provocaba el corte visual.",
+        "Los límites de Cloudflare y los errores del servidor se distinguen de las contraseñas incorrectas al iniciar sesión."
       ]
     }
   ]

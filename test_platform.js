@@ -144,3 +144,10 @@ test('chat shows current profile photos for old messages and ignores forged mess
  const isolated=await(await call('/api/soporte/mensajes?usuario=operador','GET',undefined,other)).json();assert.equal(isolated.mensajes.length,0);
  const conv=await(await call('/api/soporte/conversaciones','GET',undefined,admin)).json();assert.equal(conv.conversaciones.find(c=>c.usuario==='operador').avatar,updated);
 });
+
+test('D1 quota exhaustion returns service unavailable instead of invalid credentials',async()=>{
+ const {env,call}=setup();env.DB.prepare=()=>{throw Error("Your account has exceeded D1's free tier daily row read limit.")};
+ const response=await call('/api/login','POST',{usuario:'admin',password:'isolated-test'});
+ assert.equal(response.status,503);const body=await response.json();assert.equal(body.error,'CUPO_BASE_DATOS_AGOTADO');assert.match(body.mensaje,/No es un error de contraseña/);
+ assert.equal(response.headers.get('set-cookie'),null);
+});
