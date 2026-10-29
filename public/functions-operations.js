@@ -3725,7 +3725,7 @@ function renderizarModuloAceite() {
     }
 
     // 3. KPIs Generales del Módulo (Ambos Tambores)
-    const elKpiConsumido = document.getElementById("kpiLitrosConsumidosTambor");
+    const elKpiConsumido = document.getElementById("kpiLitrosConsumidosTotal") || document.getElementById("kpiLitrosConsumidosTambor");
     const elKpiMaquinas = document.getElementById("kpiMaquinasAbastecidasAceite");
     const elKpiCostoL = document.getElementById("kpiCostoLitroAceite");
     const elKpiTambores = document.getElementById("kpiTamboresHistoricos");
@@ -3741,6 +3741,14 @@ function renderizarModuloAceite() {
         elKpiCostoL.textContent = `$${costoPromedio.toLocaleString('es-CL')}`;
     }
     if (elKpiTambores) elKpiTambores.textContent = "2 Activos";
+
+    const costoDisponible = saldoActual1 * Number(t1.costoPorLitro ?? (Number(t1.costoTotal || 0) / capTotal1)) + saldoActual2 * Number(t2.costoPorLitro ?? (Number(t2.costoTotal || 0) / capTotal2));
+    const valorStock = document.getElementById('kpiValorizacionStockAceite');
+    if (valorStock) valorStock.textContent = `$${costoDisponible.toLocaleString('es-CL')}`;
+    for (const [n,saldo] of [[1,saldoActual1],[2,saldoActual2]]) {
+        const badge = document.getElementById(`estadoNivelAceite${n}`);
+        if (badge) {badge.textContent=saldo <= 35 ? 'Nivel crítico' : saldo <= 70 ? 'Nivel bajo' : 'Nivel normal';badge.className='badge '+(saldo <= 35 ? 'badge-rojo' : saldo <= 70 ? 'badge-naranja' : 'badge-verde');}
+    }
 
     // 4. Actualizar badge en menú lateral
     const badgeMenu = document.getElementById("badgeNivelAceiteMenu");
@@ -3773,43 +3781,32 @@ function renderizarModuloAceite() {
     if (!tbody) return;
 
     const filtro = document.getElementById("filtroTamborAceite")?.value || "TODOS";
-    const consumosFiltrados = (historialConsumoAceite || []).filter(item => {
-        if (filtro === "TODOS") return true;
-        const itemTamborId = item.tamborId || (item.tipoAceite?.toLowerCase().includes("hidráulico") || item.tipoAceite?.toLowerCase().includes("hidraulico") ? "tambor2" : "tambor1");
-        return itemTamborId === filtro;
+    const busqueda = (document.getElementById('buscarConsumoAceite')?.value || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+    document.querySelectorAll('[data-tambor-aceite]').forEach(btn => btn.setAttribute('aria-pressed',String(btn.dataset.tamborAceite===filtro)));
+    const consumosFiltrados = (historialConsumoAceite || []).map((item,originalIndex)=>({item,originalIndex})).filter(({item}) => {
+        const esT2 = item.tamborId ? item.tamborId === 'tambor2' : /hidr[aá]ulico/i.test(item.tipoAceite || '');
+        const tambor = esT2 ? 'tambor2' : 'tambor1';
+        const texto = [item.fecha,item.folioOT,item.codigoEquipo,item.equipoNombre,item.tipoMantencion,item.tecnico,item.tipoAceite].join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+        return (filtro==='TODOS' || tambor===filtro) && (!busqueda || texto.includes(busqueda));
     });
+    const contador = document.getElementById('contadorConsumosAceite');
+    if (contador) contador.textContent = `${consumosFiltrados.length} de ${(historialConsumoAceite || []).length} movimientos`;
+    if (!consumosFiltrados.length) {tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;">No hay consumos que coincidan con los filtros.</td></tr>';return;}
+    const esc = escapeHtmlSoporte;
+    tbody.innerHTML = consumosFiltrados.map(({item,originalIndex}) => {
+        const id = item.id || `ACEITE-AUTO-${originalIndex}`;
+        const esT2 = item.tamborId ? item.tamborId === 'tambor2' : /hidr[aá]ulico/i.test(item.tipoAceite || '');
+        return `<tr><td><strong>${esc(item.fecha || '-')}</strong><small>${esc(item.folioOT || 'OT General')}</small></td><td><strong>${esc(item.codigoEquipo || '-')}</strong><small>${esc(item.equipoNombre || '')}</small></td><td><span class="badge ${esT2?'badge-verde':'badge-azul'}">${esT2?'T2 · Hidráulico 10W-30':'T1 · Motor 15W-40'}</span><small>${esc(item.tipoMantencion || 'Mantención periódica')}</small></td><td><strong>−${Number(item.litrosDescontados || 0).toLocaleString('es-CL')} L</strong><small>Saldo: ${item.saldoRestante == null ? 'Sin registro' : Number(item.saldoRestante).toLocaleString('es-CL')+' L'}</small></td><td class="aceites-costo">$${Number(item.costoTotal || 0).toLocaleString('es-CL')}</td><td>${esc(item.tecnico || 'Sin asignar')}<details class="aceites-opciones-fila"><summary>Opciones</summary><button type="button" class="btn-peligro" onclick="eliminarConsumoAceite(${esc(JSON.stringify(id))})">Eliminar consumo</button></details></td></tr>`;
+    }).join('');
+}
 
-    if (consumosFiltrados.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:24px; color:#64748b;">No hay consumos de aceite registrados${filtro !== "TODOS" ? " para este tambor" : ""}.</td></tr>`;
-        return;
-    }
-
-    tbody.innerHTML = consumosFiltrados.map((item, index) => {
-        const itemId = item.id || `ACEITE-AUTO-${index}`;
-        const esT2 = item.tamborId === "tambor2" || (item.tipoAceite && (item.tipoAceite.toLowerCase().includes("hidráulico") || item.tipoAceite.toLowerCase().includes("hidraulico")));
-        const badgeTambor = esT2 
-            ? `<span class="badge" style="background:#dcfce7; color:#15803d; border:1px solid #bbf7d0; font-weight:700;">🛢️ T2 • Hidráulico 10W30</span>` 
-            : `<span class="badge badge-azul" style="font-weight:700;">🛢️ T1 • Motor 15W40</span>`;
-
-        return `
-            <tr>
-                <td><strong>${item.fecha || '-'}</strong></td>
-                <td><span class="badge badge-azul">${item.folioOT || 'OT General'}</span></td>
-                <td><strong>${item.codigoEquipo || '-'}</strong> ${item.equipoNombre ? `<br><small style="color:#64748b;">${item.equipoNombre}</small>` : ''}</td>
-                <td>${badgeTambor}</td>
-                <td>${item.tipoMantencion || 'Mantención Periódica'}</td>
-                <td><strong style="color:${esT2 ? '#059669' : '#2563eb'}; font-size:14px;">-${(item.litrosDescontados || 0).toFixed(1)} Lts</strong></td>
-                <td><span class="badge badge-gris">${(item.saldoRestante !== undefined ? item.saldoRestante : 0).toFixed(1)} Lts Disp.</span></td>
-                <td><strong style="color:#059669;">$${(item.costoTotal || 0).toLocaleString('es-CL')}</strong></td>
-                <td>${item.tecnico || 'Alexis Santos'}</td>
-                <td style="text-align:center;">
-                    <button type="button" class="btn-peligro" onclick="eliminarConsumoAceite('${itemId}')" title="Eliminar este consumo y reincorporar los litros al tambor correspondiente" style="padding:4px 8px; font-size:11px; background:#fee2e2; color:#dc2626; border:1px solid #fecaca; border-radius:6px; cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:4px; transition:background 0.2s;">
-                        🗑️ Eliminar
-                    </button>
-                </td>
-            </tr>
-        `;
-    }).join("");
+function filtrarConsumosAceite(tambor, irAlHistorial = false) {
+    const selector=document.getElementById('filtroTamborAceite');
+    if(selector && ['TODOS','tambor1','tambor2'].includes(tambor))selector.value=tambor;
+    const buscar=document.getElementById('buscarConsumoAceite');
+    if(irAlHistorial && buscar)buscar.value='';
+    renderizarModuloAceite();
+    if(irAlHistorial)document.getElementById('aceitesHistorial')?.scrollIntoView({block:'start',behavior:'auto'});
 }
 
 function eliminarConsumoAceite(id) {
