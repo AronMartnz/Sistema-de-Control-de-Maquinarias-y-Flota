@@ -260,131 +260,11 @@
              1. DASHBOARD PRINCIPAL
         ===================================================== -->
         <section class="panel active" id="panelPrincipal">
-            <div class="titulo-panel">
-                <h2>Resumen General de Flota y Operaciones</h2>
-                <p>Métricas consolidadas de grúas, equipos móviles, herramientas auxiliares y stock crítico.</p>
-            </div>
-
-            <div class="grid-tarjetas">
-                <div class="tarjeta-dash">
-                    <div class="tarjeta-icono" style="background:#eff6ff; color:#2563eb;">🚜</div>
-                    <div>
-                        <div class="numero" id="dashTotalEquipos">54</div>
-                        <div class="etiqueta">Equipos y Herramientas</div>
-                    </div>
-                </div>
-
-                <div class="tarjeta-dash">
-                    <div class="tarjeta-icono" style="background:#f0fdf4; color:#16a34a;">✅</div>
-                    <div>
-                        <div class="numero" id="dashOperativos">38</div>
-                        <div class="etiqueta">Operativos al 100%</div>
-                    </div>
-                </div>
-
-                <div class="tarjeta-dash">
-                    <div class="tarjeta-icono" style="background:#fffbeb; color:#f59e0b;">⚠️</div>
-                    <div>
-                        <div class="numero" id="dashConFalla">3</div>
-                        <div class="etiqueta">Operativos con Falla</div>
-                    </div>
-                </div>
-
-                <div class="tarjeta-dash">
-                    <div class="tarjeta-icono" style="background:#fef2f2; color:#dc2626;">🛠️</div>
-                    <div>
-                        <div class="numero" id="dashNoOperativos">13</div>
-                        <div class="etiqueta">No Operativos / Taller</div>
-                    </div>
-                </div>
-
-                <div class="tarjeta-dash">
-                    <div class="tarjeta-icono" style="background:#fff1f2; color:#e11d48;">📦</div>
-                    <div>
-                        <div class="numero" id="dashStockCritico">8</div>
-                        <div class="etiqueta">Insumos en Stock Crítico</div>
-                    </div>
-                </div>
-
-                <div class="tarjeta-dash" onclick="filtrarAlertasMantencionDash('TODAS', document.querySelector('.btn-filtro-alerta-mant'))" style="cursor:pointer;" title="Ver todas las mantenciones próximas y por vencer">
-                    <div class="tarjeta-icono" style="background:#fff7ed; color:#ea580c;">🔔</div>
-                    <div>
-                        <div class="numero" id="dashMantencionesProximas" style="color:#ea580c;">0</div>
-                        <div class="etiqueta">Mantenciones Próximas</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- =====================================================
-                 ESTADO DE LOS 2 TAMBORES DE ACEITE EN TALLER (DASHBOARD)
-            ===================================================== -->
-            <div class="caja-blanca" id="cajaDashboardTamboresAceite" style="margin-bottom:24px; padding:18px 20px; border-left:4px solid #2563eb;">
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <div style="width:40px; height:40px; border-radius:10px; background:#eff6ff; color:#1d4ed8; display:flex; align-items:center; justify-content:center; font-size:22px;">
-                            🛢️
-                        </div>
-                        <div>
-                            <h3 style="margin:0; font-size:16px; font-weight:800; display:flex; align-items:center; gap:8px;">
-                                Control de Lubricantes en Taller (2 Tambores de 200 Litros)
-                                <span class="badge badge-azul" style="font-size:11px; font-weight:700;">400 Lts Totales</span>
-                            </h3>
-                            <p style="margin:2px 0 0 0; font-size:12px;">
-                                Monitoreo volumétrico en tiempo real de los dos tambores activos para mantenciones de flota.
-                            </p>
-                        </div>
-                    </div>
-                    <button type="button" class="btn-secundario btn-topbar-accion" onclick="navegarSeccion('moduloAceite')" style="font-size:12px; padding:7px 14px; font-weight:700;">
-                        🛢️ Ver Módulo de Aceite (2 Tambores) →
-                    </button>
-                </div>
-
-                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:14px;">
-                    <!-- Mini Widget Tambor 1 (Motor) -->
-                    <div class="caja-blanca" style="border:1.5px solid var(--primary-border); border-radius:12px; padding:14px; display:flex; gap:14px; align-items:center; cursor:pointer; margin-bottom:0;" onclick="navegarSeccion('moduloAceite')" title="Ver Tambor 1 (Aceite de Motor)">
-                        <div style="font-size:38px; line-height:1; filter:drop-shadow(0 2px 4px rgba(37,99,235,0.2));">🛢️</div>
-                        <div style="flex:1;">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                                <span class="badge badge-azul" style="font-weight:700; font-size:10px;">TAMBOR 1 • MOTOR (15W-40)</span>
-                                <span id="dashNivelTambor1Txt" style="font-size:13px; font-weight:800; color:#1d4ed8;">200.0 / 200 L (100%)</span>
-                            </div>
-                            <div style="font-size:12.5px; font-weight:700; margin-bottom:6px;" id="dashNombreTambor1Txt">Aceite Valvoline Premium Blue 15W40</div>
-                            <div style="width:100%; height:12px; background:var(--card-border); border-radius:6px; overflow:hidden; border:1px solid var(--card-border);">
-                                <div id="dashBarraTambor1" style="width:100%; height:100%; background:linear-gradient(90deg, #3b82f6, #1d4ed8); border-radius:6px; transition:width 0.4s;"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Mini Widget Tambor 2 (Hidráulico) -->
-                    <div class="caja-blanca" style="border:1.5px solid var(--status-ok-border); border-radius:12px; padding:14px; display:flex; gap:14px; align-items:center; cursor:pointer; margin-bottom:0;" onclick="navegarSeccion('moduloAceite')" title="Ver Tambor 2 (Aceite Hidráulico)">
-                        <div style="font-size:38px; line-height:1; filter:drop-shadow(0 2px 4px rgba(16,185,129,0.2));">🛢️</div>
-                        <div style="flex:1;">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                                <span class="badge badge-verde" style="font-weight:700; font-size:10px;">TAMBOR 2 • HIDRÁULICO (10W-30)</span>
-                                <span id="dashNivelTambor2Txt" style="font-size:13px; font-weight:800; color:#059669;">200.0 / 200 L (100%)</span>
-                            </div>
-                            <div style="font-size:12.5px; font-weight:700; margin-bottom:6px;" id="dashNombreTambor2Txt">Aceite Hidráulico Valvoline Unitrac 10W30</div>
-                            <div style="width:100%; height:12px; background:var(--card-border); border-radius:6px; overflow:hidden; border:1px solid var(--card-border);">
-                                <div id="dashBarraTambor2" style="width:100%; height:100%; background:linear-gradient(90deg, #10b981, #059669); border-radius:6px; transition:width 0.4s;"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- =====================================================
-                 ALERTAS DE MANTENCIONES PRÓXIMAS Y PROGRAMADAS
-            ===================================================== -->
-            <div class="caja-blanca" id="cajaAlertasMantencionesProximas">
-                <div class="caja-header">
+            <div class="dashboard-cabecera"><div><span class="dashboard-eyebrow">CENTRO DE OPERACIONES</span><h2>Dashboard general</h2><p>Estado de la flota, mantenciones y recursos de taller en un solo lugar.</p></div><div class="dashboard-acciones"><button type="button" onclick="exportarPlanillaCSV()" class="btn-secundario">Exportar resumen</button><button type="button" onclick="navegarSeccion('registrarMantencion')" class="btn-primario">＋ Nueva orden de trabajo</button></div></div><div class="dashboard-indicadores"><article class="dashboard-indicador"><span>Equipos y herramientas</span><strong id="dashTotalEquipos">—</strong><small>Flota registrada y equipos auxiliares</small></article><article class="dashboard-indicador"><span>Operativas al 100%</span><strong id="dashOperativos">—</strong><small>Disponibles para la operación</small></article><button class="dashboard-indicador" type="button" onclick="filtrarAlertasMantencionDash('TODAS', document.querySelector('.btn-filtro-alerta-mant'))" aria-label="Ver todas las alertas de mantención"><span>Mantenciones prioritarias</span><strong id="dashMantencionesProximas">—</strong><small>Próximas, vencidas y en taller</small></button><article class="dashboard-indicador"><span>Insumos en stock crítico</span><strong id="dashStockCritico">—</strong><small>Artículos para revisar en bodega</small></article></div><div aria-label="Estado de la flota" class="dashboard-estados"><span><i class="dashboard-punto verde"></i><strong id="dashOperativosEstado">—</strong><span> operativas</span></span><span><i class="dashboard-punto ambar"></i><strong id="dashConFalla">—</strong><span> operativas con falla</span></span><span><i class="dashboard-punto rojo"></i><strong id="dashNoOperativos">—</strong><span> no operativas / taller</span></span><span><i class="dashboard-punto gris"></i><strong id="dashSinClasificar">—</strong><span> sin clasificar</span></span></div><div class="dashboard-operacion"><div class="caja-blanca" id="cajaAlertasMantencionesProximas">
+                <div class="caja-header dashboard-alertas-cabecera">
                     <div style="display:flex; align-items:center; gap:12px;">
-                        <div style="width:42px; height:42px; border-radius:10px; background:var(--status-warn-bg); color:var(--status-warn-dot); display:flex; align-items:center; justify-content:center; font-size:22px;">
-                            🔔
-                        </div>
                         <div>
-                            <h3 style="margin:0; font-size:16px; display:flex; align-items:center; gap:8px;">
-                                Alertas de Mantenciones Próximas y Preventivas
-                                <span class="badge badge-naranja" id="badgeTotalMantProximas" style="font-size:11.5px; font-weight:700;">0 unidades</span>
+                            <h3 style="">Agenda de mantenciones <span class="badge badge-naranja" id="badgeTotalMantProximas" style="font-size:11.5px; font-weight:700;">0 unidades</span>
                             </h3>
                             <p style="font-size:12px; margin-top:2px;">
                                 Monitoreo continuo por horómetro, kilometraje y calendario para evitar fallas imprevistas.
@@ -447,11 +327,10 @@
                 <div id="contenedorBotonExpandirAlertas" style="margin-top:12px; text-align:center;"></div>
             </div>
 
-            <!-- TABLA DE ALERTAS Y PENDIENTES TÉCNICOS -->
-            <div class="caja-blanca">
+            <aside class="dashboard-recursos"><section id="cajaDashboardTamboresAceite" class="caja-blanca dashboard-recurso"><h3>Lubricantes en taller</h3><p class="dashboard-secundario">Dos tambores · Saldos actuales del taller</p><div class="dashboard-reserva"><img src="/assets/dashboard/aceite-motor.png" alt="Tambor de aceite Motor · Tambor 1" width="66" height="78"><div class="dashboard-reserva-datos"><strong>Motor · Tambor 1</strong><small id="dashNombreTambor1Txt">Consultando existencias…</small><span id="dashNivelTambor1Txt" class="dashboard-nivel">—</span><div class="dashboard-progreso"><div id="dashBarraTambor1" style="width:0%"></div></div></div></div><div class="dashboard-reserva"><img src="/assets/dashboard/aceite-hidraulico.png" alt="Tambor de aceite Hidráulico · Tambor 2" width="66" height="78"><div class="dashboard-reserva-datos"><strong>Hidráulico · Tambor 2</strong><small id="dashNombreTambor2Txt">Consultando existencias…</small><span id="dashNivelTambor2Txt" class="dashboard-nivel">—</span><div class="dashboard-progreso"><div id="dashBarraTambor2" style="width:0%"></div></div></div></div><button type="button" onclick="navegarSeccion('moduloAceite')" class="dashboard-enlace">Ver control de aceites →</button></section><section class="caja-blanca dashboard-recurso"><h3>Combustible disponible</h3><div class="dashboard-reserva"><img src="/assets/dashboard/combustible.png" alt="Estanque de combustible" width="66" height="78"><div class="dashboard-reserva-datos"><small id="dashCapacidadCombustible">Estanque</small><strong id="dashLitrosCombustible" class="dashboard-litros">—</strong><div class="dashboard-progreso"><div id="dashBarraCombustible" style="width:0%"></div></div><small id="dashPorcentajeCombustible">—</small></div></div><p id="dashEstadoCombustible" class="dashboard-aviso">Consultando saldo…</p><button type="button" onclick="navegarSeccion('registrarCarga')" class="dashboard-enlace">Ir a combustible →</button></section></aside></div><div class="caja-blanca" id="cajaObservacionesDashboard">
                 <div class="caja-header">
                     <div>
-                        <h3>🚨 Observaciones Técnicas y Pendientes de Operadores</h3>
+                        <h3>Observaciones técnicas y pendientes</h3>
                         <p style="font-size:12px; color:#64748b;">Reportes de terreno para atención inmediata de mantenimiento.</p>
                     </div>
                     <button class="btn-secundario" onclick="navegarSeccion('programaMantencion')">Ver Programa Completo →</button>

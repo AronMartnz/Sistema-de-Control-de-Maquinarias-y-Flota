@@ -4,6 +4,7 @@ function renderizarTablasOriginales() {
 }
 
 function renderizarModuloCombustible() {
+    renderizarCombustibleDashboard();
     const elNombre = document.getElementById("lblNombreTanqueCombustible");
     const elPorcentaje = document.getElementById("lblPorcentajeCombustible");
     const barra = document.getElementById("barraProgresoCombustible");

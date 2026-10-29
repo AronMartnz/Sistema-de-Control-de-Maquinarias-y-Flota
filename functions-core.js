@@ -603,6 +603,12 @@ function renderizarAlertasMantencionesDashboard() {
         return;
     }
 
+    if (modoVistaAlertasDash === 'resumida') {
+        const esc = escapeHtmlSoporte;
+        contenedor.innerHTML = `<div class="dashboard-tabla-alertas"><table><thead><tr><th>Equipo / unidad</th><th>Estado</th><th>Próximo servicio</th><th>Responsable</th><th>Acciones</th></tr></thead><tbody>${itemsAMostrar.map(item => `<tr><td><strong>${esc(item.cod)}</strong><small>${esc(item.equipo)}</small></td><td><span class="badge ${esc(item.badgeClase)}">${esc(item.badge)}</span></td><td><strong>${esc(item.restanteTexto)}</strong><small>Actual: ${esc(item.horoStr || 'N/A')} · Próximo: ${esc(item.proxStr || '-')}</small></td><td>${esc(item.responsable || 'Sin asignar')}</td><td><div class="dashboard-fila-acciones"><button class="btn-secundario" onclick="verFichaTecnica(${esc(JSON.stringify(item.cod))})">Ficha</button><button class="btn-primario" onclick="iniciarMantencionParaEquipo(${esc(JSON.stringify(item.cod))})">OT</button></div></td></tr>`).join('')}</tbody></table></div>`;
+        return;
+    }
+
     contenedor.innerHTML = itemsAMostrar.map(item => {
         let claseBorde = 'alerta-programada';
         let colorBarra = '#2563eb';
@@ -615,49 +621,6 @@ function renderizarAlertasMantencionesDashboard() {
         } else if (item.tipoAlerta === 'proxima') {
             claseBorde = 'alerta-proxima';
             colorBarra = '#f59e0b';
-        }
-
-        if (modoVistaAlertasDash === 'resumida') {
-            return `
-                <div class="tarjeta-alerta-mant modo-resumido ${claseBorde}" style="border-left-color: ${colorBarra};">
-                    <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
-                        <div style="display:flex; align-items:center; gap:6px; min-width:0; overflow:hidden;">
-                            <span class="tarjeta-alerta-codigo" style="font-size:11.5px; padding:2px 6px; font-weight:800;">${item.cod}</span>
-                            <strong style="font-size:12.5px; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${item.equipo}">
-                                ${item.equipo}
-                            </strong>
-                        </div>
-                        <span class="badge ${item.badgeClase}" style="font-size:10px; padding:2px 7px; white-space:nowrap; flex-shrink:0;">
-                            ${item.icono} ${item.badge}
-                        </span>
-                    </div>
-
-                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:5px 8px;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; gap:4px;">
-                            <span style="color:#64748b;">Act: <strong style="color:#0f172a;">${item.horoStr || 'N/A'}</strong></span>
-                            <span style="color:#64748b;">Próx: <strong style="color:${colorBarra};">${item.proxStr || '-'}</strong></span>
-                            <span style="font-weight:700; color:${colorBarra};">${item.restanteTexto}</span>
-                        </div>
-                        <div class="tarjeta-alerta-barra-progreso" style="height:3.5px; margin-top:3px;">
-                            <div class="tarjeta-alerta-barra-relleno" style="width:${item.porcentajeProgreso}%; background:${colorBarra};"></div>
-                        </div>
-                    </div>
-
-                    <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
-                        <div style="font-size:11px; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Responsable: ${item.responsable}">
-                            👤 ${item.responsable}
-                        </div>
-                        <div style="display:flex; gap:4px; flex-shrink:0;">
-                            <button type="button" class="btn-secundario" onclick="verFichaTecnica('${item.cod}')" style="padding:2px 7px; font-size:11px; border-radius:5px; font-weight:600;" title="Ver Ficha Técnica y Filtros">
-                                📄 Ficha
-                            </button>
-                            <button type="button" class="btn-primario" onclick="iniciarMantencionParaEquipo('${item.cod}')" style="padding:2px 8px; font-size:11px; border-radius:5px; background:#ea580c; border-color:#ea580c; font-weight:700;" title="Emitir Orden de Trabajo (OT)">
-                                ⚡ OT
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
         }
 
         // Modo detallado (vista extendida)
@@ -724,12 +687,31 @@ function renderizarAlertasMantencionesDashboard() {
     }).join("");
 }
 
+function renderizarCombustibleDashboard() {
+    if (typeof estadoTanqueCombustible === 'undefined') return;
+    const capacidad = Number(estadoTanqueCombustible.capacidad) > 0 ? Number(estadoTanqueCombustible.capacidad) : 400;
+    const saldo = Math.max(0, Number(estadoTanqueCombustible.actual) || 0);
+    const porcentaje = Math.min(100, saldo / capacidad * 100);
+    const valores = {dashCapacidadCombustible:`Estanque de ${capacidad.toLocaleString('es-CL')} L`,dashLitrosCombustible:`${saldo.toLocaleString('es-CL')} L`,dashPorcentajeCombustible:`${porcentaje.toFixed(0)}% disponible`,dashEstadoCombustible:saldo === 0 ? 'Estanque vacío. Registra un abastecimiento.' : porcentaje <= 25 ? 'Nivel bajo. Planifica el próximo abastecimiento.' : 'Saldo disponible para despachos.'};
+    for (const [id,valor] of Object.entries(valores)) {const el=document.getElementById(id);if(el)el.textContent=valor;}
+    const barra = document.getElementById('dashBarraCombustible');
+    if (barra) {barra.style.width=`${porcentaje}%`;barra.style.background=porcentaje <= 25 ? '#dc5962' : '#10b981';}
+}
+
 function renderizarDashboard() {
     const totalEquipos = corssenPrograma.length;
-    const operativos = corssenPrograma.filter(e => e.estado.toLowerCase().includes("operativo") && !e.estado.toLowerCase().includes("no")).length;
-    const conFalla = corssenPrograma.filter(e => e.estado.toLowerCase().includes("falla")).length;
-    const noOperativos = corssenPrograma.filter(e => e.estado.toLowerCase().includes("no operativo") || e.estado.toLowerCase().includes("fuera")).length;
-    const stockCritico = corssenStock.filter(i => (i.stock <= (i.stockMin || 1))).length;
+    const estados = corssenPrograma.map(e => String(e.estado || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase());
+    const clasificar = estado => /no\s+operativ|fuera|taller|reparacion|en\s+mantencion/.test(estado) ? 'no' : /falla/.test(estado) ? 'falla' : /operativ[oa]/.test(estado) ? 'operativo' : 'sin';
+    const categorias = estados.map(clasificar);
+    const operativos = categorias.filter(e => e === 'operativo').length;
+    const conFalla = categorias.filter(e => e === 'falla').length;
+    const noOperativos = categorias.filter(e => e === 'no').length;
+    const stockCritico = corssenStock.filter(i => Number(i.stock || 0) <= Number(i.stockMin ?? 1)).length;
+    const estadoOperativo = document.getElementById('dashOperativosEstado');
+    const sinClasificar = document.getElementById('dashSinClasificar');
+    if (estadoOperativo) estadoOperativo.textContent = operativos;
+    if (sinClasificar) sinClasificar.textContent = categorias.filter(e => e === 'sin').length;
+    renderizarCombustibleDashboard();
 
     const elTotal = document.getElementById("dashTotalEquipos");
     const elOperativos = document.getElementById("dashOperativos");
@@ -749,15 +731,16 @@ function renderizarDashboard() {
     // Resumen de alertas recientes en Dashboard
     const tbodyAlertas = document.getElementById("tbodyAlertasDashboard");
     if (tbodyAlertas) {
+        const esc = escapeHtmlSoporte;
         const pendientesCriticos = corssenPrograma.filter(e => e.observaciones && e.observaciones.trim().length > 0).slice(0, 6);
         tbodyAlertas.innerHTML = pendientesCriticos.map(item => `
             <tr>
-                <td><strong>${item.cod}</strong></td>
-                <td>${item.equipo} (${item.marca})</td>
-                <td><span class="badge ${obtenerClaseBadge(item.estado)}">${item.estado}</span></td>
-                <td><span class="badge ${item.prioridad === 'Alta' ? 'badge-rojo' : (item.prioridad === 'Media' ? 'badge-naranja' : 'badge-verde')}">${item.prioridad}</span></td>
-                <td>${item.observaciones}</td>
-                <td>${item.responsable}</td>
+                <td><strong>${esc(item.cod || "Sin código")}</strong></td>
+                <td>${esc(item.equipo || "Sin denominación")} (${esc(item.marca || "Sin marca")})</td>
+                <td><span class="badge ${obtenerClaseBadge(item.estado)}">${esc(item.estado || "Sin estado")}</span></td>
+                <td><span class="badge ${item.prioridad === 'Alta' ? 'badge-rojo' : (item.prioridad === 'Media' ? 'badge-naranja' : 'badge-verde')}">${esc(item.prioridad || "Sin prioridad")}</span></td>
+                <td>${esc(item.observaciones)}</td>
+                <td>${esc(item.responsable || "Sin asignar")}</td>
             </tr>
         `).join("");
     }
