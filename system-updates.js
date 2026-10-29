@@ -1,41 +1,15 @@
 // Publish a new id only with a new set of user-facing release notes. See UPDATES.md.
 export const currentRelease = {
-  "id": "corssen-2026-10-28-novedades-1",
-  "title": "Tu sistema sigue mejorando",
-  "description": "Conoce las mejoras y correcciones incorporadas para facilitar tu trabajo diario.",
+  "id": "corssen-2026-10-28-login-continuo-2",
+  "title": "Entrada al sistema más fluida",
+  "description": "Corregimos la transición después de validar tus credenciales.",
   "sections": [
     {
-      "title": "Experiencia y diseño",
-      "tag": "MEJORAS",
+      "title": "Inicio de sesión",
+      "tag": "CORRECCIÓN",
       "items": [
-        "Nuevo inicio de sesión con mensajes animados y bienvenida con el logo de Corssen.",
-        "Dashboard renovado, menú lateral plegable y vistas más compactas de aceites y combustible.",
-        "Aviso de novedades que se muestra una sola vez por usuario y actualización."
-      ]
-    },
-    {
-      "title": "Inventario y abastecimiento",
-      "tag": "GESTIÓN",
-      "items": [
-        "Ajuste de stock con motivo, responsable e historial de movimientos.",
-        "Imágenes automáticas para insumos y consulta del valor del inventario por mes."
-      ]
-    },
-    {
-      "title": "Sincronización y soporte",
-      "tag": "CORRECCIONES",
-      "items": [
-        "Estado compartido entre administradores y operadores, con control de cambios simultáneos.",
-        "Chat con confirmaciones de lectura, fotos de perfil y respuestas automáticas organizadas.",
-        "Validación de existencias y saldos al registrar consumos de insumos, aceites y combustible."
-      ]
-    },
-    {
-      "title": "Mantenimiento, respaldos y acceso",
-      "tag": "CONTROL",
-      "items": [
-        "Gestión de respaldos a petición y avisos de mantenimiento o suspensión de acceso.",
-        "Acceso con cuentas configuradas y retiro de contraseñas incorporadas en el código."
+        "El logo de Corssen permanece visible hasta que se abre el sistema, sin dejar una pantalla vacía al terminar la bienvenida.",
+        "El panel se muestra sin el desvanecimiento que provocaba el corte visual."
       ]
     }
   ]
