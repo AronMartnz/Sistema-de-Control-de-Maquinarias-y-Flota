@@ -2175,7 +2175,40 @@ async function ejecutarRespaldoCronAutomatico(env) {
 
 
 
-export default {fetch: (request, env, ctx) => secureFetch(request, env, ctx, application), scheduled: async (event,env,ctx) => { try { await captureInventoryMonth(env.DB); } catch(error) { console.error("Monthly inventory capture failed",error); } return application.scheduled(event,env,ctx); }};
+const SECURITY_HEADERS = {
+  "Strict-Transport-Security": "max-age=31536000",
+  "Content-Security-Policy": [
+    "default-src 'self'",
+    "base-uri 'self'",
+    "object-src 'none'",
+    "frame-ancestors 'self'",
+    "form-action 'self'",
+    "script-src 'self' 'unsafe-inline' https://cdn.sheetjs.com https://cdnjs.cloudflare.com",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' data: https://fonts.gstatic.com",
+    "img-src 'self' data: blob: https:",
+    "connect-src 'self'",
+    "upgrade-insecure-requests"
+  ].join("; "),
+  "X-Frame-Options": "SAMEORIGIN",
+  "X-Content-Type-Options": "nosniff",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+};
+
+export default {
+  fetch: async (request, env, ctx) => {
+    const response = await secureFetch(request, env, ctx, application);
+    const headers = new Headers(response.headers);
+    for (const [name, value] of Object.entries(SECURITY_HEADERS)) headers.set(name, value);
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers
+    });
+  },
+  scheduled: async (event,env,ctx) => { try { await captureInventoryMonth(env.DB); } catch(error) { console.error("Monthly inventory capture failed",error); } return application.scheduled(event,env,ctx); }
+};
 
 export { application };
 
