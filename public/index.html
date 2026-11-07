@@ -1,4 +1,4 @@
-Warning: truncated output (original token count: 80611)
+Warning: truncated output (original token count: 80650)
 Total output lines: 4023
 
 <!DOCTYPE html>
@@ -34,7 +34,7 @@ Total output lines: 4023
 
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
-    <link rel="stylesheet" href="/style.css?v=20261102_ui_redesign">
+    <link rel="stylesheet" href="/style.css?v=20261106_corssen_recovery_1">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -74,9 +74,9 @@ Total output lines: 4023
             }
         })();
     </script>
-    <script src="/login-entry.js?v=20261102_ui_redesign"></script>
-    <link rel="stylesheet" href="/system-updates.css?v=20261102_ui_redesign">
-    <script src="/system-updates-ui.js?v=20261102_ui_redesign" defer></script>
+    <script src="/login-entry.js?v=20261106_corssen_recovery_1"></script>
+    <link rel="stylesheet" href="/system-updates.css?v=20261106_corssen_recovery_1">
+    <script src="/system-updates-ui.js?v=20261106_corssen_recovery_1" defer></script>
 </head>
 <body>
 
@@ -288,7 +288,87 @@ Total output lines: 4023
              1. DASHBOARD PRINCIPAL
         ===================================================== -->
         <section class="panel active" id="panelPrincipal">
-            <div class="dashboard-cabecera"><div><span class="dashboard-eyebrow">CENTRO DE OPERACIONES</span><h2>Dashboard general</h2><p>Estado de la flota, mantenciones y recursos de taller en un solo lugar.</p></div><div class="dashboard-acciones"><button type="button" onclick="exportarPlanillaCSV()" class="btn-secundario">Exportar resumen</button><button type="button" onclick="navegarSeccion('registrarMantencion')" class="btn-primario">＋ Nueva orden de trabajo</button></div></div><div class="dashboard-indicadores"><article class="dashboard-indicador"><span>Equipos y herramientas</span><strong id="dashTotalEquipos">—</strong><small>Flota registrada y equipos auxiliares</small></article><article class="dashboard-indicador"><span>Operativas al 100%</span><strong id="dashOperativos">—</strong><small>Disponibles para la operación</small></article><button class="dashboard-indicador" type="button" onclick="filtrarAlertasMantencionDash('TODAS', document.querySelector('.btn-filtro-alerta-mant'))" aria-label="Ver todas las alertas de mantención"><span>Mantenciones prioritarias</span><strong id="dashMantencionesProximas">—</strong><small>Próximas, vencidas y en taller</small></button><article class="dashboard-indicador"><span>Insumos en stock crítico</span><strong id="dashStockCritico">—</strong><small>Artículos para revisar en bodega</small></article></div><div aria-label="Estado de la flota" class="dashboard-estados"><span><i class="dashboard-punto verde"></i><strong id="dashOperativosEstado">—</strong><span> operativas</span></span><span><i class="dashboard-punto ambar"></i><strong id="dashConFalla">—</strong><span> operativas con falla</span></span><span><i class="dashboard-punto rojo"></i><strong id="dashNoOperativos">—</strong><span> no operativas / taller</span></span><span><i class="dashboard-punto gris"></i><strong id="dashSinClasificar">—</strong><span> sin clasificar</span></span></div><…70611 tokens truncated…                 <div class="campo-form">
+            <div class="dashboard-cabecera"><div><span class="dashboard-eyebrow">CENTRO DE OPERACIONES</span><h2>Dashboard general</h2><p>Estado de la flota, mantenciones y recursos de taller en un solo lugar.</p></div><div class="dashboard-acciones"><button type="button" onclick="exportarPlanillaCSV()" class="btn-secundario">Exportar resumen</button><button type="button" onclick="navegarSeccion('registrarMantencion')" class="btn-primario">＋ Nueva orden de trabajo</button></div></div><div class="dashboard-indicadores"><article class="dashboard-indicador"><span>Equipos y herramientas</span><strong id="dashTotalEquipos">—</strong><small>Flota registrada y equipos auxiliares</small></article><article class="dashboard-indicador"><span>Operativas al 100%</span><strong id="dashOperativos">—</strong><small>Disponibles para la operación</small></article><button class="dashboard-indicador" type="button" onclick="filtrarAlertasMantencionDash('TODAS', document.querySelector('.btn-filtro-alerta-mant'))" aria-label="Ver todas las alertas de mantención"><span>Mantenciones prioritarias</span><strong id="dashMantencionesProximas">—</strong><small>Próximas, vencidas y en taller</small></button><article class="dashboard-indicador"><span>Insumos en stock crítico</span><strong id="dashStockCritico">—</strong><small>Artículos para revisar en bodega</small></article></div><div aria-label="Estado de la flota" class="dashboard-estados"><span><i class="dashboard-punto verde"></i><strong id="dashOperativosEstado">—</strong><span> operativas</span></span><span><i class="dashboard-punto ambar"></i><strong id="dashConFalla">—</strong><span> operativas con falla</span></span><span><i class="dashboard-punto rojo"></i><strong id="dashNoOperativos">—</strong><span> no operativas / taller</span></span><span><i class="dashboard-punto gris"></i><strong id="dashSinClasificar">—</strong><span> sin clasificar</span></span></div><div class="dashboard-operacion"><div class="caja-blanca" id="cajaAlertasMantencionesProximas">
+                <div class="caja-header dashboard-alertas-cabecera">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div>
+                            <h3 style="">Agenda de mantenciones <span class="badge badge-naranja" id="badgeTotalMantProximas" style="font-size:11.5px; font-weight:700;">0 unidades</span>
+                            </h3>
+                            <p style="font-size:12px; margin-top:2px;">
+                                Monitoreo continuo por horómetro, kilometraje y calendario para evitar fallas imprevistas.
+                            </p>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                        <div class="pestanas-filtro" style="margin-bottom:0;">
+                            <button type="button" class="btn-pestana btn-filtro-alerta-mant active" data-filtro="TODAS" onclick="filtrarAlertasMantencionDash('TODAS', this)">Todas (<span id="contFiltroMantTodas">0</span>)</button>
+                            <button type="button" class="btn-pestana btn-filtro-alerta-mant" data-filtro="PROXIMAS" onclick="filtrarAlertasMantencionDash('PROXIMAS', this)">⚠️ Próximas (<span id="contFiltroMantProx">0</span>)</button>
+                            <button type="button" class="btn-pestana btn-filtro-alerta-mant" data-filtro="TALLER" onclick="filtrarAlertasMantencionDash('TALLER', this)">🛠️ En Taller (<span id="contFiltroMantTaller">0</span>)</button>
+                            <button type="button" class="btn-pestana btn-filtro-alerta-mant" data-filtro="VENCIDAS" onclick="filtrarAlertasMantencionDash('VENCIDAS', this)">🚨 Vencidas (<span id="contFiltroMantVenc">0</span>)</button>
+                            <button type="button" class="btn-pestana btn-filtro-alerta-mant" data-filtro="PROGRAMADAS" onclick="filtrarAlertasMantencionDash('PROGRAMADAS', this)">📅 Programadas (<span id="contFiltroMantProg">0</span>)</button>
+                        </div>
+                        <button type="button" class="btn-primario" onclick="navegarSeccion('registrarMantencion')" style="font-size:12px; padding:7px 14px; background:#ea580c; border-color:#ea580c; font-weight:700;">
+                            ⚡ Emitir Orden de Trabajo
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Buscador rápido dentro de alertas de mantención -->
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:12px; flex-wrap:wrap;">
+                    <div style="display:flex; align-items:center; gap:8px; flex:1; max-width:420px;">
+                        <input type="text" id="inputBuscarAlertaMant" oninput="renderizarAlertasMantencionesDashboard()" placeholder="🔍 Buscar por código, marca, equipo o responsable..." style="width:100%; padding:7px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:12px;">
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                        <div style="font-size:12px; color:#64748b; font-weight:600;" id="resumenAlertasMantTexto">
+                            Cargando alertas preventivas...
+                        </div>
+                        <div class="pestanas-filtro" style="margin-bottom:0; display:inline-flex; border:1px solid #cbd5e1; border-radius:7px; padding:2px; background:#f1f5f9;">
+                            <button type="button" id="btnVistaAlertasResumida" class="btn-pestana active" onclick="cambiarModoVistaAlertas('resumida')" style="padding:4px 10px; font-size:11.5px; border-radius:5px; font-weight:700;" title="Vista compacta resumida para ahorrar espacio">…68650 tokens truncated…r:#e0f2fe;">Vincule una maquinaria/vehículo existente o registre una nueva unidad con sus pautas oficiales</span>
+                        </div>
+                    </div>
+                    <button type="button" onclick="cerrarModalNuevaFicha()" style="background:transparent; border:none; color:#ffffff; font-size:22px; cursor:pointer;">✕</button>
+                </div>
+
+                <form id="formNuevaFicha" onsubmit="guardarNuevaFicha(event)" style="padding:20px 24px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:20px;">
+                    <!-- ASISTENTE DE VINCULACIÓN CON EQUIPO REGISTRADO -->
+                    <div style="background:#eff6ff; border:1.5px solid #bfdbfe; border-radius:12px; padding:14px 18px;">
+                        <label for="selectVincularEquipoFicha" style="font-size:12.5px; font-weight:800; color:#1e40af; display:block; margin-bottom:6px;">
+                            ⚡ Autocompletar desde Maquinaria o Vehículo Registrado:
+                        </label>
+                        <select id="selectVincularEquipoFicha" onchange="alSeleccionarEquipoVincularFicha(this.value)" style="width:100%; padding:8px 12px; border-radius:8px; border:1.5px solid #93c5fd; background:#ffffff; font-weight:600; font-size:13px; color:#1e3a8a;">
+                            <!-- Opciones inyectadas dinámicamente -->
+                        </select>
+                        <span style="font-size:11px; color:#3b82f6; margin-top:4px; display:block;">
+                            Al seleccionar un equipo de la flota, se autocompletarán su código, marca, modelo, horómetro y se precargarán lubricantes recomendados.
+                        </span>
+                    </div>
+
+                    <!-- DATOS PRINCIPALES -->
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
+                        <div style="font-size:13px; font-weight:800; color:#0f172a; margin-bottom:12px; display:flex; align-items:center; gap:6px;">
+                            <span>📋</span> 1. Información General del Equipo
+                        </div>
+                        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">
+                            <div class="campo-form">
+                                <label for="nuevaFichaCodigo">Código Interno (*):</label>
+                                <input type="text" id="nuevaFichaCodigo" placeholder="Ej: GPC-03 / CAM-08" required style="width:100%; font-weight:700;">
+                            </div>
+                            <div class="campo-form" style="grid-column: span 2;">
+                                <label for="nuevaFichaNombre">Nombre Completo del Equipo (*):</label>
+                                <input type="text" id="nuevaFichaNombre" placeholder="Ej: GRÚA PORTACONTENEDORES KALMAR DRG450" required style="width:100%;">
+                            </div>
+                            <div class="campo-form">
+                                <label for="nuevaFichaCategoria">Categoría Programa:</label>
+                                <select id="nuevaFichaCategoria" style="width:100%;">
+                                    <option value="PORTACONTENEDORES">PORTACONTENEDORES</option>
+                                    <option value="GRÚAS">GRÚAS</option>
+                                    <option value="HORQUILLAS">HORQUILLAS</option>
+                                    <option value="MÓVILES">MÓVILES (VEHÍCULOS)</option>
+                                    <option value="AUXILIARES">AUXILIARES</option>
+                                    <option value="MARÍTIMO">MARÍTIMO</option>
+                                </select>
+                            </div>
+                            <div class="campo-form">
                                 <label for="nuevaFichaMarca">Marca (*):</label>
                                 <input type="text" id="nuevaFichaMarca" placeholder="Ej: KALMAR / HYSTER / TOYOTA" required style="width:100%;">
                             </div>
@@ -520,19 +600,19 @@ Total output lines: 4023
             </svg>
             </span>
             <span class="soporte-cara soporte-cara-marca">
-                <img src="/assets/servitec-pro-original.png" alt="" width="1880" height="837" decoding="async">
+                <img src="/assets/servitec-pro-original.png" alt="" width="1880" height="837" decoding="async" style="display:block;width:54px;height:auto;max-width:54px;max-height:46px;object-fit:contain">
             </span>
         </span>
         <span id="badgeNotifSoporte" class="soporte-pulso" style="position:absolute; top:-2px; right:-2px; background:#ef4444; color:#ffffff; font-size:10px; font-weight:800; border-radius:50%; width:18px; height:18px; display:flex; align-items:center; justify-content:center; border:2px solid #ffffff;">1</span>
     </button>
 </div>
 
-<script src="/functions-core.js?v=20261102_ui_redesign"></script>
-<script src="/functions-operations.js?v=20261102_ui_redesign"></script>
+<script src="/functions-core.js?v=20261106_corssen_recovery_1"></script>
+<script src="/functions-operations.js?v=20261106_corssen_recovery_1"></script>
 <script src="inventory-ui.js"></script>
-    <script src="/support-bot.js?v=20261102_ui_redesign"></script>
-    <script src="/sidebar-toggle.js?v=20261102_ui_redesign"></script>
-    <script src="/script.js?v=20261102_ui_redesign"></script>
+    <script src="/support-bot.js?v=20261106_corssen_recovery_1"></script>
+    <script src="/sidebar-toggle.js?v=20261106_corssen_recovery_1"></script>
+    <script src="/script.js?v=20261106_corssen_recovery_1"></script>
 <dialog id="dialogInventario" class="inventario-dialog" aria-label="Gestión del artículo y ajuste de stock"><div id="contenidoDialogInventario"></div></dialog>
 </body>
 </html>
